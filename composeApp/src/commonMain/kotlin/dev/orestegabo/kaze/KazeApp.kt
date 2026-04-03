@@ -33,6 +33,7 @@ import dev.orestegabo.kaze.ui.chrome.KazeBottomBar
 import dev.orestegabo.kaze.ui.events.EventScheduleScreen
 import dev.orestegabo.kaze.ui.explore.ExploreScreen
 import dev.orestegabo.kaze.ui.map.MapScreen
+import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
 import dev.orestegabo.kaze.ui.stay.StayHomeScreen
 
 @Composable
@@ -121,69 +122,80 @@ fun App() {
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                 KazeAmbientBackground(modifier = Modifier.matchParentSize())
-                Column(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
-                    DemoFeedbackBanner(
-                        message = uiState.feedbackMessage,
-                        onDismiss = appViewModel::dismissFeedback,
+                if (uiState.isOnboardingVisible) {
+                    OnboardingScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        currentPage = uiState.onboardingPage,
+                        onPageChange = appViewModel::onOnboardingPageChanged,
+                        onSkip = appViewModel::skipOnboarding,
+                        onNext = appViewModel::onOnboardingNext,
+                        onGetStarted = appViewModel::completeOnboarding,
                     )
-
-                    when (uiState.currentDestination) {
-                        KazeDestination.STAY -> StayHomeScreen(
-                            modifier = Modifier.weight(1f),
-                            hotelDisplayName = stayUiState.hotelDisplayName,
-                            guestName = stayUiState.guestName,
-                            accessProfileLabel = stayUiState.accessProfileLabel,
-                            accessStatusLabel = stayUiState.accessStatusLabel,
-                            accessCard = stayUiState.accessCard,
-                            stayMoments = stayUiState.stayMoments,
-                            requestOptions = stayUiState.requestOptions,
-                            suggestionActivities = stayUiState.suggestionActivities,
-                            selectedTab = stayUiState.selectedTab,
-                            activeStayScreen = stayUiState.activeStayScreen,
-                            lateCheckoutRequest = stayUiState.lateCheckoutRequest,
-                            lateCheckoutDraft = stayUiState.lateCheckoutDraft,
-                            onTabChange = stayViewModel::onTabChange,
-                            onBackToStayHome = stayViewModel::onBackToHome,
-                            onLateCheckoutDraftChange = stayViewModel::onDraftChange,
-                            onLateCheckoutSubmit = { draft -> handleStayResult(stayViewModel.submitLateCheckout(draft)) },
-                            onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
+                } else {
+                    Column(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
+                        DemoFeedbackBanner(
+                            message = uiState.feedbackMessage,
+                            onDismiss = appViewModel::dismissFeedback,
                         )
 
-                        KazeDestination.EVENTS -> EventScheduleScreen(
-                            modifier = Modifier.weight(1f),
-                            days = eventsUiState.days,
-                            selectedDay = eventsUiState.selectedDay,
-                            sessions = eventsUiState.sessions,
-                            onDaySelected = eventsViewModel::onDaySelected,
-                            onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
-                        )
+                        when (uiState.currentDestination) {
+                            KazeDestination.STAY -> StayHomeScreen(
+                                modifier = Modifier.weight(1f),
+                                hotelDisplayName = stayUiState.hotelDisplayName,
+                                guestName = stayUiState.guestName,
+                                accessProfileLabel = stayUiState.accessProfileLabel,
+                                accessStatusLabel = stayUiState.accessStatusLabel,
+                                accessCard = stayUiState.accessCard,
+                                stayMoments = stayUiState.stayMoments,
+                                requestOptions = stayUiState.requestOptions,
+                                suggestionActivities = stayUiState.suggestionActivities,
+                                selectedTab = stayUiState.selectedTab,
+                                activeStayScreen = stayUiState.activeStayScreen,
+                                lateCheckoutRequest = stayUiState.lateCheckoutRequest,
+                                lateCheckoutDraft = stayUiState.lateCheckoutDraft,
+                                onTabChange = stayViewModel::onTabChange,
+                                onBackToStayHome = stayViewModel::onBackToHome,
+                                onLateCheckoutDraftChange = stayViewModel::onDraftChange,
+                                onLateCheckoutSubmit = { draft -> handleStayResult(stayViewModel.submitLateCheckout(draft)) },
+                                onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
+                            )
 
-                        KazeDestination.EXPLORE -> ExploreScreen(
-                            modifier = Modifier.weight(1f),
-                            highlights = exploreUiState.highlights,
-                            onHighlightAction = { handleExploreResult(exploreViewModel.onHighlightAction(it)) },
-                            onHeroPrimary = { handleExploreResult(exploreViewModel.reserveExperience()) },
-                            onHeroSecondary = { handleExploreResult(exploreViewModel.openPoolDeckRoute()) },
-                        )
+                            KazeDestination.EVENTS -> EventScheduleScreen(
+                                modifier = Modifier.weight(1f),
+                                days = eventsUiState.days,
+                                selectedDay = eventsUiState.selectedDay,
+                                sessions = eventsUiState.sessions,
+                                onDaySelected = eventsViewModel::onDaySelected,
+                                onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                            )
 
-                        KazeDestination.MAP -> MapScreen(
-                            modifier = Modifier.weight(1f),
-                            floors = mapUiState.floors,
-                            guestAccess = mapUiState.guestAccess,
-                            activeRoute = mapUiState.activeRoute,
-                            activeFloorId = mapUiState.selectedFloorId,
-                            onFloorSelected = mapViewModel::onFloorSelected,
-                            onStartNavigation = {},
-                            onSwitchFloor = mapViewModel::onSwitchFloor,
-                        )
+                            KazeDestination.EXPLORE -> ExploreScreen(
+                                modifier = Modifier.weight(1f),
+                                highlights = exploreUiState.highlights,
+                                onHighlightAction = { handleExploreResult(exploreViewModel.onHighlightAction(it)) },
+                                onHeroPrimary = { handleExploreResult(exploreViewModel.reserveExperience()) },
+                                onHeroSecondary = { handleExploreResult(exploreViewModel.openPoolDeckRoute()) },
+                            )
+
+                            KazeDestination.MAP -> MapScreen(
+                                modifier = Modifier.weight(1f),
+                                floors = mapUiState.floors,
+                                guestAccess = mapUiState.guestAccess,
+                                activeRoute = mapUiState.activeRoute,
+                                activeFloorId = mapUiState.selectedFloorId,
+                                onFloorSelected = mapViewModel::onFloorSelected,
+                                onStartNavigation = {},
+                                onSwitchFloor = mapViewModel::onSwitchFloor,
+                            )
+                        }
                     }
-                }
 
-                KazeBottomBar(
-                    currentDestination = uiState.currentDestination,
-                    onDestinationSelected = appViewModel::onDestinationSelected,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
+                    KazeBottomBar(
+                        currentDestination = uiState.currentDestination,
+                        onDestinationSelected = appViewModel::onDestinationSelected,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             }
         }
     }

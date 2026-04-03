@@ -30,6 +30,18 @@ data class KazeAccentPalette(
     val editorialClay: Color,
 )
 
+@Immutable
+data class KazePassPalette(
+    val cardBaseStart: Color,
+    val cardBaseMiddle: Color,
+    val cardBaseEnd: Color,
+    val cardOverlay: Color,
+    val cardOnSurface: Color,
+    val cardOnSurfaceMuted: Color,
+    val cardChip: Color,
+    val cardChipText: Color,
+)
+
 private val LocalBrandAssets = staticCompositionLocalOf {
     KazeBrandAssets(logoAsset = "", wordmarkAsset = "")
 }
@@ -39,6 +51,19 @@ private val LocalAccentPalette = staticCompositionLocalOf {
         editorialWarm = Color(0xFFC79A52),
         editorialBotanical = Color(0xFF88A37A),
         editorialClay = Color(0xFF9A7A62),
+    )
+}
+
+private val LocalPassPalette = staticCompositionLocalOf {
+    KazePassPalette(
+        cardBaseStart = Color(0xFF111419),
+        cardBaseMiddle = Color(0xFF18242B),
+        cardBaseEnd = Color(0xFF24404A),
+        cardOverlay = Color(0x14FFF9F0),
+        cardOnSurface = Color(0xFFFFFBF5),
+        cardOnSurfaceMuted = Color(0xCCFFF8EE),
+        cardChip = Color(0x2EFFF8EE),
+        cardChipText = Color(0xFFFFFBF5),
     )
 }
 
@@ -54,6 +79,10 @@ object KazeTheme {
     val accents: KazeAccentPalette
         @Composable
         get() = LocalAccentPalette.current
+
+    val pass: KazePassPalette
+        @Composable
+        get() = LocalPassPalette.current
 }
 
 @Composable
@@ -71,6 +100,16 @@ fun KazeTheme(
             editorialWarm = hotelConfig.branding.secondaryHex.toColor(),
             editorialBotanical = hotelConfig.branding.accentHex.toColor().copy(alpha = 0.86f),
             editorialClay = hotelConfig.branding.primaryHex.toColor().copy(alpha = 0.62f),
+        ),
+        LocalPassPalette provides KazePassPalette(
+            cardBaseStart = hotelConfig.branding.primaryHex.toColor().darken(0.62f),
+            cardBaseMiddle = hotelConfig.branding.primaryHex.toColor().darken(0.42f),
+            cardBaseEnd = hotelConfig.branding.secondaryHex.toColor().darken(0.28f),
+            cardOverlay = hotelConfig.branding.accentHex.toColor().copy(alpha = 0.10f),
+            cardOnSurface = Color(0xFFFFFBF5),
+            cardOnSurfaceMuted = Color(0xCCFFF8EE),
+            cardChip = Color(0x2EFFF8EE),
+            cardChipText = Color(0xFFFFFBF5),
         ),
     ) {
         MaterialTheme(
@@ -138,3 +177,10 @@ private fun Color.bestContrastingText(): Color {
     val luminance = (0.299f * red) + (0.587f * green) + (0.114f * blue)
     return if (luminance > 0.55f) Color(0xFF1A1712) else Color(0xFFFFFBF5)
 }
+
+private fun Color.darken(factor: Float): Color = Color(
+    red = red * (1f - factor),
+    green = green * (1f - factor),
+    blue = blue * (1f - factor),
+    alpha = alpha,
+)

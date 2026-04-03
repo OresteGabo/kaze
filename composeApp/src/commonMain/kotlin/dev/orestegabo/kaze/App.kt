@@ -116,15 +116,8 @@ fun App() {
 
         Scaffold(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .safeDrawingPadding(),
+                .background(MaterialTheme.colorScheme.background),
             containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                KazeBottomBar(
-                    currentDestination = currentDestination,
-                    onDestinationSelected = { currentDestination = it },
-                )
-            },
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -132,7 +125,11 @@ fun App() {
                     .fillMaxSize(),
             ) {
                 KazeAmbientBackground(modifier = Modifier.matchParentSize())
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 110.dp),
+                ) {
                     DemoFeedbackBanner(
                         message = feedbackMessage,
                         onDismiss = { feedbackMessage = "" },
@@ -260,6 +257,12 @@ fun App() {
                         )
                     }
                 }
+
+                KazeBottomBar(
+                    currentDestination = currentDestination,
+                    onDestinationSelected = { currentDestination = it },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
             }
         }
     }
@@ -382,13 +385,14 @@ private fun KazeAmbientBackground(modifier: Modifier = Modifier) {
 
 @Composable
 private fun KazeBottomBar(
+    modifier: Modifier = Modifier,
     currentDestination: KazeDestination,
     onDestinationSelected: (KazeDestination) -> Unit,
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 8.dp, vertical = 14.dp),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
         tonalElevation = 8.dp,

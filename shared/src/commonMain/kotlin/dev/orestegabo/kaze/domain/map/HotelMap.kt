@@ -1,5 +1,6 @@
 package dev.orestegabo.kaze.domain.map
 
+import dev.orestegabo.kaze.domain.map.importing.HotelMapSourceManifest
 import kotlin.math.hypot
 
 data class HotelMap(
@@ -7,6 +8,7 @@ data class HotelMap(
     val mapId: String,
     val name: String,
     val floors: List<FloorLevel>,
+    val sourceManifest: HotelMapSourceManifest? = null,
 ) {
     val allNodes: Map<String, MapNode> = floors
         .flatMap { floor -> floor.nodes.map { node -> node.id to node } }

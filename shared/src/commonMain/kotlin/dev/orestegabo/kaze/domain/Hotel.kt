@@ -1,5 +1,7 @@
 package dev.orestegabo.kaze.domain
 
+import dev.orestegabo.kaze.domain.map.importing.MapImportProfile
+
 data class Hotel(
     val id: String,
     val slug: String,
@@ -17,6 +19,7 @@ data class HotelConfig(
     val branding: HotelBranding,
     val supportedLocales: List<String> = listOf("en"),
     val defaultCurrencyCode: String = "USD",
+    val mapImportProfile: MapImportProfile? = null,
 )
 
 data class HotelBranding(

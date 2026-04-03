@@ -23,8 +23,23 @@ data class KazeBrandAssets(
     val wordmarkAsset: String,
 )
 
+@Immutable
+data class KazeAccentPalette(
+    val editorialWarm: Color,
+    val editorialBotanical: Color,
+    val editorialClay: Color,
+)
+
 private val LocalBrandAssets = staticCompositionLocalOf {
     KazeBrandAssets(logoAsset = "", wordmarkAsset = "")
+}
+
+private val LocalAccentPalette = staticCompositionLocalOf {
+    KazeAccentPalette(
+        editorialWarm = Color(0xFFC79A52),
+        editorialBotanical = Color(0xFF88A37A),
+        editorialClay = Color(0xFF9A7A62),
+    )
 }
 
 object KazeTheme {
@@ -35,6 +50,10 @@ object KazeTheme {
     val brandAssets: KazeBrandAssets
         @Composable
         get() = LocalBrandAssets.current
+
+    val accents: KazeAccentPalette
+        @Composable
+        get() = LocalAccentPalette.current
 }
 
 @Composable
@@ -47,6 +66,11 @@ fun KazeTheme(
         LocalBrandAssets provides KazeBrandAssets(
             logoAsset = hotelConfig.branding.logoAsset,
             wordmarkAsset = hotelConfig.branding.wordmarkAsset,
+        ),
+        LocalAccentPalette provides KazeAccentPalette(
+            editorialWarm = hotelConfig.branding.secondaryHex.toColor(),
+            editorialBotanical = hotelConfig.branding.accentHex.toColor().copy(alpha = 0.86f),
+            editorialClay = hotelConfig.branding.primaryHex.toColor().copy(alpha = 0.62f),
         ),
     ) {
         MaterialTheme(

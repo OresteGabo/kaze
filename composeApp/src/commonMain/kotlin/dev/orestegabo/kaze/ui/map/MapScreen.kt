@@ -41,10 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.kaze.demo.GuestAccessContext
-import dev.orestegabo.kaze.demo.sampleGuestAccess
 import dev.orestegabo.kaze.domain.map.FloorLevel
-import dev.orestegabo.kaze.domain.map.sampleMarriottConventionMap
+import dev.orestegabo.kaze.presentation.map.GuestAccessContext
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeRoundButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
@@ -59,17 +57,19 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 internal fun MapScreen(
     modifier: Modifier = Modifier,
+    floors: List<FloorLevel>,
+    guestAccess: GuestAccessContext,
     activeRoute: String,
     activeFloorId: String,
+    onFloorSelected: (String) -> Unit,
     onStartNavigation: () -> Unit,
     onSwitchFloor: () -> Unit,
 ) {
     val topChromeHeight = 112.dp
     val bottomChromeHeight = 108.dp
-    var selectedFloorId by remember(activeFloorId) { mutableStateOf(activeFloorId) }
-    val selectedFloor = remember(selectedFloorId) {
-        sampleMarriottConventionMap.floor(selectedFloorId) ?: sampleMarriottConventionMap.floor("l1")!!
-    }
+    val selectedFloor = remember(floors, activeFloorId) {
+        floors.firstOrNull { it.id == activeFloorId } ?: floors.firstOrNull()
+    } ?: return
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -79,6 +79,7 @@ internal fun MapScreen(
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, top = topChromeHeight, bottom = bottomChromeHeight),
             floor = selectedFloor,
+            guestAccess = guestAccess,
             topOverlap = topChromeHeight,
         )
 
@@ -93,15 +94,15 @@ internal fun MapScreen(
             ) {
                 FloorSelectorChip(
                     modifier = Modifier.weight(1f),
-                    label = "Ground floor",
-                    selected = selectedFloorId == "l1",
-                    onClick = { selectedFloorId = "l1" },
+                    label = floors.getOrNull(0)?.label ?: "Ground floor",
+                    selected = activeFloorId == (floors.getOrNull(0)?.id ?: "l1"),
+                    onClick = { floors.getOrNull(0)?.id?.let(onFloorSelected) },
                 )
                 FloorSelectorChip(
                     modifier = Modifier.weight(1f),
-                    label = "First floor",
-                    selected = selectedFloorId == "l9",
-                    onClick = { selectedFloorId = "l9" },
+                    label = floors.getOrNull(1)?.label ?: "First floor",
+                    selected = activeFloorId == (floors.getOrNull(1)?.id ?: "l9"),
+                    onClick = { floors.getOrNull(1)?.id?.let(onFloorSelected) },
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -129,7 +130,6 @@ internal fun MapScreen(
                     label = "Switch floor",
                     onClick = {
                         onSwitchFloor()
-                        selectedFloorId = if (selectedFloorId == "l1") "l9" else "l1"
                     },
                     modifier = Modifier.weight(1f),
                 )
@@ -201,6 +201,7 @@ private fun FloorSelectorChip(
 private fun ZoomableHotelMap(
     modifier: Modifier = Modifier,
     floor: FloorLevel,
+    guestAccess: GuestAccessContext,
     topOverlap: Dp = 0.dp,
 ) {
     var scale by remember(floor.id) { mutableStateOf(1f) }
@@ -255,8 +256,8 @@ private fun ZoomableHotelMap(
             ) {
                 MapPreview(
                     modifier = Modifier.fillMaxSize(),
-                    floorId = floor.id,
-                    guestAccess = sampleGuestAccess,
+                    floor = floor,
+                    guestAccess = guestAccess,
                 )
             }
 
@@ -302,12 +303,11 @@ private fun ZoomableHotelMap(
 @Composable
 private fun MapPreview(
     modifier: Modifier = Modifier,
-    floorId: String = "l1",
-    guestAccess: GuestAccessContext = sampleGuestAccess,
+    floor: FloorLevel,
+    guestAccess: GuestAccessContext,
 ) {
-    val floor = remember(floorId) { sampleMarriottConventionMap.floor(floorId)!! }
     val isDarkMap = MaterialTheme.colorScheme.background.red < 0.5f
-    val mapPainter = painterResource(temporaryVenueMapDrawable(floorId = floorId, isDark = isDarkMap))
+    val mapPainter = painterResource(temporaryVenueMapDrawable(floorId = floor.id, isDark = isDarkMap))
     val outlineColor = MaterialTheme.colorScheme.outline
     val nodeRingColor = MaterialTheme.colorScheme.primary
     val nodeFillColor = MaterialTheme.colorScheme.background

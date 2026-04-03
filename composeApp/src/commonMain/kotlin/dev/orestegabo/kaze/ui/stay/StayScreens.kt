@@ -39,22 +39,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.kaze.demo.ExploreHighlight
-import dev.orestegabo.kaze.demo.FollowUpOption
-import dev.orestegabo.kaze.demo.LateCheckoutDraft
-import dev.orestegabo.kaze.demo.LateCheckoutRequest
-import dev.orestegabo.kaze.demo.StayMoment
-import dev.orestegabo.kaze.demo.StayPrimaryAction
-import dev.orestegabo.kaze.demo.StayScreen
-import dev.orestegabo.kaze.demo.StayTab
-import dev.orestegabo.kaze.demo.followUpOptions
-import dev.orestegabo.kaze.demo.lateCheckoutOptions
-import dev.orestegabo.kaze.demo.paymentOptions
-import dev.orestegabo.kaze.demo.requestOptions
-import dev.orestegabo.kaze.demo.sampleHotel
-import dev.orestegabo.kaze.demo.stayAccessCard
-import dev.orestegabo.kaze.demo.stayMoments
-import dev.orestegabo.kaze.demo.suggestedActivities
+import dev.orestegabo.kaze.presentation.demo.ExploreHighlight
+import dev.orestegabo.kaze.presentation.demo.FollowUpOption
+import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
+import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
+import dev.orestegabo.kaze.presentation.demo.ServiceOption
+import dev.orestegabo.kaze.presentation.demo.StayMoment
+import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
+import dev.orestegabo.kaze.presentation.demo.StayScreen
+import dev.orestegabo.kaze.presentation.demo.StayTab
+import dev.orestegabo.kaze.presentation.demo.followUpOptions
+import dev.orestegabo.kaze.presentation.demo.lateCheckoutOptions
+import dev.orestegabo.kaze.presentation.demo.paymentOptions
+import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.ui.access.StayAccessCardSection
 import dev.orestegabo.kaze.ui.components.HighlightPanel
 import dev.orestegabo.kaze.ui.components.InfoToken
@@ -65,10 +62,19 @@ import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.components.SectionHeader
 import dev.orestegabo.kaze.ui.components.SectionIntroCard
 import dev.orestegabo.kaze.ui.components.SelectableInfoCard
+import dev.orestegabo.kaze.domain.DigitalAccessCard
 
 @Composable
 internal fun StayHomeScreen(
     modifier: Modifier = Modifier,
+    hotelDisplayName: String,
+    guestName: String,
+    accessProfileLabel: String,
+    accessStatusLabel: String,
+    accessCard: DigitalAccessCard?,
+    stayMoments: List<StayMoment>,
+    requestOptions: List<ServiceOption>,
+    suggestionActivities: List<ExploreHighlight>,
     selectedTab: StayTab,
     activeStayScreen: StayScreen,
     lateCheckoutRequest: LateCheckoutRequest?,
@@ -104,10 +110,10 @@ internal fun StayHomeScreen(
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp)) {
             CompactStayHeader(
-                hotelName = sampleHotel.config.displayName,
-                guestName = "Aline",
-                roomLabel = "Conference guest",
-                stayLabel = "Active pass",
+                hotelName = hotelDisplayName,
+                guestName = guestName,
+                roomLabel = accessProfileLabel,
+                stayLabel = accessStatusLabel,
             )
         }
         Spacer(Modifier.height(8.dp))
@@ -116,9 +122,22 @@ internal fun StayHomeScreen(
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 when (StayTab.entries[page]) {
-                    StayTab.MY_STAY -> StayTabContent(lateCheckoutRequest = lateCheckoutRequest, onPrimaryAction = onPrimaryAction)
-                    StayTab.REQUESTS -> ServiceRequestsTab(lateCheckoutRequest = lateCheckoutRequest, onPrimaryAction = onPrimaryAction)
-                    StayTab.SUGGESTIONS -> SuggestedActivitiesTab(onPrimaryAction = onPrimaryAction)
+                    StayTab.MY_STAY -> StayTabContent(
+                        hotelDisplayName = hotelDisplayName,
+                        accessCard = accessCard,
+                        stayMoments = stayMoments,
+                        lateCheckoutRequest = lateCheckoutRequest,
+                        onPrimaryAction = onPrimaryAction,
+                    )
+                    StayTab.REQUESTS -> ServiceRequestsTab(
+                        requestOptions = requestOptions,
+                        lateCheckoutRequest = lateCheckoutRequest,
+                        onPrimaryAction = onPrimaryAction,
+                    )
+                    StayTab.SUGGESTIONS -> SuggestedActivitiesTab(
+                        suggestionActivities = suggestionActivities,
+                        onPrimaryAction = onPrimaryAction,
+                    )
                 }
             }
         }
@@ -160,12 +179,15 @@ private fun StaySegmentedTabs(selectedTab: StayTab, onTabChange: (StayTab) -> Un
 
 @Composable
 private fun StayTabContent(
+    hotelDisplayName: String,
+    accessCard: DigitalAccessCard?,
+    stayMoments: List<StayMoment>,
     lateCheckoutRequest: LateCheckoutRequest?,
     onPrimaryAction: (StayPrimaryAction) -> Unit,
 ) {
     val scrollState = rememberScrollState()
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        StayAccessCardSection(card = stayAccessCard, hotelName = sampleHotel.config.displayName)
+        accessCard?.let { StayAccessCardSection(card = it, hotelName = hotelDisplayName) }
         StayStatusHero(onOpenRoute = { onPrimaryAction(StayPrimaryAction.OPEN_ROUTE) }, onViewFolio = { onPrimaryAction(StayPrimaryAction.VIEW_FOLIO) })
         ConciergeInfoCard(
             title = "My itinerary",
@@ -181,6 +203,7 @@ private fun StayTabContent(
 
 @Composable
 private fun ServiceRequestsTab(
+    requestOptions: List<ServiceOption>,
     lateCheckoutRequest: LateCheckoutRequest?,
     onPrimaryAction: (StayPrimaryAction) -> Unit,
 ) {
@@ -330,15 +353,27 @@ private fun LateCheckoutScreen(
 }
 
 @Composable
-private fun SuggestedActivitiesTab(onPrimaryAction: (StayPrimaryAction) -> Unit) {
+private fun SuggestedActivitiesTab(
+    suggestionActivities: List<ExploreHighlight>,
+    onPrimaryAction: (StayPrimaryAction) -> Unit,
+) {
     val scrollState = rememberScrollState()
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         FeaturedSuggestionHeader(
             onRefinePreferences = { onPrimaryAction(StayPrimaryAction.REFINE_SUGGESTIONS) },
             onSeeAgenda = { onPrimaryAction(StayPrimaryAction.SEE_FULL_AGENDA) },
         )
-        suggestedActivities.forEachIndexed { index, suggestion ->
-            SuggestionShowcaseCard(suggestion = suggestion, accentColor = suggestionAccent(index), onActionClick = { onPrimaryAction(StayPrimaryAction.OpenSuggestion(suggestion)) })
+        val accents = listOf(
+            KazeTheme.accents.editorialWarm,
+            KazeTheme.accents.editorialBotanical,
+            KazeTheme.accents.editorialClay,
+        )
+        suggestionActivities.forEachIndexed { index, suggestion ->
+            SuggestionShowcaseCard(
+                suggestion = suggestion,
+                accentColor = accents[index % accents.size],
+                onActionClick = { onPrimaryAction(StayPrimaryAction.OpenSuggestion(suggestion)) },
+            )
         }
     }
 }
@@ -378,12 +413,6 @@ private fun SuggestionShowcaseCard(suggestion: ExploreHighlight, accentColor: Co
             }
         }
     }
-}
-
-private fun suggestionAccent(index: Int): Color = when (index % 3) {
-    0 -> Color(0xFFC79A52)
-    1 -> Color(0xFF88A37A)
-    else -> Color(0xFF9A7A62)
 }
 
 @Composable

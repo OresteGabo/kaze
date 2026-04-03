@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.kaze.demo.KazeDestination
+import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 
 @Composable

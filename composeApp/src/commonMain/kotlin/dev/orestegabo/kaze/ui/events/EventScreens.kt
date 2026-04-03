@@ -29,10 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.kaze.demo.EventDay
-import dev.orestegabo.kaze.demo.EventSession
-import dev.orestegabo.kaze.demo.eventDays
-import dev.orestegabo.kaze.demo.eventSchedule
+import dev.orestegabo.kaze.domain.experience.EventDay
+import dev.orestegabo.kaze.domain.experience.ScheduledExperience
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.components.SectionIntroCard
@@ -40,9 +38,11 @@ import dev.orestegabo.kaze.ui.components.SectionIntroCard
 @Composable
 internal fun EventScheduleScreen(
     modifier: Modifier = Modifier,
-    selectedDay: EventDay,
+    days: List<EventDay>,
+    selectedDay: EventDay?,
+    sessions: List<ScheduledExperience>,
     onDaySelected: (EventDay) -> Unit,
-    onSessionAction: (EventSession) -> Unit,
+    onSessionAction: (ScheduledExperience) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -56,10 +56,18 @@ internal fun EventScheduleScreen(
                 subtitle = "A clean schedule view with day switching, venue references, and direct map transitions.",
             )
         }
-        item { EventDaySwitcher(selectedDay = selectedDay, onDaySelected = onDaySelected) }
-        item { Text(selectedDay.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 2.dp)) }
+        item {
+            if (selectedDay != null) {
+                EventDaySwitcher(days = days, selectedDay = selectedDay, onDaySelected = onDaySelected)
+            }
+        }
+        item {
+            if (selectedDay != null) {
+                Text(selectedDay.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
         item { Text("Today's schedule", style = MaterialTheme.typography.headlineSmall) }
-        items(eventSchedule.filter { it.day == selectedDay.id }) { session ->
+        items(sessions) { session ->
             SessionCard(session = session, onOpenMap = { onSessionAction(session) })
         }
     }
@@ -67,6 +75,7 @@ internal fun EventScheduleScreen(
 
 @Composable
 private fun EventDaySwitcher(
+    days: List<EventDay>,
     selectedDay: EventDay,
     onDaySelected: (EventDay) -> Unit,
 ) {
@@ -80,7 +89,7 @@ private fun EventDaySwitcher(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            eventDays.forEach { day ->
+            days.forEach { day ->
                 EventDayButton(day = day, selected = day == selectedDay, onClick = { onDaySelected(day) }, modifier = Modifier.weight(1f))
             }
         }
@@ -132,7 +141,7 @@ private fun EventDayButton(
 
 @Composable
 private fun SessionCard(
-    session: EventSession,
+    session: ScheduledExperience,
     onOpenMap: () -> Unit,
 ) {
     Card(
@@ -141,12 +150,16 @@ private fun SessionCard(
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(session.time, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+            Text(
+                "${session.startIso.takeLast(9).take(5)} - ${session.endIso.takeLast(9).take(5)}",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
             Text(session.title, style = MaterialTheme.typography.titleLarge)
             Text(session.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill(session.room)
-                MetaPill(session.host)
+                MetaPill(session.venueLabel)
+                session.hostLabel?.let { MetaPill(it) }
                 MetaPill("Open map")
             }
             KazeSecondaryButton(label = "Open map", onClick = onOpenMap)

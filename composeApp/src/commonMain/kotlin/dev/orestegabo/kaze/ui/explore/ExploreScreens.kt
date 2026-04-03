@@ -15,8 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.kaze.demo.ExploreHighlight
-import dev.orestegabo.kaze.demo.exploreHighlights
+import dev.orestegabo.kaze.domain.experience.AmenityHighlight
 import dev.orestegabo.kaze.ui.components.HighlightPanel
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
@@ -25,7 +24,8 @@ import dev.orestegabo.kaze.ui.components.SectionIntroCard
 @Composable
 internal fun ExploreScreen(
     modifier: Modifier = Modifier,
-    onHighlightAction: (ExploreHighlight) -> Unit,
+    highlights: List<AmenityHighlight>,
+    onHighlightAction: (AmenityHighlight) -> Unit,
     onHeroPrimary: () -> Unit,
     onHeroSecondary: () -> Unit,
 ) {
@@ -51,7 +51,7 @@ internal fun ExploreScreen(
                 onSecondaryClick = onHeroSecondary,
             )
         }
-        items(exploreHighlights) { highlight ->
+        items(highlights) { highlight ->
             ExploreCard(highlight = highlight, onActionClick = { onHighlightAction(highlight) })
         }
     }
@@ -59,7 +59,7 @@ internal fun ExploreScreen(
 
 @Composable
 private fun ExploreCard(
-    highlight: ExploreHighlight,
+    highlight: AmenityHighlight,
     onActionClick: () -> Unit,
 ) {
     Card(
@@ -74,11 +74,11 @@ private fun ExploreCard(
             Text(highlight.title, style = MaterialTheme.typography.titleLarge)
             Text(highlight.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill(highlight.location)
-                MetaPill(highlight.time)
-                MetaPill(highlight.cta)
+                MetaPill(highlight.locationLabel)
+                MetaPill(highlight.availabilityLabel)
+                MetaPill(highlight.actionLabel)
             }
-            KazeSecondaryButton(label = highlight.cta, onClick = onActionClick)
+            KazeSecondaryButton(label = highlight.actionLabel, onClick = onActionClick)
         }
     }
 }

@@ -388,29 +388,33 @@ private fun KazeBottomBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 12.dp),
-        shape = RoundedCornerShape(32.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-        tonalElevation = 10.dp,
-        shadowElevation = 18.dp,
+        tonalElevation = 8.dp,
+        shadowElevation = 14.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
+        ),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(1.dp)
+                    .height(2.dp)
                     .background(
                         Brush.horizontalGradient(
                             listOf(
                                 Color.Transparent,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f),
                                 Color.Transparent,
                             )
                         )
@@ -419,12 +423,17 @@ private fun KazeBottomBar(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 KazeDestination.entries.forEach { destination ->
                     val selected = currentDestination == destination
-                    val itemShape = RoundedCornerShape(24.dp)
+                    val itemShape = RoundedCornerShape(
+                        topStart = 22.dp,
+                        topEnd = 12.dp,
+                        bottomEnd = 22.dp,
+                        bottomStart = 12.dp,
+                    )
 
                     Column(
                         modifier = Modifier
@@ -432,55 +441,69 @@ private fun KazeBottomBar(
                             .clip(itemShape)
                             .background(
                                 if (selected) {
-                                    Brush.verticalGradient(
+                                    Brush.linearGradient(
                                         listOf(
+                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f),
                                             MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
                                         )
                                     )
                                 } else {
-                                    Brush.verticalGradient(
+                                    Brush.linearGradient(
                                         listOf(
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.08f),
                                             Color.Transparent,
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
                                         )
                                     )
                                 }
                             )
+                            .border(
+                                1.dp,
+                                if (selected) {
+                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.26f)
+                                } else {
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                                },
+                                itemShape,
+                            )
                             .clickable { onDestinationSelected(destination) }
-                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                            .padding(horizontal = 6.dp, vertical = 9.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .width(28.dp)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(
+                                    if (selected) {
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.55f)
+                                    } else {
+                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+                                    }
+                                ),
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
                                 .clip(CircleShape)
                                 .background(
                                     if (selected) {
                                         Brush.linearGradient(
                                             listOf(
-                                                MaterialTheme.colorScheme.primary,
                                                 MaterialTheme.colorScheme.secondary.copy(alpha = 0.92f),
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.78f),
                                             )
                                         )
                                     } else {
                                         Brush.linearGradient(
                                             listOf(
-                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                                                MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f),
+                                                MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
                                             )
                                         )
                                     }
-                                )
-                                .border(
-                                    width = 1.dp,
-                                    color = if (selected) {
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                    } else {
-                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)
-                                    },
-                                    shape = CircleShape,
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -490,7 +513,7 @@ private fun KazeBottomBar(
                                 tint = if (selected) {
                                     MaterialTheme.colorScheme.onPrimary
                                 } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f)
                                 },
                             )
                         }
@@ -501,7 +524,7 @@ private fun KazeBottomBar(
                             color = if (selected) {
                                 MaterialTheme.colorScheme.onSurface
                             } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f)
                             },
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                             maxLines = 1,

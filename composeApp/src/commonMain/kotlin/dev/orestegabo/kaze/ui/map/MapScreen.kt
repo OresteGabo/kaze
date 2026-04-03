@@ -41,13 +41,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.kaze.KazePrimaryButton
-import dev.orestegabo.kaze.KazeRoundButton
-import dev.orestegabo.kaze.KazeSecondaryButton
 import dev.orestegabo.kaze.demo.GuestAccessContext
 import dev.orestegabo.kaze.demo.sampleGuestAccess
 import dev.orestegabo.kaze.domain.map.FloorLevel
 import dev.orestegabo.kaze.domain.map.sampleMarriottConventionMap
+import dev.orestegabo.kaze.ui.components.KazePrimaryButton
+import dev.orestegabo.kaze.ui.components.KazeRoundButton
+import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.kotlinconf_first_floor_dark_raster
 import kaze.composeapp.generated.resources.kotlinconf_first_floor_light_raster

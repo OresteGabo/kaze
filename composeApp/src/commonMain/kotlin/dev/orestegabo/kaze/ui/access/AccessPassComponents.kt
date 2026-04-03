@@ -1,5 +1,6 @@
 package dev.orestegabo.kaze.ui.access
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,8 +19,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -89,16 +94,24 @@ private fun SignatureStayCard(
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawFuturisticPassPattern(accentColor = accentColor, frameColor = frameColor)
-                drawGaboMark(
-                    center = Offset(size.width * 0.82f, size.height * 0.78f),
-                    scaleBase = size.width * 0.0019f,
-                    tint = Color.White.copy(alpha = 0.22f),
-                )
             }
             Box(
-                modifier = Modifier.align(Alignment.TopEnd).size(148.dp).offset(x = 28.dp, y = (-18).dp).clip(CircleShape)
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(132.dp)
+                    .offset(x = 16.dp, y = 20.dp)
+                    .clip(CircleShape)
                     .background(accentColor.copy(alpha = 0.18f)),
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(modifier = Modifier.size(108.dp)) {
+                    drawGaboMark(
+                        center = Offset(size.width * 0.5f, size.height * 0.5f),
+                        scaleBase = size.width * 0.0078f,
+                        tint = Color.White.copy(alpha = 0.42f),
+                    )
+                }
+            }
             Box(
                 modifier = Modifier.align(Alignment.BottomStart).size(width = 180.dp, height = 82.dp).offset(x = (-34).dp, y = 24.dp)
                     .clip(RoundedCornerShape(topEnd = 88.dp, bottomEnd = 24.dp, topStart = 18.dp, bottomStart = 18.dp))
@@ -151,53 +164,162 @@ private fun AccessCardDialog(
     hotelName: String,
     onDismiss: () -> Unit,
 ) {
+    val accentColor = remember(card.style) { cardAccentColor(card.style) }
+
     Dialog(onDismissRequest = onDismiss) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(28.dp)) {
-            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(
+        // Main Container: Using a subtle blur-effect simulation
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(32.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            border = BorderStroke(1.dp, accentColor.copy(alpha = 0.2f))
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // Header: More elegant and centered
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Access details", style = MaterialTheme.typography.titleLarge)
-                        Text(hotelName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
-                    }
-                    KazeGhostButton(label = "Close", onClick = onDismiss)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp, 4.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "Access Details",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = hotelName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = accentColor
+                    )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.Top,
+
+                // QR Section: Modern "Staff Key" UI
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(accentColor.copy(alpha = 0.05f))
+                        .border(1.dp, accentColor.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                        .padding(20.dp)
                 ) {
-                    Box(modifier = Modifier.weight(1f)) { StaffQrPanel(card = card) }
-                    Column(modifier = Modifier.weight(1.2f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        AccessDetailLine(label = "Pass number", value = card.id.takeLast(8))
-                        AccessDetailLine(label = "Profile", value = card.contextLabel)
-                        AccessDetailLine(label = "Primary access", value = card.primaryAccessRef)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        // QR Code Mini-Panel
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.White,
+                            modifier = Modifier.size(80.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.QrCode2,
+                                contentDescription = null,
+                                tint = Color(0xFF111111),
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Staff Verification", style = MaterialTheme.typography.labelLarge)
+                            Text(
+                                "Present this for identity verification or room billing.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
                     }
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Linked access", style = MaterialTheme.typography.titleMedium)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        card.linkedAccess.forEach { badge -> MetaPill(badge) }
+
+                // Data Grid: cleaner lines
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    AccessDetailRow("Pass ID", card.id.takeLast(8))
+                    AccessDetailRow("Status", card.contextLabel)
+                    AccessDetailRow("Primary", card.primaryAccessRef)
+                }
+
+                // Linked Access: Make these pop
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Included Privileges",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        card.linkedAccess.forEach { badge ->
+                            // Custom Pill with slight accent tint
+                            MetaPill(badge)
+                        }
                     }
                 }
+
+                KazeGhostButton(
+                    label = "Dismiss",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
 }
 
 @Composable
-private fun StaffQrPanel(card: DigitalAccessCard) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(22.dp)) {
+private fun AccessDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+        Text(value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+@Composable
+private fun StaffQrPanel() {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+    ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Canvas(modifier = Modifier.size(118.dp)) { drawPseudoQr(card.id) }
-            Text("Staff scan", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.QrCode2,
+                    contentDescription = "Staff scan",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(52.dp),
+                )
+            }
+            Text("Staff scan", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                "Hotel staff can scan this access pass to open the guest profile.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+            )
         }
     }
 }
@@ -283,7 +405,12 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassP
         )
     }
 
-    drawCircle(color = accentColor.copy(alpha = 0.14f), radius = width * 0.14f, center = Offset(width * 0.82f, height * 0.78f), style = Stroke(width = 4f))
+    drawCircle(
+        color = accentColor.copy(alpha = 0.18f),
+        radius = width * 0.125f,
+        center = Offset(width * 0.86f, height * 0.82f),
+        style = Stroke(width = 4f),
+    )
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPseudoQr(seed: String) {

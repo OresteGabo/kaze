@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +50,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -98,7 +101,7 @@ fun App() {
         var activeMapRoute by remember { mutableStateOf("Guest arrival to Great Rift Ballroom") }
         var activeFloorLabel by remember { mutableStateOf("Lobby Level") }
         // TODO Replace this placeholder banner state with real user-facing confirmations from backend-driven actions.
-        var feedbackMessage by remember { mutableStateOf("Your access details are ready.") }
+        var feedbackMessage by remember { mutableStateOf("") }
         var lateCheckoutRequest by remember { mutableStateOf<LateCheckoutRequest?>(null) }
         var lateCheckoutDraft by remember { mutableStateOf(LateCheckoutDraft()) }
         var activeStayScreen by remember { mutableStateOf(StayScreen.HOME) }
@@ -120,146 +123,268 @@ fun App() {
                 )
             },
         ) { innerPadding ->
-            Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-                DemoFeedbackBanner(
-                    message = feedbackMessage,
-                    onDismiss = { feedbackMessage = "" },
-                )
+            Box(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
+            ) {
+                KazeAmbientBackground(modifier = Modifier.matchParentSize())
+                Column(modifier = Modifier.fillMaxSize()) {
+                    DemoFeedbackBanner(
+                        message = feedbackMessage,
+                        onDismiss = { feedbackMessage = "" },
+                    )
 
-                when (currentDestination) {
-                    KazeDestination.STAY -> StayHomeScreen(
-                        modifier = Modifier.weight(1f),
-                        selectedTab = selectedStayTab,
-                        activeStayScreen = activeStayScreen,
-                        lateCheckoutRequest = lateCheckoutRequest,
-                        lateCheckoutDraft = lateCheckoutDraft,
-                        onTabChange = { selectedStayTab = it },
-                        onBackToStayHome = { activeStayScreen = StayScreen.HOME },
-                        onLateCheckoutDraftChange = { lateCheckoutDraft = it },
-                        onLateCheckoutSubmit = { draft ->
-                            // TODO Connect this submission to hotel eligibility, approval, and payment APIs.
-                            val request = LateCheckoutRequest(
-                                option = draft.option,
-                                paymentOption = draft.paymentOption,
-                                followUpOption = draft.followUpOption,
-                                notes = draft.notes.ifBlank { "No additional notes." },
-                                status = "Pending front desk approval",
-                            )
-                            lateCheckoutRequest = request
-                            lateCheckoutDraft = LateCheckoutDraft(
-                                option = request.option,
-                                paymentOption = request.paymentOption,
-                                followUpOption = request.followUpOption,
-                                notes = request.notes,
-                            )
-                            activeStayScreen = StayScreen.HOME
-                            showFeedback(
-                                "Late checkout requested for ${request.option.checkoutTimeLabel}. ${request.paymentOption.confirmationLabel}.",
-                            )
-                        },
-                        onPrimaryAction = { action ->
-                            when (action) {
-                                StayPrimaryAction.OPEN_ROUTE -> {
-                                    activeMapRoute = "Guest arrival to Great Rift Ballroom"
-                                    activeFloorLabel = "Lobby Level"
-                                    currentDestination = KazeDestination.MAP
-                                    showFeedback("Opened indoor map for the ballroom route.")
-                                }
-                                StayPrimaryAction.VIEW_FOLIO -> showFeedback("Showing a placeholder access and folio summary.")
-                                StayPrimaryAction.SYNC_CALENDAR -> showFeedback("Synced your stay timeline to a demo calendar.")
-                                StayPrimaryAction.SHARE_STAY -> showFeedback("Generated a demo share link for your itinerary.")
-                                StayPrimaryAction.REQUEST_LATE_CHECKOUT -> {
-                                    lateCheckoutDraft = lateCheckoutRequest?.let {
-                                        LateCheckoutDraft(
-                                            option = it.option,
-                                            paymentOption = it.paymentOption,
-                                            followUpOption = it.followUpOption,
-                                            notes = it.notes,
-                                        )
-                                    } ?: LateCheckoutDraft()
-                                    activeStayScreen = StayScreen.LATE_CHECKOUT
-                                }
-                                StayPrimaryAction.SEE_CHECKOUT_POLICY -> showFeedback("Late checkout is subject to occupancy, housekeeping turnover, and room type. Demo fees range from RWF 35,000 to RWF 80,000.")
-                                StayPrimaryAction.NEW_REQUEST -> showFeedback("Opened the demo request composer.")
-                                StayPrimaryAction.TRACK_REQUESTS -> showFeedback("Showing local placeholder request statuses.")
-                                StayPrimaryAction.REFINE_SUGGESTIONS -> showFeedback("Updated suggestions using local guest preferences.")
-                                StayPrimaryAction.SEE_FULL_AGENDA -> {
-                                    currentDestination = KazeDestination.EVENTS
-                                    showFeedback("Jumped to the full hotel event agenda.")
-                                }
-                                is StayPrimaryAction.OpenStayMoment -> showFeedback("Opened '${action.moment.title}' with placeholder reservation details.")
-                                is StayPrimaryAction.RequestService -> {
-                                    // TODO Send this action through the real service-request API.
-                                    showFeedback("Created a demo '${action.option.title}' request.")
-                                }
-                                is StayPrimaryAction.OpenSuggestion -> {
-                                    if (action.suggestion.cta == "Open route") {
-                                        activeMapRoute = "Arrival route to ${action.suggestion.location}"
-                                        activeFloorLabel = action.suggestion.location
+                    when (currentDestination) {
+                        KazeDestination.STAY -> StayHomeScreen(
+                            modifier = Modifier.weight(1f),
+                            selectedTab = selectedStayTab,
+                            activeStayScreen = activeStayScreen,
+                            lateCheckoutRequest = lateCheckoutRequest,
+                            lateCheckoutDraft = lateCheckoutDraft,
+                            onTabChange = { selectedStayTab = it },
+                            onBackToStayHome = { activeStayScreen = StayScreen.HOME },
+                            onLateCheckoutDraftChange = { lateCheckoutDraft = it },
+                            onLateCheckoutSubmit = { draft ->
+                                // TODO Connect this submission to hotel eligibility, approval, and payment APIs.
+                                val request = LateCheckoutRequest(
+                                    option = draft.option,
+                                    paymentOption = draft.paymentOption,
+                                    followUpOption = draft.followUpOption,
+                                    notes = draft.notes.ifBlank { "No additional notes." },
+                                    status = "Pending front desk approval",
+                                )
+                                lateCheckoutRequest = request
+                                lateCheckoutDraft = LateCheckoutDraft(
+                                    option = request.option,
+                                    paymentOption = request.paymentOption,
+                                    followUpOption = request.followUpOption,
+                                    notes = request.notes,
+                                )
+                                activeStayScreen = StayScreen.HOME
+                                showFeedback(
+                                    "Late checkout requested for ${request.option.checkoutTimeLabel}. ${request.paymentOption.confirmationLabel}.",
+                                )
+                            },
+                            onPrimaryAction = { action ->
+                                when (action) {
+                                    StayPrimaryAction.OPEN_ROUTE -> {
+                                        activeMapRoute = "Guest arrival to Great Rift Ballroom"
+                                        activeFloorLabel = "Lobby Level"
                                         currentDestination = KazeDestination.MAP
-                                        showFeedback("Opened a route to ${action.suggestion.location}.")
-                                    } else {
-                                        showFeedback("Applied the suggestion '${action.suggestion.title}' using local placeholder data.")
+                                        showFeedback("Opened indoor map for the ballroom route.")
+                                    }
+                                    StayPrimaryAction.VIEW_FOLIO -> showFeedback("Showing a placeholder access and folio summary.")
+                                    StayPrimaryAction.SYNC_CALENDAR -> showFeedback("Synced your stay timeline to a demo calendar.")
+                                    StayPrimaryAction.SHARE_STAY -> showFeedback("Generated a demo share link for your itinerary.")
+                                    StayPrimaryAction.REQUEST_LATE_CHECKOUT -> {
+                                        lateCheckoutDraft = lateCheckoutRequest?.let {
+                                            LateCheckoutDraft(
+                                                option = it.option,
+                                                paymentOption = it.paymentOption,
+                                                followUpOption = it.followUpOption,
+                                                notes = it.notes,
+                                            )
+                                        } ?: LateCheckoutDraft()
+                                        activeStayScreen = StayScreen.LATE_CHECKOUT
+                                    }
+                                    StayPrimaryAction.SEE_CHECKOUT_POLICY -> showFeedback("Late checkout is subject to occupancy, housekeeping turnover, and room type. Demo fees range from RWF 35,000 to RWF 80,000.")
+                                    StayPrimaryAction.NEW_REQUEST -> showFeedback("Opened the demo request composer.")
+                                    StayPrimaryAction.TRACK_REQUESTS -> showFeedback("Showing local placeholder request statuses.")
+                                    StayPrimaryAction.REFINE_SUGGESTIONS -> showFeedback("Updated suggestions using local guest preferences.")
+                                    StayPrimaryAction.SEE_FULL_AGENDA -> {
+                                        currentDestination = KazeDestination.EVENTS
+                                        showFeedback("Jumped to the full hotel event agenda.")
+                                    }
+                                    is StayPrimaryAction.OpenStayMoment -> showFeedback("Opened '${action.moment.title}' with placeholder reservation details.")
+                                    is StayPrimaryAction.RequestService -> {
+                                        // TODO Send this action through the real service-request API.
+                                        showFeedback("Created a demo '${action.option.title}' request.")
+                                    }
+                                    is StayPrimaryAction.OpenSuggestion -> {
+                                        if (action.suggestion.cta == "Open route") {
+                                            activeMapRoute = "Arrival route to ${action.suggestion.location}"
+                                            activeFloorLabel = action.suggestion.location
+                                            currentDestination = KazeDestination.MAP
+                                            showFeedback("Opened a route to ${action.suggestion.location}.")
+                                        } else {
+                                            showFeedback("Applied the suggestion '${action.suggestion.title}' using local placeholder data.")
+                                        }
                                     }
                                 }
-                            }
-                        },
-                    )
+                            },
+                        )
 
-                    KazeDestination.EVENTS -> EventScheduleScreen(
-                        modifier = Modifier.weight(1f),
-                        selectedDay = selectedDay,
-                        onDaySelected = {
-                            selectedDay = it
-                            showFeedback("Loaded the ${it.label} summit schedule.")
-                        },
-                        onSessionAction = { session ->
-                            // TODO Deep-link this to the real session details and venue data.
-                            activeMapRoute = "Arrival route to ${session.room}"
-                            activeFloorLabel = session.room
-                            currentDestination = KazeDestination.MAP
-                            showFeedback("Opened the map route for '${session.title}'.")
-                        },
-                    )
+                        KazeDestination.EVENTS -> EventScheduleScreen(
+                            modifier = Modifier.weight(1f),
+                            selectedDay = selectedDay,
+                            onDaySelected = {
+                                selectedDay = it
+                                showFeedback("Loaded the ${it.label} summit schedule.")
+                            },
+                            onSessionAction = { session ->
+                                // TODO Deep-link this to the real session details and venue data.
+                                activeMapRoute = "Arrival route to ${session.room}"
+                                activeFloorLabel = session.room
+                                currentDestination = KazeDestination.MAP
+                                showFeedback("Opened the map route for '${session.title}'.")
+                            },
+                        )
 
-                    KazeDestination.EXPLORE -> ExploreScreen(
-                        modifier = Modifier.weight(1f),
-                        onHighlightAction = { highlight ->
-                            when (highlight.cta) {
-                                "Open amenity map", "Open amenity", "Start route" -> {
-                                    activeMapRoute = "Arrival route to ${highlight.location}"
-                                    activeFloorLabel = highlight.location
-                                    currentDestination = KazeDestination.MAP
-                                    showFeedback("Opened a route to ${highlight.location}.")
+                        KazeDestination.EXPLORE -> ExploreScreen(
+                            modifier = Modifier.weight(1f),
+                            onHighlightAction = { highlight ->
+                                when (highlight.cta) {
+                                    "Open amenity map", "Open amenity", "Start route" -> {
+                                        activeMapRoute = "Arrival route to ${highlight.location}"
+                                        activeFloorLabel = highlight.location
+                                        currentDestination = KazeDestination.MAP
+                                        showFeedback("Opened a route to ${highlight.location}.")
+                                    }
+                                    else -> showFeedback("Reserved '${highlight.title}' using demo availability.")
                                 }
-                                else -> showFeedback("Reserved '${highlight.title}' using demo availability.")
-                            }
-                        },
-                        onHeroPrimary = {
-                            showFeedback("Reserved tonight's highlighted experience in demo mode.")
-                        },
-                        onHeroSecondary = {
-                            activeMapRoute = "Arrival route to Pool Deck"
-                            activeFloorLabel = "Amenity Route"
-                            currentDestination = KazeDestination.MAP
-                            showFeedback("Opened the amenity map with a placeholder route.")
-                        },
-                    )
+                            },
+                            onHeroPrimary = {
+                                showFeedback("Reserved tonight's highlighted experience in demo mode.")
+                            },
+                            onHeroSecondary = {
+                                activeMapRoute = "Arrival route to Pool Deck"
+                                activeFloorLabel = "Amenity Route"
+                                currentDestination = KazeDestination.MAP
+                                showFeedback("Opened the amenity map with a placeholder route.")
+                            },
+                        )
 
-                    KazeDestination.MAP -> MapScreen(
-                        modifier = Modifier.weight(1f),
-                        activeRoute = activeMapRoute,
-                        activeFloorId = if (activeFloorLabel == "Guest Rooms") "l9" else "l1",
-                        onStartNavigation = {
-                            showFeedback("Started simulated wayfinding for $activeMapRoute.")
-                        },
-                        onSwitchFloor = {
-                            activeFloorLabel = if (activeFloorLabel == "Lobby Level") "Guest Rooms" else "Lobby Level"
-                            showFeedback("Switched to the $activeFloorLabel floor in demo mode.")
-                        },
-                    )
+                        KazeDestination.MAP -> MapScreen(
+                            modifier = Modifier.weight(1f),
+                            activeRoute = activeMapRoute,
+                            activeFloorId = if (activeFloorLabel == "Guest Rooms") "l9" else "l1",
+                            onStartNavigation = {
+                                showFeedback("Started simulated wayfinding for $activeMapRoute.")
+                            },
+                            onSwitchFloor = {
+                                activeFloorLabel = if (activeFloorLabel == "Lobby Level") "Guest Rooms" else "Lobby Level"
+                                showFeedback("Switched to the $activeFloorLabel floor in demo mode.")
+                            },
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun KazeAmbientBackground(modifier: Modifier = Modifier) {
+    val baseTop = MaterialTheme.colorScheme.background
+    val baseBottom = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+    val lineColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
+    val softLineColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f)
+    val circlePrimary = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+    val circleTertiary = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.07f)
+    val topPanelColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.035f)
+    val bottomPanelColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.028f)
+
+    Canvas(modifier = modifier.background(Brush.verticalGradient(listOf(baseTop, baseTop, baseBottom)))) {
+        val w = size.width
+        val h = size.height
+
+        drawRoundRect(
+            color = topPanelColor,
+            topLeft = Offset(w * 0.04f, h * 0.07f),
+            size = androidx.compose.ui.geometry.Size(w * 0.92f, h * 0.24f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(42f, 42f),
+        )
+        drawRoundRect(
+            color = bottomPanelColor,
+            topLeft = Offset(w * 0.05f, h * 0.66f),
+            size = androidx.compose.ui.geometry.Size(w * 0.90f, h * 0.20f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(42f, 42f),
+        )
+
+        drawLine(
+            color = lineColor,
+            start = Offset(w * 0.08f, h * 0.10f),
+            end = Offset(w * 0.72f, h * 0.10f),
+            strokeWidth = 5f,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = lineColor,
+            start = Offset(w * 0.12f, h * 0.135f),
+            end = Offset(w * 0.88f, h * 0.135f),
+            strokeWidth = 2.5f,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = softLineColor,
+            start = Offset(w * 0.18f, h * 0.74f),
+            end = Offset(w * 0.84f, h * 0.74f),
+            strokeWidth = 3f,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = lineColor,
+            start = Offset(w * 0.14f, h * 0.79f),
+            end = Offset(w * 0.62f, h * 0.79f),
+            strokeWidth = 5f,
+            cap = StrokeCap.Round,
+        )
+
+        val topPath = Path().apply {
+            moveTo(w * 0.62f, h * 0.06f)
+            lineTo(w * 0.76f, h * 0.06f)
+            lineTo(w * 0.82f, h * 0.11f)
+            lineTo(w * 0.93f, h * 0.11f)
+            lineTo(w * 0.93f, h * 0.18f)
+            lineTo(w * 0.82f, h * 0.18f)
+            lineTo(w * 0.75f, h * 0.24f)
+            lineTo(w * 0.58f, h * 0.24f)
+        }
+        drawPath(
+            path = topPath,
+            color = lineColor,
+            style = Stroke(width = 3f),
+        )
+
+        val bottomPath = Path().apply {
+            moveTo(w * 0.10f, h * 0.88f)
+            lineTo(w * 0.26f, h * 0.88f)
+            lineTo(w * 0.33f, h * 0.83f)
+            lineTo(w * 0.48f, h * 0.83f)
+            lineTo(w * 0.48f, h * 0.90f)
+            lineTo(w * 0.34f, h * 0.90f)
+            lineTo(w * 0.27f, h * 0.95f)
+            lineTo(w * 0.12f, h * 0.95f)
+        }
+        drawPath(
+            path = bottomPath,
+            color = softLineColor,
+            style = Stroke(width = 3f),
+        )
+
+        drawCircle(
+            color = circlePrimary,
+            radius = w * 0.18f,
+            center = Offset(w * 0.88f, h * 0.22f),
+            style = Stroke(width = 5f),
+        )
+        drawCircle(
+            color = circleTertiary,
+            radius = w * 0.22f,
+            center = Offset(w * 0.12f, h * 0.82f),
+            style = Stroke(width = 5f),
+        )
+
+        repeat(7) { index ->
+            val y = h * (0.185f + index * 0.018f)
+            drawLine(
+                color = if (index % 2 == 0) lineColor else softLineColor,
+                start = Offset(w * 0.11f, y),
+                end = Offset(w * (0.36f + index * 0.06f), y),
+                strokeWidth = if (index % 2 == 0) 3f else 2f,
+                cap = StrokeCap.Round,
+            )
         }
     }
 }
@@ -347,6 +472,24 @@ private fun StayHomeScreen(
             .fillMaxSize()
             .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
+        val pagerState = rememberPagerState(
+            initialPage = selectedTab.ordinal,
+            pageCount = { StayTab.entries.size },
+        )
+
+        LaunchedEffect(selectedTab) {
+            if (pagerState.currentPage != selectedTab.ordinal) {
+                pagerState.animateScrollToPage(selectedTab.ordinal)
+            }
+        }
+
+        LaunchedEffect(pagerState.currentPage) {
+            val pagerTab = StayTab.entries[pagerState.currentPage]
+            if (pagerTab != selectedTab) {
+                onTabChange(pagerTab)
+            }
+        }
+
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(24.dp),
@@ -369,16 +512,23 @@ private fun StayHomeScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            when (selectedTab) {
-                StayTab.MY_STAY -> StayTabContent(
-                    lateCheckoutRequest = lateCheckoutRequest,
-                    onPrimaryAction = onPrimaryAction,
-                )
-                StayTab.REQUESTS -> ServiceRequestsTab(
-                    lateCheckoutRequest = lateCheckoutRequest,
-                    onPrimaryAction = onPrimaryAction,
-                )
-                StayTab.SUGGESTIONS -> SuggestedActivitiesTab(onPrimaryAction = onPrimaryAction)
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+            ) { page ->
+                when (StayTab.entries[page]) {
+                    StayTab.MY_STAY -> StayTabContent(
+                        lateCheckoutRequest = lateCheckoutRequest,
+                        onPrimaryAction = onPrimaryAction,
+                    )
+
+                    StayTab.REQUESTS -> ServiceRequestsTab(
+                        lateCheckoutRequest = lateCheckoutRequest,
+                        onPrimaryAction = onPrimaryAction,
+                    )
+
+                    StayTab.SUGGESTIONS -> SuggestedActivitiesTab(onPrimaryAction = onPrimaryAction)
+                }
             }
         }
     }
@@ -446,10 +596,10 @@ private fun EventScheduleScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            HeaderBlock(
+            SectionIntroCard(
                 eyebrow = "What's On",
                 title = "East Africa Finance Summit",
-                subtitle = "Borrowing from KotlinConf’s schedule pattern: clear day switching, session cards, room references, and map access.",
+                subtitle = "A clean schedule view with day switching, venue references, and direct map transitions.",
             )
         }
 
@@ -459,12 +609,10 @@ private fun EventScheduleScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 eventDays.forEach { day ->
-                    AssistChip(
+                    DaySelectorChip(
+                        label = day.label,
+                        selected = day == selectedDay,
                         onClick = { onDaySelected(day) },
-                        label = { Text(day.label) },
-                        leadingIcon = {
-                            DestinationDot(selected = day == selectedDay)
-                        },
                     )
                 }
             }
@@ -489,19 +637,19 @@ private fun ExploreScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            HeaderBlock(
+            SectionIntroCard(
                 eyebrow = "Explore",
                 title = "Hotel life beyond the room",
-                subtitle = "This section is the hotel equivalent of speakers, venues, and side events: amenities, experiences, and the people/places that make the property feel alive.",
+                subtitle = "Amenities, experiences, and social moments curated around the visitor's current context.",
             )
         }
 
         item {
-            ConciergeInfoCard(
+            HighlightPanel(
                 title = "Tonight's highlighted experiences",
                 body = "Sunset jazz at the lounge, chef's table seating, and a guided art walk through the lobby collection.",
-                actionPrimary = "Reserve activity",
-                actionSecondary = "Open amenity map",
+                primaryLabel = "Reserve activity",
+                secondaryLabel = "Open amenity map",
                 onPrimaryClick = onHeroPrimary,
                 onSecondaryClick = onHeroSecondary,
             )
@@ -808,6 +956,11 @@ private fun SignatureStayCard(
                     accentColor = accentColor,
                     frameColor = frameColor,
                 )
+                drawGaboMark(
+                    center = Offset(size.width * 0.82f, size.height * 0.78f),
+                    scaleBase = size.width * 0.0019f,
+                    tint = Color.White.copy(alpha = 0.22f),
+                )
             }
             Box(
                 modifier = Modifier
@@ -1043,34 +1196,20 @@ private fun ServiceRequestsTab(
                 onEdit = { onPrimaryAction(StayPrimaryAction.REQUEST_LATE_CHECKOUT) },
             )
         } else {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-            ) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Late checkout", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Request extra time in the room, choose how you want to pay, and tell reception how to follow up.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = { onPrimaryAction(StayPrimaryAction.REQUEST_LATE_CHECKOUT) }) {
-                            Text("Request late checkout")
-                        }
-                        OutlinedButton(onClick = { onPrimaryAction(StayPrimaryAction.SEE_CHECKOUT_POLICY) }) {
-                            Text("See policy")
-                        }
-                    }
-                }
-            }
+            HighlightPanel(
+                title = "Late checkout",
+                body = "Request extra time in the room, choose how you want to pay, and tell reception how to follow up.",
+                primaryLabel = "Request late checkout",
+                secondaryLabel = "See policy",
+                onPrimaryClick = { onPrimaryAction(StayPrimaryAction.REQUEST_LATE_CHECKOUT) },
+                onSecondaryClick = { onPrimaryAction(StayPrimaryAction.SEE_CHECKOUT_POLICY) },
+            )
         }
 
-        ConciergeInfoCard(
-            title = "Service requests",
-            body = "The guest can instantly ask for towels, room service, laundry pickup, or concierge help without calling the desk.",
-            actionPrimary = "New request",
-            actionSecondary = "Track open requests",
-            onPrimaryClick = { onPrimaryAction(StayPrimaryAction.NEW_REQUEST) },
-            onSecondaryClick = { onPrimaryAction(StayPrimaryAction.TRACK_REQUESTS) },
+        SectionIntroCard(
+            eyebrow = "Requests",
+            title = "Hotel services",
+            subtitle = "Ask for support without calling the desk. Requests stay visible and easy to track.",
         )
 
         requestOptions.chunked(2).forEach { rowItems ->
@@ -1079,6 +1218,8 @@ private fun ServiceRequestsTab(
                     Card(
                         modifier = Modifier.weight(1f),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(22.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -1110,6 +1251,8 @@ private fun LateCheckoutStatusCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        shape = RoundedCornerShape(24.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -1170,19 +1313,19 @@ private fun LateCheckoutScreen(
         }
 
         item {
-            HeaderBlock(
+            SectionIntroCard(
                 eyebrow = "Stay Extension",
                 title = "Request late checkout",
-                subtitle = "A full page works better here: the guest can review price, approval rules, payment preference, and reception follow-up without squeezing everything into a dialog.",
+                subtitle = "Review pricing, approval rules, payment preference, and reception follow-up in one quiet flow.",
             )
         }
 
         item {
-            ConciergeInfoCard(
+            HighlightPanel(
                 title = "Current stay details",
-                body = "Room 906. Standard checkout is April 6, 2026 at 10:00. Late checkout remains subject to occupancy and housekeeping turnover.",
-                actionPrimary = "See policy",
-                actionSecondary = "Back to stay",
+                body = "Standard checkout is April 6, 2026 at 10:00. Late checkout remains subject to occupancy and housekeeping turnover.",
+                primaryLabel = "See policy",
+                secondaryLabel = "Back to stay",
                 onPrimaryClick = {},
                 onSecondaryClick = onBack,
             )
@@ -1245,7 +1388,11 @@ private fun LateCheckoutScreen(
         }
 
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                shape = RoundedCornerShape(24.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+            ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -1343,6 +1490,108 @@ private fun SuggestedActivitiesTab(onPrimaryAction: (StayPrimaryAction) -> Unit)
                 suggestion = suggestion,
                 accentColor = suggestionAccent(index),
                 onActionClick = { onPrimaryAction(StayPrimaryAction.OpenSuggestion(suggestion)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionIntroCard(
+    eyebrow: String,
+    title: String,
+    subtitle: String,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)),
+        shape = RoundedCornerShape(24.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                eyebrow,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+            Text(title, style = MaterialTheme.typography.headlineSmall)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HighlightPanel(
+    title: String,
+    body: String,
+    primaryLabel: String,
+    secondaryLabel: String,
+    onPrimaryClick: () -> Unit,
+    onSecondaryClick: () -> Unit,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = RoundedCornerShape(26.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(
+                body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Button(onClick = onPrimaryClick) {
+                    Text(primaryLabel)
+                }
+                TextButton(onClick = onSecondaryClick) {
+                    Text(secondaryLabel)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DaySelectorChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(999.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        tonalElevation = if (selected) 3.dp else 0.dp,
+        shadowElevation = if (selected) 1.dp else 0.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DestinationDot(selected = selected)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -1525,7 +1774,9 @@ private fun DemoFeedbackBanner(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+        shape = RoundedCornerShape(22.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.24f)),
     ) {
         Row(
             modifier = Modifier
@@ -1630,6 +1881,8 @@ private fun StayStatusHero(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = RoundedCornerShape(28.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -1671,6 +1924,8 @@ private fun ConciergeInfoCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(26.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -1697,6 +1952,8 @@ private fun StayMomentCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
     ) {
         Row(
             modifier = Modifier
@@ -1732,7 +1989,11 @@ private fun SessionCard(
     session: EventSession,
     onOpenMap: () -> Unit,
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(26.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+    ) {
         Column(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -1760,7 +2021,11 @@ private fun ExploreCard(
     highlight: ExploreHighlight,
     onActionClick: () -> Unit,
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(26.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+    ) {
         Column(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -2098,6 +2363,45 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPseudoQr(seed: 
             }
         }
     }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaboMark(
+    center: Offset,
+    scaleBase: Float,
+    tint: Color,
+) {
+    val originX = center.x - 52f * scaleBase
+    val originY = center.y - 50f * scaleBase
+    val scale = scaleBase
+
+    val monogram = Path().apply {
+        moveTo(originX + 70f * scale, originY + 28f * scale)
+        lineTo(originX + 42f * scale, originY + 28f * scale)
+        lineTo(originX + 25f * scale, originY + 50f * scale)
+        lineTo(originX + 42f * scale, originY + 72f * scale)
+        lineTo(originX + 70f * scale, originY + 72f * scale)
+        moveTo(originX + 58f * scale, originY + 50f * scale)
+        lineTo(originX + 80f * scale, originY + 50f * scale)
+    }
+
+    drawPath(
+        path = monogram,
+        color = tint,
+        style = Stroke(
+            width = 9f * scale,
+            cap = StrokeCap.Round,
+            join = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ),
+    )
+
+    drawCircle(
+        color = tint,
+        radius = 4.5f * scale,
+        center = Offset(
+            originX + 80f * scale,
+            originY + 50f * scale,
+        ),
+    )
 }
 
 private data class GuestAccessContext(

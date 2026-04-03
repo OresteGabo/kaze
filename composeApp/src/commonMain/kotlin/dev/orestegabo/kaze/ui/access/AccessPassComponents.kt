@@ -2,6 +2,7 @@ package dev.orestegabo.kaze.ui.access
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +50,9 @@ import dev.orestegabo.kaze.domain.DigitalAccessCard
 import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.MetaPill
+import kaze.composeapp.generated.resources.Res
+import kaze.composeapp.generated.resources.gabo_mark_raster
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 internal fun StayAccessCardSection(
@@ -104,13 +108,12 @@ private fun SignatureStayCard(
                     .background(accentColor.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Canvas(modifier = Modifier.size(108.dp)) {
-                    drawGaboMark(
-                        center = Offset(size.width * 0.5f, size.height * 0.5f),
-                        scaleBase = size.width * 0.0078f,
-                        tint = onCard.copy(alpha = 0.42f),
-                    )
-                }
+                Image(
+                    painter = painterResource(Res.drawable.gabo_mark_raster),
+                    contentDescription = "GABO mark",
+                    modifier = Modifier.size(92.dp),
+                    alpha = 0.38f,
+                )
             }
             Box(
                 modifier = Modifier.align(Alignment.BottomStart).size(width = 180.dp, height = 82.dp).offset(x = (-34).dp, y = 24.dp)
@@ -402,42 +405,74 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassP
 ) {
     val width = size.width
     val height = size.height
-    drawLine(color = accentColor.copy(alpha = 0.18f), start = Offset(width * 0.08f, height * 0.12f), end = Offset(width * 0.72f, height * 0.12f), strokeWidth = 5f, cap = StrokeCap.Round)
-    drawLine(color = accentColor.copy(alpha = 0.12f), start = Offset(width * 0.12f, height * 0.16f), end = Offset(width * 0.88f, height * 0.16f), strokeWidth = 2.5f, cap = StrokeCap.Round)
-    drawLine(color = onSurfaceColor.copy(alpha = 0.10f), start = Offset(width * 0.18f, height * 0.70f), end = Offset(width * 0.84f, height * 0.70f), strokeWidth = 3f, cap = StrokeCap.Round)
-    drawLine(color = accentColor.copy(alpha = 0.16f), start = Offset(width * 0.14f, height * 0.76f), end = Offset(width * 0.62f, height * 0.76f), strokeWidth = 5f, cap = StrokeCap.Round)
+    // Quiet line stack near the hotel/title zone.
+    drawLine(
+        color = accentColor.copy(alpha = 0.18f),
+        start = Offset(width * 0.08f, height * 0.10f),
+        end = Offset(width * 0.36f, height * 0.10f),
+        strokeWidth = 3.5f,
+        cap = StrokeCap.Round,
+    )
+    drawLine(
+        color = onSurfaceColor.copy(alpha = 0.10f),
+        start = Offset(width * 0.08f, height * 0.145f),
+        end = Offset(width * 0.28f, height * 0.145f),
+        strokeWidth = 2f,
+        cap = StrokeCap.Round,
+    )
 
-    val topPath = Path().apply {
-        moveTo(width * 0.62f, height * 0.08f)
+    // Top-right geometry aligned with the pass-number chip zone.
+    val topRightFrame = Path().apply {
+        moveTo(width * 0.60f, height * 0.08f)
         lineTo(width * 0.76f, height * 0.08f)
-        lineTo(width * 0.82f, height * 0.13f)
-        lineTo(width * 0.93f, height * 0.13f)
-        lineTo(width * 0.93f, height * 0.20f)
-        lineTo(width * 0.82f, height * 0.20f)
-        lineTo(width * 0.75f, height * 0.26f)
-        lineTo(width * 0.58f, height * 0.26f)
+        lineTo(width * 0.83f, height * 0.13f)
+        lineTo(width * 0.94f, height * 0.13f)
+        lineTo(width * 0.94f, height * 0.22f)
+        lineTo(width * 0.84f, height * 0.22f)
+        lineTo(width * 0.76f, height * 0.28f)
+        lineTo(width * 0.58f, height * 0.28f)
     }
-    drawPath(path = topPath, color = frameColor.copy(alpha = 0.48f), style = Stroke(width = 3f))
+    drawPath(
+        path = topRightFrame,
+        color = frameColor.copy(alpha = 0.46f),
+        style = Stroke(width = 3f),
+    )
 
-    val bottomPath = Path().apply {
-        moveTo(width * 0.10f, height * 0.84f)
-        lineTo(width * 0.26f, height * 0.84f)
-        lineTo(width * 0.33f, height * 0.79f)
-        lineTo(width * 0.48f, height * 0.79f)
-        lineTo(width * 0.48f, height * 0.86f)
-        lineTo(width * 0.34f, height * 0.86f)
-        lineTo(width * 0.27f, height * 0.91f)
-        lineTo(width * 0.12f, height * 0.91f)
-    }
-    drawPath(path = bottomPath, color = onSurfaceColor.copy(alpha = 0.10f), style = Stroke(width = 3f))
-
-    repeat(7) { index ->
-        val y = height * (0.22f + index * 0.045f)
+    // Mid-body traces aligned with the open space between title and lower access copy.
+    listOf(0.48f, 0.55f, 0.62f).forEachIndexed { index, yFactor ->
         drawLine(
-            color = if (index % 2 == 0) accentColor.copy(alpha = 0.16f) else onSurfaceColor.copy(alpha = 0.08f),
-            start = Offset(width * 0.11f, y),
-            end = Offset(width * (0.36f + index * 0.06f), y),
-            strokeWidth = if (index % 2 == 0) 3f else 2f,
+            color = if (index == 1) accentColor.copy(alpha = 0.18f) else onSurfaceColor.copy(alpha = 0.10f),
+            start = Offset(width * 0.10f, height * yFactor),
+            end = Offset(width * (0.54f + index * 0.10f), height * yFactor),
+            strokeWidth = if (index == 1) 3f else 2f,
+            cap = StrokeCap.Round,
+        )
+    }
+
+    // Lower-left geometry aligned with the context/primary access block.
+    val bottomLeftFrame = Path().apply {
+        moveTo(width * 0.08f, height * 0.74f)
+        lineTo(width * 0.24f, height * 0.74f)
+        lineTo(width * 0.31f, height * 0.68f)
+        lineTo(width * 0.48f, height * 0.68f)
+        lineTo(width * 0.48f, height * 0.77f)
+        lineTo(width * 0.34f, height * 0.77f)
+        lineTo(width * 0.27f, height * 0.83f)
+        lineTo(width * 0.12f, height * 0.83f)
+    }
+    drawPath(
+        path = bottomLeftFrame,
+        color = onSurfaceColor.copy(alpha = 0.12f),
+        style = Stroke(width = 2.8f),
+    )
+
+    repeat(4) { index ->
+        val y = height * (0.79f + index * 0.035f)
+        drawLine(
+            color = if (index % 2 == 0) accentColor.copy(alpha = 0.14f) else onSurfaceColor.copy(alpha = 0.08f),
+            start = Offset(width * 0.10f, y),
+            end = Offset(width * (0.24f + index * 0.07f), y),
+            strokeWidth = if (index % 2 == 0) 2.6f else 1.8f,
             cap = StrokeCap.Round,
         )
     }
@@ -448,21 +483,4 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassP
         center = Offset(width * 0.86f, height * 0.82f),
         style = Stroke(width = 4f),
     )
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaboMark(center: Offset, scaleBase: Float, tint: Color) {
-    val originX = center.x - 52f * scaleBase
-    val originY = center.y - 50f * scaleBase
-    val scale = scaleBase
-    val monogram = Path().apply {
-        moveTo(originX + 70f * scale, originY + 28f * scale)
-        lineTo(originX + 42f * scale, originY + 28f * scale)
-        lineTo(originX + 25f * scale, originY + 50f * scale)
-        lineTo(originX + 42f * scale, originY + 72f * scale)
-        lineTo(originX + 70f * scale, originY + 72f * scale)
-        moveTo(originX + 58f * scale, originY + 50f * scale)
-        lineTo(originX + 80f * scale, originY + 50f * scale)
-    }
-    drawPath(path = monogram, color = tint, style = Stroke(width = 9f * scale, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
-    drawCircle(color = tint, radius = 4.5f * scale, center = Offset(originX + 80f * scale, originY + 50f * scale))
 }

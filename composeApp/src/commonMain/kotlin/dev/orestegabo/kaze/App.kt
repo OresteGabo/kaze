@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,18 +37,14 @@ import androidx.compose.material.icons.filled.DoorFront
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,12 +63,20 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kaze.composeapp.generated.resources.Res
+import kaze.composeapp.generated.resources.kotlinconf_first_floor_dark_raster
+import kaze.composeapp.generated.resources.kotlinconf_first_floor_light_raster
+import kaze.composeapp.generated.resources.kotlinconf_ground_floor_dark_raster
+import kaze.composeapp.generated.resources.kotlinconf_ground_floor_light_raster
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import dev.orestegabo.kaze.domain.ExperienceMode
 import dev.orestegabo.kaze.domain.DigitalAccessCard
 import dev.orestegabo.kaze.domain.Hotel
@@ -85,9 +90,7 @@ import dev.orestegabo.kaze.domain.TypographySpec
 import dev.orestegabo.kaze.domain.map.AccessLevel
 import dev.orestegabo.kaze.domain.map.AccessRule
 import dev.orestegabo.kaze.domain.map.AccessStatus
-import dev.orestegabo.kaze.domain.map.FloorStrokeKind
 import dev.orestegabo.kaze.domain.map.MapArea
-import dev.orestegabo.kaze.domain.map.MapAreaKind
 import dev.orestegabo.kaze.domain.map.sampleMarriottConventionMap
 import dev.orestegabo.kaze.theme.KazeTheme
 
@@ -172,11 +175,10 @@ fun App() {
                                         activeMapRoute = "Guest arrival to Great Rift Ballroom"
                                         activeFloorLabel = "Lobby Level"
                                         currentDestination = KazeDestination.MAP
-                                        showFeedback("Opened indoor map for the ballroom route.")
                                     }
-                                    StayPrimaryAction.VIEW_FOLIO -> showFeedback("Showing a placeholder access and folio summary.")
-                                    StayPrimaryAction.SYNC_CALENDAR -> showFeedback("Synced your stay timeline to a demo calendar.")
-                                    StayPrimaryAction.SHARE_STAY -> showFeedback("Generated a demo share link for your itinerary.")
+                                    StayPrimaryAction.VIEW_FOLIO -> Unit
+                                    StayPrimaryAction.SYNC_CALENDAR -> Unit
+                                    StayPrimaryAction.SHARE_STAY -> Unit
                                     StayPrimaryAction.REQUEST_LATE_CHECKOUT -> {
                                         lateCheckoutDraft = lateCheckoutRequest?.let {
                                             LateCheckoutDraft(
@@ -188,27 +190,25 @@ fun App() {
                                         } ?: LateCheckoutDraft()
                                         activeStayScreen = StayScreen.LATE_CHECKOUT
                                     }
-                                    StayPrimaryAction.SEE_CHECKOUT_POLICY -> showFeedback("Late checkout is subject to occupancy, housekeeping turnover, and room type. Demo fees range from RWF 35,000 to RWF 80,000.")
-                                    StayPrimaryAction.NEW_REQUEST -> showFeedback("Opened the demo request composer.")
-                                    StayPrimaryAction.TRACK_REQUESTS -> showFeedback("Showing local placeholder request statuses.")
-                                    StayPrimaryAction.REFINE_SUGGESTIONS -> showFeedback("Updated suggestions using local guest preferences.")
+                                    StayPrimaryAction.SEE_CHECKOUT_POLICY -> Unit
+                                    StayPrimaryAction.NEW_REQUEST -> Unit
+                                    StayPrimaryAction.TRACK_REQUESTS -> Unit
+                                    StayPrimaryAction.REFINE_SUGGESTIONS -> Unit
                                     StayPrimaryAction.SEE_FULL_AGENDA -> {
                                         currentDestination = KazeDestination.EVENTS
-                                        showFeedback("Jumped to the full hotel event agenda.")
                                     }
-                                    is StayPrimaryAction.OpenStayMoment -> showFeedback("Opened '${action.moment.title}' with placeholder reservation details.")
+                                    is StayPrimaryAction.OpenStayMoment -> Unit
                                     is StayPrimaryAction.RequestService -> {
                                         // TODO Send this action through the real service-request API.
-                                        showFeedback("Created a demo '${action.option.title}' request.")
+                                        showFeedback("${action.option.title} request sent.")
                                     }
                                     is StayPrimaryAction.OpenSuggestion -> {
                                         if (action.suggestion.cta == "Open route") {
                                             activeMapRoute = "Arrival route to ${action.suggestion.location}"
                                             activeFloorLabel = action.suggestion.location
                                             currentDestination = KazeDestination.MAP
-                                            showFeedback("Opened a route to ${action.suggestion.location}.")
                                         } else {
-                                            showFeedback("Applied the suggestion '${action.suggestion.title}' using local placeholder data.")
+                                            showFeedback("${action.suggestion.title} saved to your plan.")
                                         }
                                     }
                                 }
@@ -220,14 +220,12 @@ fun App() {
                             selectedDay = selectedDay,
                             onDaySelected = {
                                 selectedDay = it
-                                showFeedback("Loaded the ${it.label} summit schedule.")
                             },
                             onSessionAction = { session ->
                                 // TODO Deep-link this to the real session details and venue data.
                                 activeMapRoute = "Arrival route to ${session.room}"
                                 activeFloorLabel = session.room
                                 currentDestination = KazeDestination.MAP
-                                showFeedback("Opened the map route for '${session.title}'.")
                             },
                         )
 
@@ -239,19 +237,15 @@ fun App() {
                                         activeMapRoute = "Arrival route to ${highlight.location}"
                                         activeFloorLabel = highlight.location
                                         currentDestination = KazeDestination.MAP
-                                        showFeedback("Opened a route to ${highlight.location}.")
                                     }
-                                    else -> showFeedback("Reserved '${highlight.title}' using demo availability.")
+                                    else -> showFeedback("${highlight.title} reserved.")
                                 }
                             },
-                            onHeroPrimary = {
-                                showFeedback("Reserved tonight's highlighted experience in demo mode.")
-                            },
+                            onHeroPrimary = { showFeedback("Experience reserved.") },
                             onHeroSecondary = {
                                 activeMapRoute = "Arrival route to Pool Deck"
                                 activeFloorLabel = "Amenity Route"
                                 currentDestination = KazeDestination.MAP
-                                showFeedback("Opened the amenity map with a placeholder route.")
                             },
                         )
 
@@ -259,12 +253,9 @@ fun App() {
                             modifier = Modifier.weight(1f),
                             activeRoute = activeMapRoute,
                             activeFloorId = if (activeFloorLabel == "Guest Rooms") "l9" else "l1",
-                            onStartNavigation = {
-                                showFeedback("Started simulated wayfinding for $activeMapRoute.")
-                            },
+                            onStartNavigation = {},
                             onSwitchFloor = {
                                 activeFloorLabel = if (activeFloorLabel == "Lobby Level") "Guest Rooms" else "Lobby Level"
-                                showFeedback("Switched to the $activeFloorLabel floor in demo mode.")
                             },
                         )
                     }
@@ -544,7 +535,7 @@ private fun StaySegmentedTabs(
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
             .clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f))
             .padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -553,9 +544,9 @@ private fun StaySegmentedTabs(
             Surface(
                 modifier = Modifier.clickable { onTabChange(tab) },
                 shape = RoundedCornerShape(18.dp),
-                color = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
-                tonalElevation = if (selected) 4.dp else 0.dp,
-                shadowElevation = if (selected) 2.dp else 0.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                tonalElevation = if (selected) 6.dp else 0.dp,
+                shadowElevation = if (selected) 4.dp else 0.dp,
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -564,10 +555,10 @@ private fun StaySegmentedTabs(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(if (selected) 10.dp else 8.dp)
                             .clip(CircleShape)
                             .background(
-                                if (selected) MaterialTheme.colorScheme.primary
+                                if (selected) MaterialTheme.colorScheme.onPrimary
                                 else MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
                             ),
                     )
@@ -575,7 +566,7 @@ private fun StaySegmentedTabs(
                         text = tab.label,
                         maxLines = 1,
                         style = MaterialTheme.typography.labelLarge,
-                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -604,18 +595,26 @@ private fun EventScheduleScreen(
         }
 
         item {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                eventDays.forEach { day ->
-                    DaySelectorChip(
-                        label = day.label,
-                        selected = day == selectedDay,
-                        onClick = { onDaySelected(day) },
-                    )
-                }
-            }
+            EventDaySwitcher(
+                selectedDay = selectedDay,
+                onDaySelected = onDaySelected,
+            )
+        }
+
+        item {
+            Text(
+                selectedDay.label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+
+        item {
+            Text(
+                "Today's schedule",
+                style = MaterialTheme.typography.headlineSmall,
+            )
         }
 
         items(eventSchedule.filter { it.day == selectedDay.id }) { session ->
@@ -728,21 +727,19 @@ private fun MapScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Button(
+            KazePrimaryButton(
+                label = "Start navigation",
                 onClick = onStartNavigation,
                 modifier = Modifier.weight(1f),
-            ) {
-                Text("Start navigation")
-            }
-            OutlinedButton(
+            )
+            KazeSecondaryButton(
+                label = "Switch floor",
                 onClick = {
                     onSwitchFloor()
                     selectedFloorId = if (selectedFloorId == "l1") "l9" else "l1"
                 },
                 modifier = Modifier.weight(1f),
-            ) {
-                Text("Switch floor")
-            }
+            )
         }
     }
 }
@@ -754,19 +751,54 @@ private fun FloorSelectorChip(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(999.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-        ),
+    val shape = RoundedCornerShape(999.dp)
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+    }
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+    }
+    val textColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f)
+    }
+
+    Row(
+        modifier = modifier
+            .clip(shape)
+            .background(containerColor)
+            .border(1.dp, borderColor, shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label)
+        Box(
+            modifier = Modifier
+                .size(if (selected) 9.dp else 7.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) {
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.92f)
+                    } else {
+                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                    }
+                ),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = textColor,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -780,20 +812,39 @@ private fun ZoomableHotelMap(
     val density = LocalDensity.current
 
     BoxWithConstraints(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.background)
-            .pointerInput(floor.id) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 4f)
-                    offset += pan
-                }
-            },
+        modifier = modifier.background(MaterialTheme.colorScheme.background),
     ) {
         val mapWidth = maxWidth * 1.55f
         val mapHeight = maxHeight * 1.25f
+        val containerWidthPx = with(density) { maxWidth.toPx() }
+        val containerHeightPx = with(density) { maxHeight.toPx() }
+        val mapWidthPx = with(density) { mapWidth.toPx() }
+        val mapHeightPx = with(density) { mapHeight.toPx() }
+
+        fun clampOffset(proposedOffset: Offset, targetScale: Float): Offset {
+            if (targetScale <= 1.01f) return Offset.Zero
+
+            // The map is already centered and may already overflow the viewport at base zoom.
+            // Only allow extra panning introduced by zooming beyond that initial anchored state.
+            val maxTranslationX = ((mapWidthPx * targetScale) - mapWidthPx) / 2f
+            val maxTranslationY = ((mapHeightPx * targetScale) - mapHeightPx) / 2f
+
+            return Offset(
+                x = proposedOffset.x.coerceIn(-maxTranslationX.coerceAtLeast(0f), maxTranslationX.coerceAtLeast(0f)),
+                y = proposedOffset.y.coerceIn(-maxTranslationY.coerceAtLeast(0f), maxTranslationY.coerceAtLeast(0f)),
+            )
+        }
 
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(floor.id, containerWidthPx, containerHeightPx, mapWidthPx, mapHeightPx) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        val newScale = (scale * zoom).coerceIn(1f, 4f)
+                        scale = newScale
+                        offset = clampOffset(offset + pan, newScale)
+                    }
+                },
         ) {
             Box(
                 modifier = Modifier
@@ -811,20 +862,6 @@ private fun ZoomableHotelMap(
                     floorId = floor.id,
                     guestAccess = sampleGuestAccess,
                 )
-                floor.areas.forEach { area ->
-                    if (!sampleGuestAccess.shouldRenderLabel(area.accessRule)) return@forEach
-                    val center = area.center()
-                    Text(
-                        text = if (sampleGuestAccess.canAccess(area.accessRule)) area.label else "Restricted",
-                        modifier = Modifier.offset {
-                            val x = (center.x / floor.canvasSize.width * with(density) { mapWidth.toPx() }).toInt()
-                            val y = (center.y / floor.canvasSize.height * with(density) { mapHeight.toPx() }).toInt()
-                            IntOffset(x - 40, y - 10)
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    )
-                }
             }
 
             Column(
@@ -838,18 +875,28 @@ private fun ZoomableHotelMap(
                     tonalElevation = 4.dp,
                     shadowElevation = 6.dp,
                 ) {
-                    TextButton(onClick = { scale = (scale + 0.25f).coerceAtMost(4f) }) {
-                        Text("+", style = MaterialTheme.typography.headlineSmall)
-                    }
+                    KazeRoundButton(
+                        label = "+",
+                        onClick = {
+                            val newScale = (scale + 0.25f).coerceAtMost(4f)
+                            scale = newScale
+                            offset = clampOffset(offset, newScale)
+                        },
+                    )
                 }
                 Surface(
                     shape = CircleShape,
                     tonalElevation = 4.dp,
                     shadowElevation = 6.dp,
                 ) {
-                    TextButton(onClick = { scale = (scale - 0.25f).coerceAtLeast(1f) }) {
-                        Text("-", style = MaterialTheme.typography.headlineSmall)
-                    }
+                    KazeRoundButton(
+                        label = "-",
+                        onClick = {
+                            val newScale = (scale - 0.25f).coerceAtLeast(1f)
+                            scale = newScale
+                            offset = clampOffset(offset, newScale)
+                        },
+                    )
                 }
             }
         }
@@ -1074,9 +1121,7 @@ private fun AccessCardDialog(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                         )
                     }
-                    TextButton(onClick = onDismiss) {
-                        Text("Close")
-                    }
+                    KazeGhostButton(label = "Close", onClick = onDismiss)
                 }
 
                 Row(
@@ -1227,12 +1272,11 @@ private fun ServiceRequestsTab(
                         ) {
                             Text(option.title, style = MaterialTheme.typography.titleMedium)
                             Text(option.description, style = MaterialTheme.typography.bodyMedium)
-                            OutlinedButton(
+                            KazeSecondaryButton(
+                                label = "Request",
                                 onClick = { onPrimaryAction(StayPrimaryAction.RequestService(option)) },
                                 modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text("Request")
-                            }
+                            )
                         }
                     }
                 }
@@ -1276,9 +1320,7 @@ private fun LateCheckoutStatusCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.82f),
             )
-            OutlinedButton(onClick = onEdit) {
-                Text("Edit request")
-            }
+            KazeSecondaryButton(label = "Edit request", onClick = onEdit)
         }
     }
 }
@@ -1303,9 +1345,7 @@ private fun LateCheckoutScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = onBack) {
-                    Text("Back")
-                }
+                KazeGhostButton(label = "Back", onClick = onBack)
                 if (existingRequest != null) {
                     MetaPill(existingRequest.status)
                 }
@@ -1412,12 +1452,11 @@ private fun LateCheckoutScreen(
         }
 
         item {
-            Button(
+            KazePrimaryButton(
+                label = "Submit late checkout request",
                 onClick = onSubmit,
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Submit late checkout request")
-            }
+            )
         }
     }
 }
@@ -1554,46 +1593,108 @@ private fun HighlightPanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Button(onClick = onPrimaryClick) {
-                    Text(primaryLabel)
-                }
-                TextButton(onClick = onSecondaryClick) {
-                    Text(secondaryLabel)
-                }
+                KazePrimaryButton(label = primaryLabel, onClick = onPrimaryClick)
+                KazeGhostButton(label = secondaryLabel, onClick = onSecondaryClick)
             }
         }
     }
 }
 
 @Composable
-private fun DaySelectorChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
+private fun EventDaySwitcher(
+    selectedDay: EventDay,
+    onDaySelected: (EventDay) -> Unit,
 ) {
     Surface(
-        modifier = Modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(999.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-        tonalElevation = if (selected) 3.dp else 0.dp,
-        shadowElevation = if (selected) 1.dp else 0.dp,
+        shape = RoundedCornerShape(26.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
         ),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DestinationDot(selected = selected)
-            Text(
-                label,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            )
+            eventDays.forEach { day ->
+                EventDayButton(
+                    day = day,
+                    selected = day == selectedDay,
+                    onClick = { onDaySelected(day) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun EventDayButton(
+    day: EventDay,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val parts = day.label.split(" ", limit = 2)
+    val shortDay = parts.firstOrNull().orEmpty()
+    val shortDate = parts.getOrNull(1).orEmpty()
+    val shape = RoundedCornerShape(20.dp)
+
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(
+                if (selected) {
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        )
+                    )
+                }
+            )
+            .border(
+                1.dp,
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+                shape,
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(if (selected) 8.dp else 6.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                    else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.42f),
+                ),
+        )
+        Text(
+            text = shortDay,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
+        )
+        Text(
+            text = shortDate,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
@@ -1625,12 +1726,8 @@ private fun FeaturedSuggestionHeader(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onRefinePreferences) {
-                    Text("Refine")
-                }
-                OutlinedButton(onClick = onSeeAgenda) {
-                    Text("See agenda")
-                }
+                KazePrimaryButton(label = "Refine", onClick = onRefinePreferences)
+                KazeSecondaryButton(label = "See agenda", onClick = onSeeAgenda)
             }
         }
     }
@@ -1679,12 +1776,11 @@ private fun SuggestionShowcaseCard(
                     InfoToken(label = suggestion.location, accentColor = accentColor)
                     InfoToken(label = suggestion.time, accentColor = accentColor)
                 }
-                Button(
+                KazePrimaryButton(
+                    label = suggestion.cta,
                     onClick = onActionClick,
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(suggestion.cta)
-                }
+                )
             }
         }
     }
@@ -1792,9 +1888,7 @@ private fun DemoFeedbackBanner(
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             Spacer(Modifier.width(12.dp))
-            TextButton(onClick = onDismiss) {
-                Text("Dismiss")
-            }
+            KazeGhostButton(label = "Dismiss", onClick = onDismiss)
         }
     }
 }
@@ -1902,12 +1996,8 @@ private fun StayStatusHero(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Button(onClick = onOpenRoute) {
-                    Text("Open route")
-                }
-                TextButton(onClick = onViewFolio) {
-                    Text("View folio")
-                }
+                KazePrimaryButton(label = "Open route", onClick = onOpenRoute)
+                KazeGhostButton(label = "View folio", onClick = onViewFolio)
             }
         }
     }
@@ -1934,12 +2024,8 @@ private fun ConciergeInfoCard(
             Text(title, style = MaterialTheme.typography.titleLarge)
             Text(body, style = MaterialTheme.typography.bodyMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onPrimaryClick) {
-                    Text(actionPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                OutlinedButton(onClick = onSecondaryClick) {
-                    Text(actionSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                KazePrimaryButton(label = actionPrimary, onClick = onPrimaryClick)
+                KazeSecondaryButton(label = actionSecondary, onClick = onSecondaryClick)
             }
         }
     }
@@ -1976,9 +2062,7 @@ private fun StayMomentCard(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                 )
-                OutlinedButton(onClick = onOpen) {
-                    Text(moment.action)
-                }
+                KazeSecondaryButton(label = moment.action, onClick = onOpen)
             }
         }
     }
@@ -2009,9 +2093,7 @@ private fun SessionCard(
                 MetaPill(session.host)
                 MetaPill("Open map")
             }
-            OutlinedButton(onClick = onOpenMap) {
-                Text("Open map")
-            }
+            KazeSecondaryButton(label = "Open map", onClick = onOpenMap)
         }
     }
 }
@@ -2040,10 +2122,129 @@ private fun ExploreCard(
                 MetaPill(highlight.time)
                 MetaPill(highlight.cta)
             }
-            OutlinedButton(onClick = onActionClick) {
-                Text(highlight.cta)
-            }
+            KazeSecondaryButton(label = highlight.cta, onClick = onActionClick)
         }
+    }
+}
+
+@Composable
+private fun KazePrimaryButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: RoundedCornerShape = RoundedCornerShape(18.dp),
+) {
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.92f),
+                    )
+                )
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 13.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun KazeSecondaryButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
+    shape: RoundedCornerShape = RoundedCornerShape(18.dp),
+) {
+    val containerColor = if (emphasized) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+    }
+    val borderColor = if (emphasized) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.42f)
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)
+    }
+    val textColor = if (emphasized) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(containerColor)
+            .border(1.dp, borderColor, shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 13.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun KazeGhostButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun KazeRoundButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .size(52.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
@@ -2080,183 +2281,58 @@ private fun MapPreview(
     guestAccess: GuestAccessContext = sampleGuestAccess,
 ) {
     val floor = remember(floorId) { sampleMarriottConventionMap.floor(floorId)!! }
-    val nodeLookup = remember(floorId) { floor.nodes.associateBy { it.id } }
+    val isDarkMap = MaterialTheme.colorScheme.background.red < 0.5f
+    val mapPainter = painterResource(temporaryVenueMapDrawable(floorId = floorId, isDark = isDarkMap))
     val outlineColor = MaterialTheme.colorScheme.outline
-    val secondaryColor = MaterialTheme.colorScheme.secondary
-    val wallColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-    val roomBoundaryColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
-    val decorColor = MaterialTheme.colorScheme.tertiary
-    val edgeColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
     val nodeRingColor = MaterialTheme.colorScheme.primary
     val nodeFillColor = MaterialTheme.colorScheme.background
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    val hallwayColor = MaterialTheme.colorScheme.surfaceVariant
-    val lobbyColor = MaterialTheme.colorScheme.primaryContainer
-    val ballroomColor = MaterialTheme.colorScheme.secondaryContainer
-    val diningColor = MaterialTheme.colorScheme.tertiaryContainer
-    val serviceColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-    val guestRoomColor = MaterialTheme.colorScheme.background
-    val supportColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
 
-    Canvas(
+    Box(
         modifier = modifier
             .border(1.dp, outlineColor, RoundedCornerShape(24.dp))
-            .padding(16.dp),
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(12.dp),
     ) {
-        val scaleX = size.width / floor.canvasSize.width
-        val scaleY = size.height / floor.canvasSize.height
+        Image(
+            painter = mapPainter,
+            contentDescription = "Temporary venue floor plan",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize(),
+        )
 
-        floor.areas.forEach { area ->
-            if (!guestAccess.shouldRenderArea(area.accessRule)) return@forEach
-            val isAccessible = guestAccess.canAccess(area.accessRule)
-            val areaPath = area.toPath(scaleX = scaleX, scaleY = scaleY)
-            drawPath(
-                path = areaPath,
-                color = areaFillColor(
-                    areaKind = area.kind,
-                    accessRule = area.accessRule,
-                    isAccessible = isAccessible,
-                    surfaceColor = surfaceColor,
-                    hallwayColor = hallwayColor,
-                    lobbyColor = lobbyColor,
-                    ballroomColor = ballroomColor,
-                    diningColor = diningColor,
-                    serviceColor = serviceColor,
-                    guestRoomColor = guestRoomColor,
-                    supportColor = supportColor,
-                ),
-            )
-            drawPath(
-                path = areaPath,
-                color = if (isAccessible) outlineColor.copy(alpha = 0.65f) else Color(0x99C64545),
-                style = Stroke(width = 3f),
-            )
-        }
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val scaleX = size.width / floor.canvasSize.width
+            val scaleY = size.height / floor.canvasSize.height
 
-        floor.strokes.forEach { stroke ->
-            if (stroke.kind == FloorStrokeKind.DECOR) return@forEach
-            val pathColor = strokeColor(
-                strokeKind = stroke.kind,
-                secondaryColor = secondaryColor,
-                wallColor = wallColor,
-                roomBoundaryColor = roomBoundaryColor,
-                decorColor = decorColor,
-            )
-
-            stroke.points.zipWithNext().forEach { (from, to) ->
-                drawLine(
-                    color = pathColor,
-                    start = Offset(from.x * scaleX, from.y * scaleY),
-                    end = Offset(to.x * scaleX, to.y * scaleY),
-                    strokeWidth = 5f,
-                    cap = StrokeCap.Round,
+            floor.nodes.forEach { node ->
+                val center = Offset(node.position.x * scaleX, node.position.y * scaleY)
+                drawCircle(
+                    color = nodeRingColor,
+                    radius = 10f,
+                    center = center,
+                    style = Stroke(width = 4f),
                 )
-            }
-            if (stroke.closed && stroke.points.size > 2) {
-                val first = stroke.points.first()
-                val last = stroke.points.last()
-                drawLine(
-                    color = pathColor,
-                    start = Offset(last.x * scaleX, last.y * scaleY),
-                    end = Offset(first.x * scaleX, first.y * scaleY),
-                    strokeWidth = 5f,
-                    cap = StrokeCap.Round,
+                drawCircle(
+                    color = nodeFillColor,
+                    radius = 5.5f,
+                    center = center,
                 )
             }
         }
-
-        floor.edges.forEach { edge ->
-            val from = nodeLookup.getValue(edge.fromNodeId)
-            val to = nodeLookup.getValue(edge.toNodeId)
-            drawLine(
-                color = edgeColor,
-                start = Offset(from.position.x * scaleX, from.position.y * scaleY),
-                end = Offset(to.position.x * scaleX, to.position.y * scaleY),
-                strokeWidth = 10f,
-                cap = StrokeCap.Round,
-            )
-        }
-
-        floor.nodes.forEach { node ->
-            val center = Offset(node.position.x * scaleX, node.position.y * scaleY)
-            drawCircle(
-                color = nodeRingColor,
-                radius = 10f,
-                center = center,
-                style = Stroke(width = 5f),
-            )
-            drawCircle(
-                color = nodeFillColor,
-                radius = 6f,
-                center = center,
-            )
-        }
     }
 }
 
-private fun strokeColor(
-    strokeKind: FloorStrokeKind,
-    secondaryColor: Color,
-    wallColor: Color,
-    roomBoundaryColor: Color,
-    decorColor: Color,
-): Color = when (strokeKind) {
-    FloorStrokeKind.OUTLINE -> secondaryColor
-    FloorStrokeKind.WALL -> wallColor
-    FloorStrokeKind.ROOM_BOUNDARY -> roomBoundaryColor
-    FloorStrokeKind.DECOR -> decorColor
-}
-
-private fun areaFillColor(
-    areaKind: MapAreaKind,
-    accessRule: AccessRule,
-    isAccessible: Boolean,
-    surfaceColor: Color,
-    hallwayColor: Color,
-    lobbyColor: Color,
-    ballroomColor: Color,
-    diningColor: Color,
-    serviceColor: Color,
-    guestRoomColor: Color,
-    supportColor: Color,
-): Color {
-    if (!isAccessible) {
-        return when (accessRule.status) {
-            AccessStatus.HIDDEN -> Color.Transparent
-            AccessStatus.LIMITED -> Color(0x55D06B6B)
-            AccessStatus.RESTRICTED -> Color(0x66C64545)
-            AccessStatus.OPEN -> Color(0x33D06B6B)
-        }
-    }
-
-    return when (areaKind) {
-    MapAreaKind.HALLWAY -> hallwayColor
-    MapAreaKind.LOBBY_LOUNGE -> lobbyColor
-    MapAreaKind.BALLROOM -> ballroomColor
-    MapAreaKind.DINING -> diningColor
-    MapAreaKind.SERVICE -> serviceColor
-    MapAreaKind.GUEST_ROOM -> guestRoomColor
-    MapAreaKind.RECEPTION -> surfaceColor.copy(alpha = 0.95f)
-    MapAreaKind.SUPPORT -> supportColor
-}
-}
-
-private fun MapArea.toPath(scaleX: Float, scaleY: Float): Path {
-    val path = Path()
-    points.firstOrNull()?.let { first ->
-        path.moveTo(first.x * scaleX, first.y * scaleY)
-        points.drop(1).forEach { point ->
-            path.lineTo(point.x * scaleX, point.y * scaleY)
-        }
-        path.close()
-    }
-    return path
-}
-
-private fun MapArea.center(): dev.orestegabo.kaze.domain.map.MapPoint {
-    val avgX = points.map { it.x }.average().toFloat()
-    val avgY = points.map { it.y }.average().toFloat()
-    return dev.orestegabo.kaze.domain.map.MapPoint(avgX, avgY)
+private fun temporaryVenueMapDrawable(
+    floorId: String,
+    isDark: Boolean,
+): DrawableResource = when {
+    // TODO Replace these temporary rasterized KotlinConf floor plans with hotel-provided
+    // SVG-backed venue assets once Kaze receives its own branded architectural exports.
+    floorId == "l9" && isDark -> Res.drawable.kotlinconf_first_floor_dark_raster
+    floorId == "l9" -> Res.drawable.kotlinconf_first_floor_light_raster
+    isDark -> Res.drawable.kotlinconf_ground_floor_dark_raster
+    else -> Res.drawable.kotlinconf_ground_floor_light_raster
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassPattern(
@@ -2731,11 +2807,11 @@ private val sampleHotel = Hotel(
         hotelId = "rw-kgl-marriott",
         displayName = "Kigali Marriott",
         branding = HotelBranding(
-            primaryHex = "#8C6A2F",
-            secondaryHex = "#B28A4A",
-            accentHex = "#D7B67A",
-            surfaceHex = "#FFF9F1",
-            backgroundHex = "#F6F1E8",
+            primaryHex = "#2F6970",
+            secondaryHex = "#B4874F",
+            accentHex = "#D8C6A3",
+            surfaceHex = "#FCF8F1",
+            backgroundHex = "#F3EEE5",
             logoAsset = "branding/rw-kgl-marriott/logo.svg",
             wordmarkAsset = "branding/rw-kgl-marriott/wordmark.svg",
             typography = TypographySpec(

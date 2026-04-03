@@ -42,20 +42,20 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.orestegabo.kaze.domain.AccessCardStyle
 import dev.orestegabo.kaze.domain.DigitalAccessCard
+import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 
 @Composable
 internal fun StayAccessCardSection(
     card: DigitalAccessCard,
-    hotelName: String,
 ) {
     var showDetails by remember { mutableStateOf(false) }
+    val hotelName = KazeTheme.hotelConfig.displayName
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Access pass", style = MaterialTheme.typography.titleMedium)
@@ -77,9 +77,12 @@ private fun SignatureStayCard(
     hotelName: String,
     onClick: () -> Unit,
 ) {
-    val backgroundBrush = remember(card.style) { cardBackground(card.style) }
+    val passPalette = KazeTheme.pass
+    val backgroundBrush = remember(card.style, passPalette) { cardBackground(card.style, passPalette) }
     val frameColor = remember(card.style) { cardFrameColor(card.style) }
     val accentColor = remember(card.style) { cardAccentColor(card.style) }
+    val onCard = passPalette.cardOnSurface
+    val onCardMuted = passPalette.cardOnSurfaceMuted
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -92,9 +95,6 @@ private fun SignatureStayCard(
                 .border(1.dp, frameColor, RoundedCornerShape(34.dp))
                 .padding(20.dp),
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawFuturisticPassPattern(accentColor = accentColor, frameColor = frameColor)
-            }
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -108,18 +108,18 @@ private fun SignatureStayCard(
                     drawGaboMark(
                         center = Offset(size.width * 0.5f, size.height * 0.5f),
                         scaleBase = size.width * 0.0078f,
-                        tint = Color.White.copy(alpha = 0.42f),
+                        tint = onCard.copy(alpha = 0.42f),
                     )
                 }
             }
             Box(
                 modifier = Modifier.align(Alignment.BottomStart).size(width = 180.dp, height = 82.dp).offset(x = (-34).dp, y = 24.dp)
                     .clip(RoundedCornerShape(topEnd = 88.dp, bottomEnd = 24.dp, topStart = 18.dp, bottomStart = 18.dp))
-                    .background(Color.White.copy(alpha = 0.06f)),
+                    .background(passPalette.cardOverlay),
             )
 
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                Text(hotelName.uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.74f))
+                Text(hotelName.uppercase(), style = MaterialTheme.typography.labelSmall, color = onCardMuted.copy(alpha = 0.9f))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -135,8 +135,8 @@ private fun SignatureStayCard(
                             style = MaterialTheme.typography.labelLarge,
                             color = accentColor,
                         )
-                        Text(card.title, style = MaterialTheme.typography.headlineLarge, color = Color.White)
-                        Text(card.subtitle, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.82f))
+                        Text(card.title, style = MaterialTheme.typography.headlineLarge, color = onCard)
+                        Text(card.subtitle, style = MaterialTheme.typography.bodyMedium, color = onCardMuted)
                     }
                     CardChip(text = card.id.takeLast(8), inverse = true)
                 }
@@ -148,11 +148,23 @@ private fun SignatureStayCard(
                     verticalAlignment = Alignment.Bottom,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(card.contextLabel.uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.58f))
-                        Text(card.primaryAccessRef, style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.94f))
+                        Text(card.contextLabel.uppercase(), style = MaterialTheme.typography.labelSmall, color = onCardMuted.copy(alpha = 0.78f))
+                        Text(card.primaryAccessRef, style = MaterialTheme.typography.titleMedium, color = onCard)
                     }
-                    Text("Tap for details", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.72f))
+                    Text("Tap for details", style = MaterialTheme.typography.labelMedium, color = onCardMuted.copy(alpha = 0.88f))
                 }
+            }
+
+            Canvas(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(vertical = 10.dp),
+            ) {
+                drawFuturisticPassPattern(
+                    accentColor = accentColor,
+                    frameColor = frameColor,
+                    onSurfaceColor = passPalette.cardOnSurface,
+                )
             }
         }
     }
@@ -215,21 +227,21 @@ private fun AccessCardDialog(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // QR Code Mini-Panel
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.size(80.dp)
                     ) {
-                        // QR Code Mini-Panel
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color.White,
-                            modifier = Modifier.size(80.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.QrCode2,
-                                contentDescription = null,
-                                tint = Color(0xFF111111),
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Filled.QrCode2,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Staff Verification", style = MaterialTheme.typography.labelLarge)
@@ -284,7 +296,7 @@ private fun AccessDetailRow(label: String, value: String) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-        Text(value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+        Text(value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -338,23 +350,30 @@ private fun AccessDetailLine(label: String, value: String) {
 
 @Composable
 private fun CardChip(text: String, inverse: Boolean) {
+    val passPalette = KazeTheme.pass
     Surface(
         shape = RoundedCornerShape(999.dp),
-        color = if (inverse) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.12f),
+        color = if (inverse) passPalette.cardChip else passPalette.cardChip.copy(alpha = 0.72f),
     ) {
         Text(
             text,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White,
+            color = passPalette.cardChipText,
         )
     }
 }
 
-private fun cardBackground(style: AccessCardStyle): Brush = when (style) {
-    AccessCardStyle.KazeDefault -> Brush.linearGradient(listOf(Color(0xFF111419), Color(0xFF18242B), Color(0xFF24404A)))
-    is AccessCardStyle.HotelBranded -> Brush.linearGradient(listOf(Color(0xFF121416), style.supportHex.toUiColor(), style.accentHex.toUiColor().copy(alpha = 0.72f)))
-    is AccessCardStyle.EventSignature -> Brush.linearGradient(listOf(Color(0xFF101318), Color(0xFF18262D), style.accentHex.toUiColor().copy(alpha = 0.48f)))
+private fun cardBackground(style: AccessCardStyle, passPalette: dev.orestegabo.kaze.theme.KazePassPalette): Brush = when (style) {
+    AccessCardStyle.KazeDefault -> Brush.linearGradient(
+        listOf(passPalette.cardBaseStart, passPalette.cardBaseMiddle, passPalette.cardBaseEnd),
+    )
+    is AccessCardStyle.HotelBranded -> Brush.linearGradient(
+        listOf(passPalette.cardBaseStart, style.supportHex.toUiColor(), style.accentHex.toUiColor().copy(alpha = 0.72f)),
+    )
+    is AccessCardStyle.EventSignature -> Brush.linearGradient(
+        listOf(passPalette.cardBaseStart, passPalette.cardBaseMiddle, style.accentHex.toUiColor().copy(alpha = 0.48f)),
+    )
 }
 
 private fun cardFrameColor(style: AccessCardStyle): Color = when (style) {
@@ -376,30 +395,48 @@ private fun String.toUiColor(): Color {
     return Color(argb)
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassPattern(accentColor: Color, frameColor: Color) {
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassPattern(
+    accentColor: Color,
+    frameColor: Color,
+    onSurfaceColor: Color,
+) {
     val width = size.width
     val height = size.height
-    drawLine(color = accentColor.copy(alpha = 0.26f), start = Offset(width * 0.08f, height * 0.22f), end = Offset(width * 0.72f, height * 0.22f), strokeWidth = 4f, cap = StrokeCap.Round)
-    drawLine(color = accentColor.copy(alpha = 0.18f), start = Offset(width * 0.12f, height * 0.30f), end = Offset(width * 0.84f, height * 0.30f), strokeWidth = 2f, cap = StrokeCap.Round)
+    drawLine(color = accentColor.copy(alpha = 0.18f), start = Offset(width * 0.08f, height * 0.12f), end = Offset(width * 0.72f, height * 0.12f), strokeWidth = 5f, cap = StrokeCap.Round)
+    drawLine(color = accentColor.copy(alpha = 0.12f), start = Offset(width * 0.12f, height * 0.16f), end = Offset(width * 0.88f, height * 0.16f), strokeWidth = 2.5f, cap = StrokeCap.Round)
+    drawLine(color = onSurfaceColor.copy(alpha = 0.10f), start = Offset(width * 0.18f, height * 0.70f), end = Offset(width * 0.84f, height * 0.70f), strokeWidth = 3f, cap = StrokeCap.Round)
+    drawLine(color = accentColor.copy(alpha = 0.16f), start = Offset(width * 0.14f, height * 0.76f), end = Offset(width * 0.62f, height * 0.76f), strokeWidth = 5f, cap = StrokeCap.Round)
 
-    val path = Path().apply {
-        moveTo(width * 0.58f, height * 0.08f)
-        lineTo(width * 0.75f, height * 0.08f)
-        lineTo(width * 0.82f, height * 0.16f)
-        lineTo(width * 0.94f, height * 0.16f)
-        lineTo(width * 0.94f, height * 0.26f)
-        lineTo(width * 0.82f, height * 0.26f)
-        lineTo(width * 0.74f, height * 0.34f)
-        lineTo(width * 0.56f, height * 0.34f)
+    val topPath = Path().apply {
+        moveTo(width * 0.62f, height * 0.08f)
+        lineTo(width * 0.76f, height * 0.08f)
+        lineTo(width * 0.82f, height * 0.13f)
+        lineTo(width * 0.93f, height * 0.13f)
+        lineTo(width * 0.93f, height * 0.20f)
+        lineTo(width * 0.82f, height * 0.20f)
+        lineTo(width * 0.75f, height * 0.26f)
+        lineTo(width * 0.58f, height * 0.26f)
     }
-    drawPath(path = path, color = frameColor.copy(alpha = 0.55f), style = Stroke(width = 3f))
+    drawPath(path = topPath, color = frameColor.copy(alpha = 0.48f), style = Stroke(width = 3f))
 
-    repeat(6) { index ->
-        val y = height * (0.56f + index * 0.055f)
+    val bottomPath = Path().apply {
+        moveTo(width * 0.10f, height * 0.84f)
+        lineTo(width * 0.26f, height * 0.84f)
+        lineTo(width * 0.33f, height * 0.79f)
+        lineTo(width * 0.48f, height * 0.79f)
+        lineTo(width * 0.48f, height * 0.86f)
+        lineTo(width * 0.34f, height * 0.86f)
+        lineTo(width * 0.27f, height * 0.91f)
+        lineTo(width * 0.12f, height * 0.91f)
+    }
+    drawPath(path = bottomPath, color = onSurfaceColor.copy(alpha = 0.10f), style = Stroke(width = 3f))
+
+    repeat(7) { index ->
+        val y = height * (0.22f + index * 0.045f)
         drawLine(
-            color = if (index % 2 == 0) accentColor.copy(alpha = 0.24f) else Color.White.copy(alpha = 0.12f),
-            start = Offset(width * 0.08f, y),
-            end = Offset(width * (0.28f + index * 0.08f), y),
+            color = if (index % 2 == 0) accentColor.copy(alpha = 0.16f) else onSurfaceColor.copy(alpha = 0.08f),
+            start = Offset(width * 0.11f, y),
+            end = Offset(width * (0.36f + index * 0.06f), y),
             strokeWidth = if (index % 2 == 0) 3f else 2f,
             cap = StrokeCap.Round,
         )
@@ -411,30 +448,6 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassP
         center = Offset(width * 0.86f, height * 0.82f),
         style = Stroke(width = 4f),
     )
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPseudoQr(seed: String) {
-    val modules = 21
-    val cell = size.minDimension / modules
-    val bg = Color.White
-    val fg = Color(0xFF111111)
-    drawRect(bg)
-    fun drawFinder(x: Int, y: Int) {
-        drawRect(color = fg, topLeft = Offset(x * cell, y * cell), size = androidx.compose.ui.geometry.Size(cell * 7, cell * 7))
-        drawRect(color = bg, topLeft = Offset((x + 1) * cell, (y + 1) * cell), size = androidx.compose.ui.geometry.Size(cell * 5, cell * 5))
-        drawRect(color = fg, topLeft = Offset((x + 2) * cell, (y + 2) * cell), size = androidx.compose.ui.geometry.Size(cell * 3, cell * 3))
-    }
-    drawFinder(0, 0); drawFinder(14, 0); drawFinder(0, 14)
-    for (row in 0 until modules) {
-        for (col in 0 until modules) {
-            val inFinder = (row < 7 && col < 7) || (row < 7 && col >= 14) || (row >= 14 && col < 7)
-            if (inFinder) continue
-            val hash = seed.hashCode() + row * 31 + col * 17
-            if ((hash and 3) == 0) {
-                drawRect(color = fg, topLeft = Offset(col * cell, row * cell), size = androidx.compose.ui.geometry.Size(cell, cell))
-            }
-        }
-    }
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaboMark(center: Offset, scaleBase: Float, tint: Color) {

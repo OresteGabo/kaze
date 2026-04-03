@@ -19,6 +19,29 @@ internal class KazeAppViewModel(
     )
         private set
 
+    fun onOnboardingPageChanged(page: Int) {
+        uiState = uiState.copy(onboardingPage = page.coerceAtLeast(0))
+    }
+
+    fun onOnboardingNext() {
+        val nextPage = (uiState.onboardingPage + 1).coerceAtMost(2)
+        uiState = uiState.copy(onboardingPage = nextPage)
+    }
+
+    fun skipOnboarding() {
+        uiState = uiState.copy(
+            isOnboardingVisible = false,
+            onboardingPage = 0,
+        )
+    }
+
+    fun completeOnboarding() {
+        uiState = uiState.copy(
+            isOnboardingVisible = false,
+            onboardingPage = 0,
+        )
+    }
+
     fun onDestinationSelected(destination: KazeDestination) {
         navigator.goTo(destination)
         syncNavigationState()

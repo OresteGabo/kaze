@@ -187,7 +187,7 @@ private fun StayTabContent(
 ) {
     val scrollState = rememberScrollState()
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        accessCard?.let { StayAccessCardSection(card = it, hotelName = hotelDisplayName) }
+        accessCard?.let { StayAccessCardSection(card = it) }
         StayStatusHero(onOpenRoute = { onPrimaryAction(StayPrimaryAction.OPEN_ROUTE) }, onViewFolio = { onPrimaryAction(StayPrimaryAction.VIEW_FOLIO) })
         ConciergeInfoCard(
             title = "My itinerary",

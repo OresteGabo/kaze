@@ -67,6 +67,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -775,78 +776,77 @@ private fun MapScreen(
     onStartNavigation: () -> Unit,
     onSwitchFloor: () -> Unit,
 ) {
+    val topChromeHeight = 112.dp
+    val bottomChromeHeight = 108.dp
     var selectedFloorId by remember(activeFloorId) { mutableStateOf(activeFloorId) }
     val selectedFloor = remember(selectedFloorId) {
         sampleMarriottConventionMap.floor(selectedFloorId) ?: sampleMarriottConventionMap.floor("l1")!!
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            "Map",
+    Box(
+        modifier = modifier.fillMaxSize(),
+    ) {
+        ZoomableHotelMap(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 18.dp, start = 20.dp, end = 20.dp),
-            style = MaterialTheme.typography.headlineSmall,
+                .padding(start = 12.dp, end = 12.dp, top = topChromeHeight, bottom = bottomChromeHeight),
+            floor = selectedFloor,
+            topOverlap = topChromeHeight,
         )
-        Spacer(Modifier.height(12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+
+        Column(
+            modifier = Modifier.fillMaxSize(),
         ) {
-            FloorSelectorChip(
-                modifier = Modifier.weight(1f),
-                label = "Ground floor",
-                selected = selectedFloorId == "l1",
-                onClick = { selectedFloorId = "l1" },
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, start = 20.dp, end = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                FloorSelectorChip(
+                    modifier = Modifier.weight(1f),
+                    label = "Ground floor",
+                    selected = selectedFloorId == "l1",
+                    onClick = { selectedFloorId = "l1" },
+                )
+                FloorSelectorChip(
+                    modifier = Modifier.weight(1f),
+                    label = "First floor",
+                    selected = selectedFloorId == "l9",
+                    onClick = { selectedFloorId = "l9" },
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                activeRoute,
+                modifier = Modifier.padding(horizontal = 20.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            FloorSelectorChip(
-                modifier = Modifier.weight(1f),
-                label = "First floor",
-                selected = selectedFloorId == "l9",
-                onClick = { selectedFloorId = "l9" },
-            )
-        }
-        Spacer(Modifier.height(10.dp))
-        Text(
-            activeRoute,
-            modifier = Modifier.padding(horizontal = 20.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
-        )
-        Spacer(Modifier.height(10.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 12.dp),
-        ) {
-            ZoomableHotelMap(
-                modifier = Modifier.fillMaxSize(),
-                floor = selectedFloor,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            KazePrimaryButton(
-                label = "Start navigation",
-                onClick = onStartNavigation,
-                modifier = Modifier.weight(1f),
-            )
-            KazeSecondaryButton(
-                label = "Switch floor",
-                onClick = {
-                    onSwitchFloor()
-                    selectedFloorId = if (selectedFloorId == "l1") "l9" else "l1"
-                },
-                modifier = Modifier.weight(1f),
-            )
+            Spacer(Modifier.weight(1f))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                KazePrimaryButton(
+                    label = "Start navigation",
+                    onClick = onStartNavigation,
+                    modifier = Modifier.weight(1f),
+                )
+                KazeSecondaryButton(
+                    label = "Switch floor",
+                    onClick = {
+                        onSwitchFloor()
+                        selectedFloorId = if (selectedFloorId == "l1") "l9" else "l1"
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
@@ -913,6 +913,7 @@ private fun FloorSelectorChip(
 private fun ZoomableHotelMap(
     modifier: Modifier = Modifier,
     floor: dev.orestegabo.kaze.domain.map.FloorLevel,
+    topOverlap: Dp = 0.dp,
 ) {
     var scale by remember(floor.id) { mutableStateOf(1f) }
     var offset by remember(floor.id) { mutableStateOf(Offset.Zero) }
@@ -927,6 +928,7 @@ private fun ZoomableHotelMap(
         val containerHeightPx = with(density) { maxHeight.toPx() }
         val mapWidthPx = with(density) { mapWidth.toPx() }
         val mapHeightPx = with(density) { mapHeight.toPx() }
+        val topOverlapPx = density.run { topOverlap.toPx() }
 
         fun clampOffset(proposedOffset: Offset, targetScale: Float): Offset {
             if (targetScale <= 1.01f) return Offset.Zero
@@ -934,11 +936,12 @@ private fun ZoomableHotelMap(
             // The map is already centered and may already overflow the viewport at base zoom.
             // Only allow extra panning introduced by zooming beyond that initial anchored state.
             val maxTranslationX = ((mapWidthPx * targetScale) - mapWidthPx) / 2f
-            val maxTranslationY = ((mapHeightPx * targetScale) - mapHeightPx) / 2f
+            val maxTranslationUp = ((mapHeightPx * targetScale) - mapHeightPx) / 2f + topOverlapPx
+            val maxTranslationDown = ((mapHeightPx * targetScale) - mapHeightPx) / 2f
 
             return Offset(
                 x = proposedOffset.x.coerceIn(-maxTranslationX.coerceAtLeast(0f), maxTranslationX.coerceAtLeast(0f)),
-                y = proposedOffset.y.coerceIn(-maxTranslationY.coerceAtLeast(0f), maxTranslationY.coerceAtLeast(0f)),
+                y = proposedOffset.y.coerceIn(-maxTranslationUp.coerceAtLeast(0f), maxTranslationDown.coerceAtLeast(0f)),
             )
         }
 

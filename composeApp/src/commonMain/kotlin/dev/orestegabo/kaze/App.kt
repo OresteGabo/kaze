@@ -31,11 +31,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.DoorFront
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -78,22 +73,37 @@ import kaze.composeapp.generated.resources.kotlinconf_ground_floor_dark_raster
 import kaze.composeapp.generated.resources.kotlinconf_ground_floor_light_raster
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import dev.orestegabo.kaze.domain.ExperienceMode
-import dev.orestegabo.kaze.domain.DigitalAccessCard
-import dev.orestegabo.kaze.domain.Hotel
-import dev.orestegabo.kaze.domain.HotelBranding
-import dev.orestegabo.kaze.domain.HotelCampus
-import dev.orestegabo.kaze.domain.HotelBuilding
-import dev.orestegabo.kaze.domain.HotelConfig
-import dev.orestegabo.kaze.domain.HotelMarket
 import dev.orestegabo.kaze.domain.AccessCardStyle
+import dev.orestegabo.kaze.domain.DigitalAccessCard
 import dev.orestegabo.kaze.domain.TypographySpec
-import dev.orestegabo.kaze.domain.map.AccessLevel
-import dev.orestegabo.kaze.domain.map.AccessRule
-import dev.orestegabo.kaze.domain.map.AccessStatus
 import dev.orestegabo.kaze.domain.map.MapArea
-import dev.orestegabo.kaze.domain.map.sampleMarriottConventionMap
+import dev.orestegabo.kaze.demo.EventSession
+import dev.orestegabo.kaze.demo.EventDay
+import dev.orestegabo.kaze.demo.ExploreHighlight
+import dev.orestegabo.kaze.demo.FollowUpOption
+import dev.orestegabo.kaze.demo.KazeDestination
+import dev.orestegabo.kaze.demo.LateCheckoutDraft
+import dev.orestegabo.kaze.demo.LateCheckoutOption
+import dev.orestegabo.kaze.demo.LateCheckoutRequest
+import dev.orestegabo.kaze.demo.PaymentOption
+import dev.orestegabo.kaze.demo.ServiceOption
+import dev.orestegabo.kaze.demo.StayMoment
+import dev.orestegabo.kaze.demo.StayPrimaryAction
+import dev.orestegabo.kaze.demo.StayScreen
+import dev.orestegabo.kaze.demo.StayTab
+import dev.orestegabo.kaze.demo.eventDays
+import dev.orestegabo.kaze.demo.eventSchedule
+import dev.orestegabo.kaze.demo.exploreHighlights
+import dev.orestegabo.kaze.demo.followUpOptions
+import dev.orestegabo.kaze.demo.lateCheckoutOptions
+import dev.orestegabo.kaze.demo.paymentOptions
+import dev.orestegabo.kaze.demo.requestOptions
+import dev.orestegabo.kaze.demo.sampleHotel
+import dev.orestegabo.kaze.demo.stayAccessCard
+import dev.orestegabo.kaze.demo.stayMoments
+import dev.orestegabo.kaze.demo.suggestedActivities
 import dev.orestegabo.kaze.theme.KazeTheme
+import dev.orestegabo.kaze.ui.map.MapScreen
 
 @Composable
 @Preview
@@ -764,251 +774,6 @@ private fun ExploreScreen(
 
         items(exploreHighlights) { highlight ->
             ExploreCard(highlight = highlight, onActionClick = { onHighlightAction(highlight) })
-        }
-    }
-}
-
-@Composable
-private fun MapScreen(
-    modifier: Modifier = Modifier,
-    activeRoute: String,
-    activeFloorId: String,
-    onStartNavigation: () -> Unit,
-    onSwitchFloor: () -> Unit,
-) {
-    val topChromeHeight = 112.dp
-    val bottomChromeHeight = 108.dp
-    var selectedFloorId by remember(activeFloorId) { mutableStateOf(activeFloorId) }
-    val selectedFloor = remember(selectedFloorId) {
-        sampleMarriottConventionMap.floor(selectedFloorId) ?: sampleMarriottConventionMap.floor("l1")!!
-    }
-
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
-        ZoomableHotelMap(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 12.dp, end = 12.dp, top = topChromeHeight, bottom = bottomChromeHeight),
-            floor = selectedFloor,
-            topOverlap = topChromeHeight,
-        )
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp, start = 20.dp, end = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                FloorSelectorChip(
-                    modifier = Modifier.weight(1f),
-                    label = "Ground floor",
-                    selected = selectedFloorId == "l1",
-                    onClick = { selectedFloorId = "l1" },
-                )
-                FloorSelectorChip(
-                    modifier = Modifier.weight(1f),
-                    label = "First floor",
-                    selected = selectedFloorId == "l9",
-                    onClick = { selectedFloorId = "l9" },
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                activeRoute,
-                modifier = Modifier.padding(horizontal = 20.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.weight(1f))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                KazePrimaryButton(
-                    label = "Start navigation",
-                    onClick = onStartNavigation,
-                    modifier = Modifier.weight(1f),
-                )
-                KazeSecondaryButton(
-                    label = "Switch floor",
-                    onClick = {
-                        onSwitchFloor()
-                        selectedFloorId = if (selectedFloorId == "l1") "l9" else "l1"
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-        }
-    }
-}
-
-@Composable
-private fun FloorSelectorChip(
-    modifier: Modifier = Modifier,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(999.dp)
-    val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
-    }
-    val borderColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-    } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-    }
-    val textColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f)
-    }
-
-    Row(
-        modifier = modifier
-            .clip(shape)
-            .background(containerColor)
-            .border(1.dp, borderColor, shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(if (selected) 9.dp else 7.dp)
-                .clip(CircleShape)
-                .background(
-                    if (selected) {
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.92f)
-                    } else {
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
-                    }
-                ),
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = textColor,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun ZoomableHotelMap(
-    modifier: Modifier = Modifier,
-    floor: dev.orestegabo.kaze.domain.map.FloorLevel,
-    topOverlap: Dp = 0.dp,
-) {
-    var scale by remember(floor.id) { mutableStateOf(1f) }
-    var offset by remember(floor.id) { mutableStateOf(Offset.Zero) }
-    val density = LocalDensity.current
-
-    BoxWithConstraints(
-        modifier = modifier.background(MaterialTheme.colorScheme.background),
-    ) {
-        val mapWidth = maxWidth * 1.55f
-        val mapHeight = maxHeight * 1.25f
-        val containerWidthPx = with(density) { maxWidth.toPx() }
-        val containerHeightPx = with(density) { maxHeight.toPx() }
-        val mapWidthPx = with(density) { mapWidth.toPx() }
-        val mapHeightPx = with(density) { mapHeight.toPx() }
-        val topOverlapPx = density.run { topOverlap.toPx() }
-
-        fun clampOffset(proposedOffset: Offset, targetScale: Float): Offset {
-            if (targetScale <= 1.01f) return Offset.Zero
-
-            // The map is already centered and may already overflow the viewport at base zoom.
-            // Only allow extra panning introduced by zooming beyond that initial anchored state.
-            val maxTranslationX = ((mapWidthPx * targetScale) - mapWidthPx) / 2f
-            val maxTranslationUp = ((mapHeightPx * targetScale) - mapHeightPx) / 2f + topOverlapPx
-            val maxTranslationDown = ((mapHeightPx * targetScale) - mapHeightPx) / 2f
-
-            return Offset(
-                x = proposedOffset.x.coerceIn(-maxTranslationX.coerceAtLeast(0f), maxTranslationX.coerceAtLeast(0f)),
-                y = proposedOffset.y.coerceIn(-maxTranslationUp.coerceAtLeast(0f), maxTranslationDown.coerceAtLeast(0f)),
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(floor.id, containerWidthPx, containerHeightPx, mapWidthPx, mapHeightPx) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        val newScale = (scale * zoom).coerceIn(1f, 4f)
-                        scale = newScale
-                        offset = clampOffset(offset + pan, newScale)
-                    }
-                },
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = offset.x
-                        translationY = offset.y
-                    }
-                    .size(mapWidth, mapHeight),
-            ) {
-                MapPreview(
-                    modifier = Modifier.fillMaxSize(),
-                    floorId = floor.id,
-                    guestAccess = sampleGuestAccess,
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    tonalElevation = 4.dp,
-                    shadowElevation = 6.dp,
-                ) {
-                    KazeRoundButton(
-                        label = "+",
-                        onClick = {
-                            val newScale = (scale + 0.25f).coerceAtMost(4f)
-                            scale = newScale
-                            offset = clampOffset(offset, newScale)
-                        },
-                    )
-                }
-                Surface(
-                    shape = CircleShape,
-                    tonalElevation = 4.dp,
-                    shadowElevation = 6.dp,
-                ) {
-                    KazeRoundButton(
-                        label = "-",
-                        onClick = {
-                            val newScale = (scale - 0.25f).coerceAtLeast(1f)
-                            scale = newScale
-                            offset = clampOffset(offset, newScale)
-                        },
-                    )
-                }
-            }
         }
     }
 }
@@ -2238,7 +2003,7 @@ private fun ExploreCard(
 }
 
 @Composable
-private fun KazePrimaryButton(
+internal fun KazePrimaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -2270,7 +2035,7 @@ private fun KazePrimaryButton(
 }
 
 @Composable
-private fun KazeSecondaryButton(
+internal fun KazeSecondaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -2313,7 +2078,7 @@ private fun KazeSecondaryButton(
 }
 
 @Composable
-private fun KazeGhostButton(
+internal fun KazeGhostButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -2336,7 +2101,7 @@ private fun KazeGhostButton(
 }
 
 @Composable
-private fun KazeRoundButton(
+internal fun KazeRoundButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -2382,67 +2147,6 @@ private fun DestinationDot(selected: Boolean) {
                 shape = CircleShape,
             ),
     )
-}
-
-@Composable
-private fun MapPreview(
-    modifier: Modifier = Modifier,
-    floorId: String = "l1",
-    guestAccess: GuestAccessContext = sampleGuestAccess,
-) {
-    val floor = remember(floorId) { sampleMarriottConventionMap.floor(floorId)!! }
-    val isDarkMap = MaterialTheme.colorScheme.background.red < 0.5f
-    val mapPainter = painterResource(temporaryVenueMapDrawable(floorId = floorId, isDark = isDarkMap))
-    val outlineColor = MaterialTheme.colorScheme.outline
-    val nodeRingColor = MaterialTheme.colorScheme.primary
-    val nodeFillColor = MaterialTheme.colorScheme.background
-
-    Box(
-        modifier = modifier
-            .border(1.dp, outlineColor, RoundedCornerShape(24.dp))
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(12.dp),
-    ) {
-        Image(
-            painter = mapPainter,
-            contentDescription = "Temporary venue floor plan",
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val scaleX = size.width / floor.canvasSize.width
-            val scaleY = size.height / floor.canvasSize.height
-
-            floor.nodes.forEach { node ->
-                val center = Offset(node.position.x * scaleX, node.position.y * scaleY)
-                drawCircle(
-                    color = nodeRingColor,
-                    radius = 10f,
-                    center = center,
-                    style = Stroke(width = 4f),
-                )
-                drawCircle(
-                    color = nodeFillColor,
-                    radius = 5.5f,
-                    center = center,
-                )
-            }
-        }
-    }
-}
-
-private fun temporaryVenueMapDrawable(
-    floorId: String,
-    isDark: Boolean,
-): DrawableResource = when {
-    // TODO Replace these temporary rasterized KotlinConf floor plans with hotel-provided
-    // SVG-backed venue assets once Kaze receives its own branded architectural exports.
-    floorId == "l9" && isDark -> Res.drawable.kotlinconf_first_floor_dark_raster
-    floorId == "l9" -> Res.drawable.kotlinconf_first_floor_light_raster
-    isDark -> Res.drawable.kotlinconf_ground_floor_dark_raster
-    else -> Res.drawable.kotlinconf_ground_floor_light_raster
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFuturisticPassPattern(
@@ -2589,365 +2293,3 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaboMark(
         ),
     )
 }
-
-private data class GuestAccessContext(
-    val grantedLevels: Set<AccessLevel>,
-) {
-    fun canAccess(rule: AccessRule): Boolean = when (rule.level) {
-        AccessLevel.PUBLIC -> true
-        else -> rule.level in grantedLevels
-    }
-
-    fun shouldRenderArea(rule: AccessRule): Boolean =
-        !(rule.status == AccessStatus.HIDDEN && !canAccess(rule))
-
-    fun shouldRenderLabel(rule: AccessRule): Boolean =
-        !(rule.status == AccessStatus.HIDDEN && !canAccess(rule))
-}
-
-private val sampleGuestAccess = GuestAccessContext(
-    grantedLevels = setOf(
-        AccessLevel.PUBLIC,
-        AccessLevel.IN_HOUSE_GUEST,
-    ),
-)
-
-private enum class KazeDestination(
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-) {
-    STAY("Stay", Icons.Filled.DoorFront),
-    EVENTS("Events", Icons.Filled.CalendarMonth),
-    EXPLORE("Explore", Icons.Filled.Explore),
-    MAP("Map", Icons.Filled.Map),
-}
-
-private enum class StayTab(val label: String) {
-    MY_STAY("My Stay"),
-    REQUESTS("Requests"),
-    SUGGESTIONS("Suggestions"),
-}
-
-private enum class StayScreen {
-    HOME,
-    LATE_CHECKOUT,
-}
-
-private data class StayMoment(
-    val time: String,
-    val title: String,
-    val detail: String,
-    val place: String,
-    val action: String,
-)
-
-private data class ServiceOption(
-    val title: String,
-    val description: String,
-)
-
-private data class EventDay(
-    val id: String,
-    val label: String,
-)
-
-private data class EventSession(
-    val day: String,
-    val time: String,
-    val title: String,
-    val description: String,
-    val room: String,
-    val host: String,
-)
-
-private data class ExploreHighlight(
-    val title: String,
-    val description: String,
-    val location: String,
-    val time: String,
-    val cta: String,
-)
-
-private data class LateCheckoutOption(
-    val id: String,
-    val checkoutTimeLabel: String,
-    val feeLabel: String,
-    val availabilityLabel: String,
-    val summary: String,
-)
-
-private data class LateCheckoutRequest(
-    val option: LateCheckoutOption,
-    val paymentOption: PaymentOption,
-    val followUpOption: FollowUpOption,
-    val notes: String,
-    val status: String,
-)
-
-private data class LateCheckoutDraft(
-    val option: LateCheckoutOption = lateCheckoutOptions.first(),
-    val paymentOption: PaymentOption = PaymentOption.CHARGE_TO_ROOM,
-    val followUpOption: FollowUpOption = FollowUpOption.CONFIRM_IN_APP,
-    val notes: String = "",
-)
-
-private enum class PaymentOption(
-    val label: String,
-    val description: String,
-    val confirmationLabel: String,
-) {
-    CHARGE_TO_ROOM(
-        label = "Charge to room",
-        description = "Add the late checkout fee to the room folio for settlement at final checkout.",
-        confirmationLabel = "Added to folio once approved",
-    ),
-    PAY_NOW_AT_RECEPTION(
-        label = "Pay at reception",
-        description = "Guest settles the fee at the front desk after approval.",
-        confirmationLabel = "Payment requested at front desk",
-    ),
-    PAY_IN_ROOM(
-        label = "Pay in room",
-        description = "Reception or duty manager can come to the room with a card terminal if the property offers this service.",
-        confirmationLabel = "Reception follow-up in room",
-    ),
-}
-
-private enum class FollowUpOption(
-    val label: String,
-    val description: String,
-) {
-    CONFIRM_IN_APP(
-        label = "Confirm in app",
-        description = "Send approval and fee confirmation silently through the app.",
-    ),
-    CALL_ROOM(
-        label = "Call the room",
-        description = "Reception should call the room once availability is confirmed.",
-    ),
-    COLLECT_PAYMENT_IN_ROOM(
-        label = "Reception to room",
-        description = "Reception can come upstairs to confirm and collect payment if hotel policy allows it.",
-    ),
-}
-
-private sealed interface StayPrimaryAction {
-    data object OPEN_ROUTE : StayPrimaryAction
-    data object VIEW_FOLIO : StayPrimaryAction
-    data object SYNC_CALENDAR : StayPrimaryAction
-    data object SHARE_STAY : StayPrimaryAction
-    data object REQUEST_LATE_CHECKOUT : StayPrimaryAction
-    data object SEE_CHECKOUT_POLICY : StayPrimaryAction
-    data object NEW_REQUEST : StayPrimaryAction
-    data object TRACK_REQUESTS : StayPrimaryAction
-    data object REFINE_SUGGESTIONS : StayPrimaryAction
-    data object SEE_FULL_AGENDA : StayPrimaryAction
-    data class OpenStayMoment(val moment: StayMoment) : StayPrimaryAction
-    data class RequestService(val option: ServiceOption) : StayPrimaryAction
-    data class OpenSuggestion(val suggestion: ExploreHighlight) : StayPrimaryAction
-}
-
-private val stayMoments = listOf(
-    StayMoment(
-        time = "Today • 14:00",
-        title = "Signature massage",
-        detail = "Reserved treatment slot with a 15-minute arrival window.",
-        place = "Ubumwe Spa",
-        action = "Open route",
-    ),
-    StayMoment(
-        time = "Today • 19:30",
-        title = "Chef's tasting dinner",
-        detail = "Window table reserved for two with vegetarian preference noted.",
-        place = "Kivu Dining",
-        action = "View menu",
-    ),
-    StayMoment(
-        time = "Tomorrow • 08:00",
-        title = "Airport transfer",
-        detail = "Vehicle confirmed. Pickup point is the main porte-cochere.",
-        place = "Front Drive",
-        action = "Contact concierge",
-    ),
-)
-
-private val requestOptions = listOf(
-    ServiceOption("Fresh towels", "Send towels and bath amenities to the room."),
-    ServiceOption("In-room dining", "Browse menu and order directly from the app."),
-    ServiceOption("Laundry pickup", "Request express or standard garment collection."),
-    ServiceOption("Concierge help", "Ask for transport, reservations, or local assistance."),
-)
-
-private val lateCheckoutOptions = listOf(
-    LateCheckoutOption(
-        id = "checkout_12",
-        checkoutTimeLabel = "12:00 checkout",
-        feeLabel = "RWF 35,000",
-        availabilityLabel = "High availability",
-        summary = "Best for guests with an afternoon meeting or flexible airport transfer.",
-    ),
-    LateCheckoutOption(
-        id = "checkout_14",
-        checkoutTimeLabel = "14:00 checkout",
-        feeLabel = "RWF 55,000",
-        availabilityLabel = "Limited availability",
-        summary = "Subject to housekeeping turnover and incoming arrivals.",
-    ),
-    LateCheckoutOption(
-        id = "checkout_16",
-        checkoutTimeLabel = "16:00 checkout",
-        feeLabel = "RWF 80,000",
-        availabilityLabel = "Suite-only review",
-        summary = "Usually requires manager approval because it affects same-day room readiness.",
-    ),
-)
-
-private val paymentOptions = PaymentOption.entries
-private val followUpOptions = FollowUpOption.entries
-
-private val eventDays = listOf(
-    EventDay("day1", "Fri 3 Apr"),
-    EventDay("day2", "Sat 4 Apr"),
-    EventDay("day3", "Sun 5 Apr"),
-)
-
-private val eventSchedule = listOf(
-    EventSession(
-        day = "day1",
-        time = "16:00 - 17:00",
-        title = "Welcome reception",
-        description = "Arrival gathering for summit delegates with lounge music and light bites.",
-        room = "Sky Lobby",
-        host = "Guest Relations",
-    ),
-    EventSession(
-        day = "day2",
-        time = "08:00 - 09:15",
-        title = "Opening keynote",
-        description = "Main plenary session in the Great Rift Ballroom, with map route and speaker details available from the card.",
-        room = "Great Rift Ballroom",
-        host = "Finance Summit",
-    ),
-    EventSession(
-        day = "day2",
-        time = "11:00 - 12:00",
-        title = "Private investor roundtable",
-        description = "Invitation-only gathering with live occupancy and room lookup support.",
-        room = "Virunga Room",
-        host = "Executive Office",
-    ),
-    EventSession(
-        day = "day3",
-        time = "10:00 - 11:30",
-        title = "Farewell brunch",
-        description = "Closing brunch for delegates and hotel guests who opted into the event program.",
-        room = "Kivu Terrace",
-        host = "Events Team",
-    ),
-)
-
-private val exploreHighlights = listOf(
-    ExploreHighlight(
-        title = "Infinity pool quiet hours",
-        description = "A calmer pool deck period curated for business travelers between meetings.",
-        location = "Pool Deck",
-        time = "06:00 - 09:00",
-        cta = "Open amenity",
-    ),
-    ExploreHighlight(
-        title = "Lobby art walk",
-        description = "A short self-guided route through the hotel’s featured Rwandan artists.",
-        location = "Grand Lobby",
-        time = "All day",
-        cta = "Start route",
-    ),
-    ExploreHighlight(
-        title = "Evening jazz set",
-        description = "Soft live music in the bar, recommended for summit delegates after sessions.",
-        location = "Panorama Bar",
-        time = "20:00",
-        cta = "Reserve table",
-    ),
-)
-
-private val suggestedActivities = listOf(
-    ExploreHighlight(
-        title = "Because you booked the spa",
-        description = "A wellness tea service is available in the relaxation lounge right after your treatment.",
-        location = "Ubumwe Spa",
-        time = "After 15:00",
-        cta = "Add to stay",
-    ),
-    ExploreHighlight(
-        title = "Because you are attending the summit",
-        description = "A networking coffee point opens 20 minutes before the keynote near the ballroom entrance.",
-        location = "Great Rift Foyer",
-        time = "07:40",
-        cta = "Open route",
-    ),
-    ExploreHighlight(
-        title = "Because checkout is tomorrow",
-        description = "A late breakfast and pressing service bundle is available for departing guests.",
-        location = "Kivu Dining",
-        time = "Tomorrow morning",
-        cta = "Book bundle",
-    ),
-)
-
-private val stayAccessCard = DigitalAccessCard(
-    id = "pass_rw_48392",
-    title = "Kaze Pass",
-    subtitle = "Conference and leisure access",
-    contextLabel = "Conference guest",
-    primaryAccessRef = "Summit / Dining / Pool",
-    linkedAccess = listOf("Summit Entry", "Restaurant Access", "Pool Access", "Concierge Services"),
-    style = AccessCardStyle.EventSignature(
-        eventLabel = "East Africa Finance Summit",
-        accentHex = "#67E8F9",
-    ),
-)
-
-private val sampleHotel = Hotel(
-    id = "rw-kgl-marriott",
-    slug = "kigali-marriott",
-    name = "Kigali Marriott by Kaze",
-    market = HotelMarket.LUXURY_HOTEL,
-    timezoneId = "Africa/Kigali",
-    config = HotelConfig(
-        hotelId = "rw-kgl-marriott",
-        displayName = "Kigali Marriott",
-        branding = HotelBranding(
-            primaryHex = "#2F6970",
-            secondaryHex = "#B4874F",
-            accentHex = "#D8C6A3",
-            surfaceHex = "#FCF8F1",
-            backgroundHex = "#F3EEE5",
-            logoAsset = "branding/rw-kgl-marriott/logo.svg",
-            wordmarkAsset = "branding/rw-kgl-marriott/wordmark.svg",
-            typography = TypographySpec(
-                headingScale = 1.05f,
-                bodyScale = 1f,
-                labelScale = 0.96f,
-            ),
-        ),
-        supportedLocales = listOf("en", "fr"),
-        defaultCurrencyCode = "RWF",
-    ),
-    campus = HotelCampus(
-        city = "Kigali",
-        countryCode = "RW",
-        buildings = listOf(
-            HotelBuilding(
-                id = "main-tower",
-                name = "Main Tower",
-                floors = listOf("l1", "l9"),
-            )
-        ),
-    ),
-    activeExperiences = setOf(
-        ExperienceMode.STAY,
-        ExperienceMode.EVENT,
-        ExperienceMode.EXPLORE,
-        ExperienceMode.SERVICE_REQUESTS,
-    ),
-)

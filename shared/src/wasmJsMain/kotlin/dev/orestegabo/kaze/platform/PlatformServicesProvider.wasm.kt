@@ -1,5 +1,7 @@
 package dev.orestegabo.kaze.platform
 
+import kotlinx.browser.localStorage
+
 actual object PlatformServicesProvider {
     actual fun create(): PlatformServices = PlatformServices(
         roomKeyService = object : RoomKeyService {
@@ -15,16 +17,14 @@ actual object PlatformServicesProvider {
             override fun perform(effect: HapticEffect) = Unit
         },
         secureStore = object : SecureStore {
-            private val values = mutableMapOf<String, String>()
-
             override suspend fun put(key: String, value: String) {
-                values[key] = value
+                localStorage.setItem(key, value)
             }
 
-            override suspend fun get(key: String): String? = values[key]
+            override suspend fun get(key: String): String? = localStorage.getItem(key)
 
             override suspend fun remove(key: String) {
-                values.remove(key)
+                localStorage.removeItem(key)
             }
         },
     )

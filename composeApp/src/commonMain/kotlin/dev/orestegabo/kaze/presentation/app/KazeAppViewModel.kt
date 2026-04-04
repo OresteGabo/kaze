@@ -4,13 +4,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import dev.orestegabo.kaze.platform.SecureStore
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.navigation.KazeNavigator
 import dev.orestegabo.kaze.presentation.navigation.MapNavigationTarget
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 internal class KazeAppViewModel(
+    private val secureStore: SecureStore,
     private val navigator: KazeNavigator = KazeNavigator(),
 ) : ViewModel() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     var uiState by mutableStateOf(
         KazeAppUiState(
             currentDestination = navigator.state.currentDestination,
@@ -18,6 +27,17 @@ internal class KazeAppViewModel(
         ),
     )
         private set
+
+    init {
+        scope.launch {
+            val hasSeenOnboarding = secureStore.get(HAS_SEEN_ONBOARDING_KEY) == TRUE_VALUE
+            uiState = uiState.copy(
+                isReady = true,
+                isOnboardingVisible = !hasSeenOnboarding,
+                onboardingPage = 0,
+            )
+        }
+    }
 
     fun onOnboardingPageChanged(page: Int) {
         uiState = uiState.copy(onboardingPage = page.coerceAtLeast(0))
@@ -29,17 +49,21 @@ internal class KazeAppViewModel(
     }
 
     fun skipOnboarding() {
-        uiState = uiState.copy(
-            isOnboardingVisible = false,
-            onboardingPage = 0,
-        )
+        persistOnboardingDismissal()
     }
 
     fun completeOnboarding() {
+        persistOnboardingDismissal()
+    }
+
+    private fun persistOnboardingDismissal() {
         uiState = uiState.copy(
             isOnboardingVisible = false,
             onboardingPage = 0,
         )
+        scope.launch {
+            secureStore.put(HAS_SEEN_ONBOARDING_KEY, TRUE_VALUE)
+        }
     }
 
     fun onDestinationSelected(destination: KazeDestination) {
@@ -76,5 +100,15 @@ internal class KazeAppViewModel(
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
         )
+    }
+
+    override fun onCleared() {
+        scope.cancel()
+        super.onCleared()
+    }
+
+    private companion object {
+        const val HAS_SEEN_ONBOARDING_KEY = "app.has_seen_onboarding"
+        const val TRUE_VALUE = "true"
     }
 }

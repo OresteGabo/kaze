@@ -38,6 +38,7 @@ internal enum class StayTab(val label: String) {
 internal enum class StayScreen {
     HOME,
     LATE_CHECKOUT,
+    SERVICE_REQUEST,
 }
 
 internal data class StayMoment(
@@ -52,7 +53,62 @@ internal data class StayMoment(
 internal data class ServiceOption(
     val title: String,
     val description: String,
+    val isCustom: Boolean = false,
 )
+
+internal data class ServiceRequestDraftUi(
+    val option: ServiceOption = requestOptions.first(),
+    val window: RequestWindowOption = RequestWindowOption.AS_SOON_AS_POSSIBLE,
+    val followUp: RequestContactOption = RequestContactOption.CONFIRM_IN_APP,
+    val quantity: Int = 1,
+    val customRequest: String = "",
+    val locationNote: String = "",
+    val notes: String = "",
+)
+
+internal data class ServiceRequestRecord(
+    val id: String,
+    val option: ServiceOption,
+    val status: String,
+    val requestedAt: String,
+    val window: RequestWindowOption,
+    val followUp: RequestContactOption,
+    val quantity: Int,
+    val locationNote: String,
+    val notes: String,
+)
+
+internal enum class RequestWindowOption(
+    val label: String,
+    val description: String,
+) {
+    AS_SOON_AS_POSSIBLE(
+        label = "As soon as possible",
+        description = "Best for towels, support, or anything needed quickly.",
+    ),
+    WITHIN_30_MINUTES(
+        label = "Within 30 minutes",
+        description = "Useful when the guest is on the way back or preparing to leave.",
+    ),
+    THIS_EVENING(
+        label = "Later today",
+        description = "Send the request later in the day without an immediate visit.",
+    ),
+}
+
+internal enum class RequestContactOption(
+    val label: String,
+    val description: String,
+) {
+    CONFIRM_IN_APP(
+        label = "Confirm in app",
+        description = "Keep the request quiet and send updates through the app.",
+    ),
+    CALL_ME(
+        label = "Call me",
+        description = "Reception or service staff can call before arriving.",
+    ),
+}
 
 internal data class EventDay(
     val id: String,
@@ -187,6 +243,8 @@ internal val requestOptions = listOf(
     ServiceOption("In-room dining", "Browse menu and order directly from the app."),
     ServiceOption("Laundry pickup", "Request express or standard garment collection."),
     ServiceOption("Concierge help", "Ask for transport, reservations, or local assistance."),
+    ServiceOption("Late checkout", "Stay a little longer before checkout."),
+    ServiceOption("Custom request", "Ask for something else.", isCustom = true),
 )
 
 internal val lateCheckoutOptions = listOf(

@@ -1,11 +1,13 @@
 package dev.orestegabo.kaze.ui.stay
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,11 +26,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +43,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.orestegabo.kaze.presentation.demo.ExploreHighlight
 import dev.orestegabo.kaze.presentation.demo.FollowUpOption
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
@@ -64,6 +68,7 @@ import dev.orestegabo.kaze.ui.components.SectionHeader
 import dev.orestegabo.kaze.ui.components.SectionIntroCard
 import dev.orestegabo.kaze.ui.components.SelectableInfoCard
 import dev.orestegabo.kaze.domain.DigitalAccessCard
+import androidx.compose.foundation.layout.IntrinsicSize
 
 @Composable
 internal fun StayHomeScreen(
@@ -281,8 +286,8 @@ private fun LateCheckoutStatusCard(request: LateCheckoutRequest, onEdit: () -> U
             Text("Late checkout request", style = MaterialTheme.typography.titleMedium)
             Text("${request.option.checkoutTimeLabel} • ${request.option.feeLabel}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
             Text(request.status, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            MetaPill(request.paymentOption.label)
-            MetaPill(request.followUpOption.label)
+            MetaPill(request.paymentOption.label,)
+            MetaPill(request.followUpOption.label,)
             Text("Reception note: ${request.notes}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.82f))
             KazeSecondaryButton(label = "Edit request", onClick = onEdit)
         }
@@ -302,7 +307,7 @@ private fun LateCheckoutScreen(
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 KazeGhostButton(label = "Back", onClick = onBack)
-                if (existingRequest != null) MetaPill(existingRequest.status)
+                if (existingRequest != null) MetaPill(existingRequest.status,)
             }
         }
         item { SectionIntroCard(eyebrow = "Stay Extension", title = "Request late checkout", subtitle = "Review pricing, approval rules, payment preference, and reception follow-up in one quiet flow.") }
@@ -425,7 +430,7 @@ private fun SuggestionShowcaseCard(suggestion: ExploreHighlight, accentColor: Co
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
             Box(modifier = Modifier.fillMaxWidth().background(accentColor.copy(alpha = 0.18f)).padding(horizontal = 18.dp, vertical = 16.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetaPill("Recommended")
+                    MetaPill("Recommended",)
                     Text(suggestion.title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                     Text(suggestion.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f))
                 }
@@ -494,21 +499,117 @@ private fun StayStatusHero(onOpenRoute: () -> Unit, onViewFolio: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+        shape = RoundedCornerShape(28.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.tertiary, CircleShape).align(Alignment.CenterVertically))
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(moment.time, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
-                Text(moment.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(moment.detail, style = MaterialTheme.typography.bodyMedium)
-                Text("${moment.place} • ${moment.action}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
-                KazeSecondaryButton(label = moment.action, onClick = onOpen)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+                .height(IntrinsicSize.Min), // Forces the Row to calculate the height of the right column
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // --- LEFT COLUMN (Timeline) ---
+            Column(
+                modifier = Modifier.width(70.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                val timeParts = moment.time.split("•").map { it.trim() }
+                Text(
+                    timeParts.firstOrNull().orEmpty(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.74f),
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    timeParts.getOrElse(1) { moment.time },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // This line now fills the space dynamically
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .weight(1f)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
+                            shape = CircleShape
+                        ),
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                    ),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "UNTIL",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.72f),
+                        )
+                        Text(
+                            moment.endTime,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+
+            // --- RIGHT COLUMN (Content) ---
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        moment.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        moment.detail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
+                        lineHeight = 20.sp
+                    )
+                }
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    MetaPill(moment.place)
+                    // You can use the optional color here if you updated MetaPill
+                    MetaPill("Scheduled")
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                KazeSecondaryButton(
+                    label = moment.action,
+                    onClick = onOpen,
+                    modifier = Modifier.fillMaxWidth() // Makes the card feel grounded
+                )
             }
         }
     }

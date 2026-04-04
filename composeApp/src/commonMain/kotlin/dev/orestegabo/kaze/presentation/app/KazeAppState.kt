@@ -4,7 +4,8 @@ import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.navigation.MapNavigationTarget
 
 internal data class KazeAppUiState(
-    val isOnboardingVisible: Boolean = true,
+    val isReady: Boolean = false,
+    val isOnboardingVisible: Boolean = false,
     val onboardingPage: Int = 0,
     val currentDestination: KazeDestination = KazeDestination.STAY,
     val activeMapTarget: MapNavigationTarget = MapNavigationTarget(),

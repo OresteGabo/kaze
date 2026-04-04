@@ -158,9 +158,9 @@ private fun SessionCard(
             Text(session.title, style = MaterialTheme.typography.titleLarge)
             Text(session.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill(session.venueLabel)
-                session.hostLabel?.let { MetaPill(it) }
-                MetaPill("Open map")
+                MetaPill(session.venueLabel,)
+                session.hostLabel?.let { MetaPill(it,) }
+                MetaPill("Open map",)
             }
             KazeSecondaryButton(label = "Open map", onClick = onOpenMap)
         }

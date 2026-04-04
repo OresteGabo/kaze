@@ -74,9 +74,9 @@ private fun ExploreCard(
             Text(highlight.title, style = MaterialTheme.typography.titleLarge)
             Text(highlight.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill(highlight.locationLabel)
-                MetaPill(highlight.availabilityLabel)
-                MetaPill(highlight.actionLabel)
+                MetaPill(highlight.locationLabel,)
+                MetaPill(highlight.availabilityLabel,)
+                MetaPill(highlight.actionLabel,)
             }
             KazeSecondaryButton(label = highlight.actionLabel, onClick = onActionClick)
         }

@@ -51,7 +51,7 @@ import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import kaze.composeapp.generated.resources.Res
-import kaze.composeapp.generated.resources.gabo_mark_raster
+import kaze.composeapp.generated.resources.k_mark_raster
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -109,8 +109,8 @@ private fun SignatureStayCard(
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.gabo_mark_raster),
-                    contentDescription = "GABO mark",
+                    painter = painterResource(Res.drawable.k_mark_raster),
+                    contentDescription = "Kaze mark",
                     modifier = Modifier.size(92.dp),
                     alpha = 0.38f,
                 )

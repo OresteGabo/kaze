@@ -17,7 +17,7 @@
     <path
         d="M 70,28 H 42 L 25,50 42,72 H 70 M 50.788461,49.278846 69.663462,71.394231 m -0.451923,-42.35577 -13.687314,15.212104 -4.697301,4.920107"
         stroke="#6d5e0f"
-        stroke-width="9"
+        stroke-width="6"
         stroke-linejoin="round"
         stroke-linecap="round"
         fill="none" />

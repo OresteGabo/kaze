@@ -62,12 +62,7 @@ internal fun StayAccessCardSection(
     val hotelName = KazeTheme.hotelConfig.displayName
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Access pass", style = MaterialTheme.typography.titleMedium)
-        Text(
-            "One signature card can carry room, event, dining, wellness, or day-visitor access. Tap to reveal what is linked to it.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
-        )
+        Text("Kaze pass", style = MaterialTheme.typography.titleMedium)
         SignatureStayCard(card = card, hotelName = hotelName, onClick = { showDetails = true })
         if (showDetails) {
             AccessCardDialog(card = card, hotelName = hotelName, onDismiss = { showDetails = false })

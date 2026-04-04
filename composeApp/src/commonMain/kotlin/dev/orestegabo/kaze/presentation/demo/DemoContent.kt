@@ -42,6 +42,7 @@ internal enum class StayScreen {
 
 internal data class StayMoment(
     val time: String,
+    val endTime: String,
     val title: String,
     val detail: String,
     val place: String,
@@ -157,6 +158,7 @@ internal sealed interface StayPrimaryAction {
 internal val stayMoments = listOf(
     StayMoment(
         time = "Today • 14:00",
+        endTime = "15:15",
         title = "Signature massage",
         detail = "Reserved treatment slot with a 15-minute arrival window.",
         place = "Ubumwe Spa",
@@ -164,6 +166,7 @@ internal val stayMoments = listOf(
     ),
     StayMoment(
         time = "Today • 19:30",
+        endTime = "22:00",
         title = "Chef's tasting dinner",
         detail = "Window table reserved for two with vegetarian preference noted.",
         place = "Kivu Dining",
@@ -171,6 +174,7 @@ internal val stayMoments = listOf(
     ),
     StayMoment(
         time = "Tomorrow • 08:00",
+        endTime = "08:30",
         title = "Airport transfer",
         detail = "Vehicle confirmed. Pickup point is the main porte-cochere.",
         place = "Front Drive",

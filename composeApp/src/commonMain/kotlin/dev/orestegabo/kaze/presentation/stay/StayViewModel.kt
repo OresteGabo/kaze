@@ -11,9 +11,13 @@ import dev.orestegabo.kaze.domain.guest.LateCheckoutSelection
 import dev.orestegabo.kaze.domain.guest.PaymentPreference
 import dev.orestegabo.kaze.domain.guest.ServiceRequestDraft
 import dev.orestegabo.kaze.domain.guest.ServiceRequestType
-import dev.orestegabo.kaze.presentation.demo.ServiceOption
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
+import dev.orestegabo.kaze.presentation.demo.RequestContactOption
+import dev.orestegabo.kaze.presentation.demo.RequestWindowOption
+import dev.orestegabo.kaze.presentation.demo.ServiceOption
+import dev.orestegabo.kaze.presentation.demo.ServiceRequestDraftUi
+import dev.orestegabo.kaze.presentation.demo.ServiceRequestRecord
 import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
 import dev.orestegabo.kaze.presentation.demo.StayScreen
 import dev.orestegabo.kaze.presentation.demo.StayTab
@@ -59,6 +63,10 @@ internal class StayViewModel(
         uiState = uiState.copy(lateCheckoutDraft = draft)
     }
 
+    fun onServiceRequestDraftChange(draft: ServiceRequestDraftUi) {
+        uiState = uiState.copy(serviceRequestDraft = draft)
+    }
+
     fun submitLateCheckout(draft: LateCheckoutDraft): StayActionResult.Feedback {
         val decision = runImmediateSuspend {
             submitLateCheckoutUseCase(
@@ -97,6 +105,58 @@ internal class StayViewModel(
         )
     }
 
+    fun submitServiceRequest(draft: ServiceRequestDraftUi): StayActionResult.Feedback {
+        val receipt = runImmediateSuspend {
+            stayRepository.submitServiceRequest(
+                ServiceRequestDraft(
+                    guest = guestIdentity,
+                    type = draft.option.toDomainRequestType(),
+                    note = buildString {
+                        if (draft.option.isCustom && draft.customRequest.isNotBlank()) {
+                            append(draft.customRequest.trim())
+                        }
+                        if (draft.notes.isNotBlank()) {
+                            if (isNotEmpty()) append("\n")
+                            append(draft.notes.trim())
+                        }
+                    }.ifBlank { null },
+                ),
+            )
+        }
+
+        // TODO replace local request records with repository-backed request history once real APIs are wired.
+        val requestRecord = ServiceRequestRecord(
+            id = "req_${uiState.submittedServiceRequests.size + 1}",
+            option = draft.option,
+            status = "Pending hotel confirmation",
+            requestedAt = "Requested just now",
+            window = draft.window,
+            followUp = draft.followUp,
+            quantity = draft.quantity,
+            locationNote = draft.locationNote,
+            notes = buildString {
+                if (draft.option.isCustom && draft.customRequest.isNotBlank()) {
+                    append(draft.customRequest.trim())
+                }
+                if (draft.notes.isNotBlank()) {
+                    if (isNotEmpty()) append("\n")
+                    append(draft.notes.trim())
+                }
+            },
+        )
+
+        uiState = uiState.copy(
+            activeStayScreen = StayScreen.HOME,
+            selectedTab = StayTab.REQUESTS,
+            serviceRequestDraft = ServiceRequestDraftUi(option = draft.option),
+            submittedServiceRequests = listOf(requestRecord) + uiState.submittedServiceRequests,
+        )
+
+        return StayActionResult.Feedback(
+            "${draft.option.title} request sent. ${receipt.note ?: "The hotel will confirm it shortly."}",
+        )
+    }
+
     fun handleAction(action: StayPrimaryAction): StayActionResult? = when (action) {
         StayPrimaryAction.OPEN_ROUTE -> StayActionResult.NavigateToMap(
             route = "Guest arrival to Great Rift Ballroom",
@@ -128,15 +188,12 @@ internal class StayViewModel(
         StayPrimaryAction.SEE_FULL_AGENDA -> StayActionResult.NavigateToEvents
         is StayPrimaryAction.OpenStayMoment -> null
         is StayPrimaryAction.RequestService -> {
-            val receipt = runImmediateSuspend {
-                stayRepository.submitServiceRequest(
-                    ServiceRequestDraft(
-                        guest = guestIdentity,
-                        type = action.option.toDomainRequestType(),
-                    ),
-                )
-            }
-            StayActionResult.Feedback("${action.option.title} request sent. ${receipt.note.orEmpty()}".trim())
+            uiState = uiState.copy(
+                activeStayScreen = StayScreen.SERVICE_REQUEST,
+                selectedTab = StayTab.REQUESTS,
+                serviceRequestDraft = ServiceRequestDraftUi(option = action.option),
+            )
+            null
         }
         is StayPrimaryAction.OpenSuggestion -> {
             if (action.suggestion.cta == "Open route") {

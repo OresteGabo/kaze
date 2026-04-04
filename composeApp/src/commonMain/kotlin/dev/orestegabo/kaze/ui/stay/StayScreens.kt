@@ -300,7 +300,12 @@ private fun ServiceRequestsTab(
                 ServiceRequestHistoryCard(request = request)
             }
         }
-        SectionIntroCard(eyebrow = "Requests", title = "Hotel services", subtitle = "Ask for support without calling the desk. Requests stay visible and easy to track.")
+        SectionIntroCard(
+            eyebrow = "Requests",
+            title = "Hotel services",
+            subtitle = "Ask for support without calling the desk. Requests stay visible and easy to track.",
+            eyebrowColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+        )
         requestOptions.chunked(2).forEach { rowItems ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { option ->

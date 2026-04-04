@@ -218,6 +218,7 @@ internal fun SectionIntroCard(
     eyebrow: String,
     title: String,
     subtitle: String,
+    eyebrowColor: Color = MaterialTheme.colorScheme.tertiary,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)),
@@ -228,7 +229,7 @@ internal fun SectionIntroCard(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(eyebrow, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+            Text(eyebrow, style = MaterialTheme.typography.labelLarge, color = eyebrowColor)
             Text(title, style = MaterialTheme.typography.headlineSmall)
             Text(
                 subtitle,

@@ -124,10 +124,8 @@ internal fun StayHomeScreen(
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 when (StayTab.entries[page]) {
                     StayTab.MY_STAY -> StayTabContent(
-                        hotelDisplayName = hotelDisplayName,
                         accessCard = accessCard,
                         stayMoments = stayMoments,
-                        lateCheckoutRequest = lateCheckoutRequest,
                         onPrimaryAction = onPrimaryAction,
                     )
                     StayTab.REQUESTS -> ServiceRequestsTab(
@@ -217,24 +215,14 @@ private fun StaySegmentedTabs(selectedTab: StayTab, onTabChange: (StayTab) -> Un
 
 @Composable
 private fun StayTabContent(
-    hotelDisplayName: String,
     accessCard: DigitalAccessCard?,
     stayMoments: List<StayMoment>,
-    lateCheckoutRequest: LateCheckoutRequest?,
     onPrimaryAction: (StayPrimaryAction) -> Unit,
 ) {
     val scrollState = rememberScrollState()
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         accessCard?.let { StayAccessCardSection(card = it) }
         StayStatusHero(onOpenRoute = { onPrimaryAction(StayPrimaryAction.OPEN_ROUTE) }, onViewFolio = { onPrimaryAction(StayPrimaryAction.VIEW_FOLIO) })
-        ConciergeInfoCard(
-            title = "My itinerary",
-            body = "Your confirmed access, reservations, event moments, and service plans are organized like a personalized agenda.",
-            actionPrimary = "Sync to calendar",
-            actionSecondary = "Share with partner",
-            onPrimaryClick = { onPrimaryAction(StayPrimaryAction.SYNC_CALENDAR) },
-            onSecondaryClick = { onPrimaryAction(StayPrimaryAction.SHARE_STAY) },
-        )
         stayMoments.forEach { moment -> StayMomentCard(moment = moment, onOpen = { onPrimaryAction(StayPrimaryAction.OpenStayMoment(moment)) }) }
     }
 }
@@ -491,37 +479,16 @@ private fun StayStatusHero(onOpenRoute: () -> Unit, onViewFolio: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Active access profile", style = MaterialTheme.typography.titleMedium)
-                Text("Conference guest • Dining, pool, and event access connected", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f))
+                Text("Ready now", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Open the map for your next destination or review your current hotel charges.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+                )
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 KazePrimaryButton(label = "Open route", onClick = onOpenRoute)
-                KazeGhostButton(label = "View folio", onClick = onViewFolio)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ConciergeInfoCard(
-    title: String,
-    body: String,
-    actionPrimary: String,
-    actionSecondary: String,
-    onPrimaryClick: () -> Unit,
-    onSecondaryClick: () -> Unit,
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(26.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
-    ) {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge)
-            Text(body, style = MaterialTheme.typography.bodyMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KazePrimaryButton(label = actionPrimary, onClick = onPrimaryClick)
-                KazeSecondaryButton(label = actionSecondary, onClick = onSecondaryClick)
+                KazeGhostButton(label = "My charges", onClick = onViewFolio)
             }
         }
     }

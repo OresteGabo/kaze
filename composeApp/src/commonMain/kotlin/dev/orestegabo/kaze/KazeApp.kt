@@ -150,7 +150,6 @@ fun App() {
                         Column(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
                             DemoFeedbackBanner(
                                 message = uiState.feedbackMessage,
-                                onDismiss = appViewModel::dismissFeedback,
                             )
 
                             when (uiState.currentDestination) {
@@ -168,10 +167,14 @@ fun App() {
                                     activeStayScreen = stayUiState.activeStayScreen,
                                     lateCheckoutRequest = stayUiState.lateCheckoutRequest,
                                     lateCheckoutDraft = stayUiState.lateCheckoutDraft,
+                                    serviceRequestDraft = stayUiState.serviceRequestDraft,
+                                    submittedServiceRequests = stayUiState.submittedServiceRequests,
                                     onTabChange = stayViewModel::onTabChange,
                                     onBackToStayHome = stayViewModel::onBackToHome,
                                     onLateCheckoutDraftChange = stayViewModel::onDraftChange,
                                     onLateCheckoutSubmit = { draft -> handleStayResult(stayViewModel.submitLateCheckout(draft)) },
+                                    onServiceRequestDraftChange = stayViewModel::onServiceRequestDraftChange,
+                                    onServiceRequestSubmit = { draft -> handleStayResult(stayViewModel.submitServiceRequest(draft)) },
                                     onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
                                 )
 

@@ -423,7 +423,12 @@ private fun CompactStayHeader(hotelName: String, guestName: String, roomLabel: S
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(hotelName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+            Text(
+                hotelName,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.82f),
+            )
             Text("Welcome, $guestName", style = MaterialTheme.typography.titleLarge)
             Text(roomLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f))
         }

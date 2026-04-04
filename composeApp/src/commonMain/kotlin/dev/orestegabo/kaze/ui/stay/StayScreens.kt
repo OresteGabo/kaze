@@ -1240,18 +1240,18 @@ private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val timeParts = moment.time.split("•").map { it.trim() }
-                Text(
-                    timeParts.firstOrNull().orEmpty(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.74f),
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    timeParts.getOrElse(1) { moment.time },
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                )
+                    Text(
+                        timeParts.firstOrNull().orEmpty(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        timeParts.getOrElse(1) { moment.time },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                    )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -1261,7 +1261,7 @@ private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
                         .width(2.dp)
                         .weight(1f)
                         .background(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
                             shape = CircleShape
                         ),
                 )
@@ -1273,7 +1273,7 @@ private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     border = BorderStroke(
                         1.dp,
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f),
                     ),
                 ) {
                     Column(
@@ -1283,13 +1283,13 @@ private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
                         Text(
                             "UNTIL",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.72f),
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.78f),
                         )
                         Text(
                             moment.endTime,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -1318,9 +1318,17 @@ private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    MetaPill(moment.place)
+                    MetaPill(
+                        label = moment.place,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.74f),
+                        textColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
                     // You can use the optional color here if you updated MetaPill
-                    MetaPill("Scheduled")
+                    MetaPill(
+                        label = "Scheduled",
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
+                        textColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))

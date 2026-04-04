@@ -153,7 +153,8 @@ internal fun KazeRoundButton(
 @Composable
 internal fun MetaPill(
     label: String,
-    containerColor: Color = MaterialTheme.colorScheme.primaryContainer // Default color
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     Surface(
         shape = RoundedCornerShape(999.dp),
@@ -163,7 +164,8 @@ internal fun MetaPill(
             label,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), // Slightly tighter vertical padding
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            color = textColor,
         )
     }
 }
@@ -218,7 +220,7 @@ internal fun SectionIntroCard(
     eyebrow: String,
     title: String,
     subtitle: String,
-    eyebrowColor: Color = MaterialTheme.colorScheme.tertiary,
+    eyebrowColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)),

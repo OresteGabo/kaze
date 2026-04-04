@@ -3,10 +3,12 @@ package dev.orestegabo.kaze.theme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import dev.orestegabo.kaze.domain.HotelConfig
@@ -42,6 +44,21 @@ data class KazePassPalette(
     val cardChipText: Color,
 )
 
+@Immutable
+data class KazeUiPalette(
+    val ambientBottom: Color,
+    val ambientLineStrong: Color,
+    val ambientLineSoft: Color,
+    val ambientCirclePrimary: Color,
+    val ambientCircleSecondary: Color,
+    val ambientPanelTop: Color,
+    val ambientPanelBottom: Color,
+    val floatingShell: Color,
+    val floatingShellBorder: Color,
+    val successContainer: Color,
+    val successContent: Color,
+)
+
 private val LocalBrandAssets = staticCompositionLocalOf {
     KazeBrandAssets(logoAsset = "", wordmarkAsset = "")
 }
@@ -67,6 +84,22 @@ private val LocalPassPalette = staticCompositionLocalOf {
     )
 }
 
+private val LocalUiPalette = staticCompositionLocalOf {
+    KazeUiPalette(
+        ambientBottom = Color(0xFFF0EAE0),
+        ambientLineStrong = Color(0x223A6B73),
+        ambientLineSoft = Color(0x1A8C6B4F),
+        ambientCirclePrimary = Color(0x143A6B73),
+        ambientCircleSecondary = Color(0x128C6B4F),
+        ambientPanelTop = Color(0x0D3A6B73),
+        ambientPanelBottom = Color(0x0A8C6B4F),
+        floatingShell = Color(0xF0FFF9F0),
+        floatingShellBorder = Color(0x268C6B4F),
+        successContainer = Color(0x1F2E8B57),
+        successContent = Color(0xFF2E8B57),
+    )
+}
+
 object KazeTheme {
     val hotelConfig: HotelConfig
         @Composable
@@ -83,13 +116,19 @@ object KazeTheme {
     val pass: KazePassPalette
         @Composable
         get() = LocalPassPalette.current
+
+    val ui: KazeUiPalette
+        @Composable
+        get() = LocalUiPalette.current
 }
 
 @Composable
 fun KazeTheme(
     hotelConfig: HotelConfig,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    val colorScheme = hotelConfig.branding.toColorScheme(darkTheme)
     CompositionLocalProvider(
         LocalHotelConfig provides hotelConfig,
         LocalBrandAssets provides KazeBrandAssets(
@@ -98,56 +137,125 @@ fun KazeTheme(
         ),
         LocalAccentPalette provides KazeAccentPalette(
             editorialWarm = hotelConfig.branding.secondaryHex.toColor(),
-            editorialBotanical = hotelConfig.branding.accentHex.toColor().copy(alpha = 0.86f),
-            editorialClay = hotelConfig.branding.primaryHex.toColor().copy(alpha = 0.62f),
+            editorialBotanical = if (darkTheme) hotelConfig.branding.accentHex.toColor().lighten(0.08f) else hotelConfig.branding.accentHex.toColor().copy(alpha = 0.86f),
+            editorialClay = if (darkTheme) hotelConfig.branding.primaryHex.toColor().lighten(0.14f) else hotelConfig.branding.primaryHex.toColor().copy(alpha = 0.62f),
         ),
         LocalPassPalette provides KazePassPalette(
-            cardBaseStart = hotelConfig.branding.primaryHex.toColor().darken(0.62f),
-            cardBaseMiddle = hotelConfig.branding.primaryHex.toColor().darken(0.42f),
-            cardBaseEnd = hotelConfig.branding.secondaryHex.toColor().darken(0.28f),
-            cardOverlay = hotelConfig.branding.accentHex.toColor().copy(alpha = 0.10f),
+            cardBaseStart = if (darkTheme) hotelConfig.branding.primaryHex.toColor().darken(0.72f) else hotelConfig.branding.primaryHex.toColor().darken(0.62f),
+            cardBaseMiddle = if (darkTheme) hotelConfig.branding.primaryHex.toColor().darken(0.54f) else hotelConfig.branding.primaryHex.toColor().darken(0.42f),
+            cardBaseEnd = if (darkTheme) hotelConfig.branding.secondaryHex.toColor().darken(0.42f) else hotelConfig.branding.secondaryHex.toColor().darken(0.28f),
+            cardOverlay = hotelConfig.branding.accentHex.toColor().copy(alpha = if (darkTheme) 0.14f else 0.10f),
             cardOnSurface = Color(0xFFFFFBF5),
             cardOnSurfaceMuted = Color(0xCCFFF8EE),
             cardChip = Color(0x2EFFF8EE),
             cardChipText = Color(0xFFFFFBF5),
         ),
+        LocalUiPalette provides hotelConfig.branding.toUiPalette(darkTheme),
     ) {
         MaterialTheme(
-            colorScheme = hotelConfig.branding.toColorScheme(),
+            colorScheme = colorScheme,
             typography = hotelConfig.branding.typography.toTypography(),
             content = content,
         )
     }
 }
 
-private fun HotelBranding.toColorScheme(): ColorScheme {
+private fun HotelBranding.toColorScheme(darkTheme: Boolean): ColorScheme {
     val primary = primaryHex.toColor()
     val secondary = secondaryHex.toColor()
     val accent = accentHex.toColor()
     val surface = surfaceHex.toColor()
     val background = backgroundHex.toColor()
 
-    return lightColorScheme(
-        primary = primary,
-        onPrimary = primary.bestContrastingText(),
-        secondary = secondary,
-        onSecondary = secondary.bestContrastingText(),
-        tertiary = accent,
-        onTertiary = accent.bestContrastingText(),
-        surface = surface,
-        onSurface = surface.bestContrastingText(),
-        background = background,
-        onBackground = background.bestContrastingText(),
-        primaryContainer = primary.copy(alpha = 0.12f),
-        onPrimaryContainer = Color(0xFF183236),
-        secondaryContainer = secondary.copy(alpha = 0.14f),
-        onSecondaryContainer = Color(0xFF4C3317),
-        tertiaryContainer = accent.copy(alpha = 0.20f),
-        onTertiaryContainer = Color(0xFF5A4930),
-        surfaceVariant = Color(0xFFF0EAE0),
-        onSurfaceVariant = Color(0xFF5E5A52),
-        outline = Color(0xFFD4CABB),
-    )
+    return if (darkTheme) {
+        val darkBackground = background.darken(0.84f).blend(primary.darken(0.88f), 0.20f)
+        val darkSurface = surface.darken(0.78f).blend(primary.darken(0.86f), 0.18f)
+        val darkSurfaceVariant = darkSurface.lighten(0.08f)
+        val darkOutline = darkSurfaceVariant.lighten(0.22f)
+        val darkPrimary = primary.lighten(0.08f)
+        val darkSecondary = secondary.lighten(0.06f)
+        val darkAccent = accent.lighten(0.10f)
+
+        darkColorScheme(
+            primary = darkPrimary,
+            onPrimary = darkPrimary.bestContrastingText(),
+            secondary = darkSecondary,
+            onSecondary = darkSecondary.bestContrastingText(),
+            tertiary = darkAccent,
+            onTertiary = darkAccent.bestContrastingText(),
+            background = darkBackground,
+            onBackground = darkBackground.bestContrastingText(),
+            surface = darkSurface,
+            onSurface = darkSurface.bestContrastingText(),
+            primaryContainer = darkPrimary.darken(0.42f),
+            onPrimaryContainer = darkPrimary.darken(0.42f).bestContrastingText(),
+            secondaryContainer = darkSecondary.darken(0.48f),
+            onSecondaryContainer = darkSecondary.darken(0.48f).bestContrastingText(),
+            tertiaryContainer = darkAccent.darken(0.52f),
+            onTertiaryContainer = darkAccent.darken(0.52f).bestContrastingText(),
+            surfaceVariant = darkSurfaceVariant,
+            onSurfaceVariant = darkSurfaceVariant.bestContrastingText().copy(alpha = 0.78f),
+            outline = darkOutline,
+        )
+    } else {
+        lightColorScheme(
+            primary = primary,
+            onPrimary = primary.bestContrastingText(),
+            secondary = secondary,
+            onSecondary = secondary.bestContrastingText(),
+            tertiary = accent,
+            onTertiary = accent.bestContrastingText(),
+            surface = surface,
+            onSurface = surface.bestContrastingText(),
+            background = background,
+            onBackground = background.bestContrastingText(),
+            primaryContainer = primary.copy(alpha = 0.12f),
+            onPrimaryContainer = primary.darken(0.72f),
+            secondaryContainer = secondary.copy(alpha = 0.14f),
+            onSecondaryContainer = secondary.darken(0.72f),
+            tertiaryContainer = accent.copy(alpha = 0.20f),
+            onTertiaryContainer = accent.darken(0.72f),
+            surfaceVariant = Color(0xFFF0EAE0),
+            onSurfaceVariant = Color(0xFF5E5A52),
+            outline = Color(0xFFD4CABB),
+        )
+    }
+}
+
+private fun HotelBranding.toUiPalette(darkTheme: Boolean): KazeUiPalette {
+    val primary = primaryHex.toColor()
+    val secondary = secondaryHex.toColor()
+    val accent = accentHex.toColor()
+
+    return if (darkTheme) {
+        KazeUiPalette(
+            ambientBottom = primary.darken(0.84f).blend(accent.darken(0.88f), 0.14f),
+            ambientLineStrong = primary.lighten(0.18f).copy(alpha = 0.22f),
+            ambientLineSoft = accent.lighten(0.18f).copy(alpha = 0.18f),
+            ambientCirclePrimary = primary.lighten(0.16f).copy(alpha = 0.12f),
+            ambientCircleSecondary = accent.lighten(0.14f).copy(alpha = 0.11f),
+            ambientPanelTop = primary.lighten(0.12f).copy(alpha = 0.08f),
+            ambientPanelBottom = accent.lighten(0.12f).copy(alpha = 0.07f),
+            floatingShell = surfaceHex.toColor().darken(0.76f).copy(alpha = 0.92f),
+            floatingShellBorder = secondary.lighten(0.08f).copy(alpha = 0.22f),
+            successContainer = Color(0x1F66C38C),
+            successContent = Color(0xFF8EDFAE),
+        )
+    } else {
+        KazeUiPalette(
+            ambientBottom = Color(0xFFF0EAE0),
+            ambientLineStrong = primary.copy(alpha = 0.13f),
+            ambientLineSoft = accent.copy(alpha = 0.10f),
+            ambientCirclePrimary = primary.copy(alpha = 0.08f),
+            ambientCircleSecondary = accent.copy(alpha = 0.07f),
+            ambientPanelTop = primary.copy(alpha = 0.035f),
+            ambientPanelBottom = accent.copy(alpha = 0.028f),
+            floatingShell = surfaceHex.toColor().copy(alpha = 0.94f),
+            floatingShellBorder = secondary.copy(alpha = 0.16f),
+            successContainer = Color(0x1F2E8B57),
+            successContent = Color(0xFF2E8B57),
+        )
+    }
 }
 
 private fun TypographySpec.toTypography(): Typography {
@@ -183,4 +291,18 @@ private fun Color.darken(factor: Float): Color = Color(
     green = green * (1f - factor),
     blue = blue * (1f - factor),
     alpha = alpha,
+)
+
+private fun Color.lighten(factor: Float): Color = Color(
+    red = red + ((1f - red) * factor),
+    green = green + ((1f - green) * factor),
+    blue = blue + ((1f - blue) * factor),
+    alpha = alpha,
+)
+
+private fun Color.blend(other: Color, ratio: Float): Color = Color(
+    red = red * (1f - ratio) + other.red * ratio,
+    green = green * (1f - ratio) + other.green * ratio,
+    blue = blue * (1f - ratio) + other.blue * ratio,
+    alpha = alpha * (1f - ratio) + other.alpha * ratio,
 )

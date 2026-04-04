@@ -38,17 +38,19 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
+import dev.orestegabo.kaze.theme.KazeTheme
 
 @Composable
 internal fun KazeAmbientBackground(modifier: Modifier = Modifier) {
+    val uiPalette = KazeTheme.ui
     val baseTop = MaterialTheme.colorScheme.background
-    val baseBottom = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
-    val lineColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
-    val softLineColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f)
-    val circlePrimary = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-    val circleTertiary = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.07f)
-    val topPanelColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.035f)
-    val bottomPanelColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.028f)
+    val baseBottom = uiPalette.ambientBottom
+    val lineColor = uiPalette.ambientLineStrong
+    val softLineColor = uiPalette.ambientLineSoft
+    val circlePrimary = uiPalette.ambientCirclePrimary
+    val circleTertiary = uiPalette.ambientCircleSecondary
+    val topPanelColor = uiPalette.ambientPanelTop
+    val bottomPanelColor = uiPalette.ambientPanelBottom
 
     Canvas(modifier = modifier.background(Brush.verticalGradient(listOf(baseTop, baseTop, baseBottom)))) {
         val w = size.width
@@ -118,13 +120,14 @@ internal fun KazeBottomBar(
     currentDestination: KazeDestination,
     onDestinationSelected: (KazeDestination) -> Unit,
 ) {
+    val uiPalette = KazeTheme.ui
     Surface(
         modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 14.dp),
         shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        color = uiPalette.floatingShell,
         tonalElevation = 8.dp,
         shadowElevation = 14.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f)),
+        border = BorderStroke(1.dp, uiPalette.floatingShellBorder),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
@@ -234,6 +237,7 @@ internal fun DemoFeedbackBanner(
     message: String,
 ) {
     if (message.isBlank()) return
+    val uiPalette = KazeTheme.ui
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
@@ -247,7 +251,7 @@ internal fun DemoFeedbackBanner(
         ) {
             Surface(
                 shape = CircleShape,
-                color = Color(0xFF2E8B57).copy(alpha = 0.14f),
+                color = uiPalette.successContainer,
             ) {
                 Box(
                     modifier = Modifier.size(32.dp),
@@ -256,7 +260,7 @@ internal fun DemoFeedbackBanner(
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = Color(0xFF2E8B57),
+                        tint = uiPalette.successContent,
                         modifier = Modifier.size(18.dp),
                     )
                 }

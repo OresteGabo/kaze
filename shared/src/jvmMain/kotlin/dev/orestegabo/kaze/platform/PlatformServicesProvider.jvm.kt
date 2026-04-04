@@ -1,5 +1,7 @@
 package dev.orestegabo.kaze.platform
 
+import java.util.prefs.Preferences
+
 actual object PlatformServicesProvider {
     actual fun create(): PlatformServices = PlatformServices(
         roomKeyService = object : RoomKeyService {
@@ -15,16 +17,16 @@ actual object PlatformServicesProvider {
             override fun perform(effect: HapticEffect) = Unit
         },
         secureStore = object : SecureStore {
-            private val values = mutableMapOf<String, String>()
+            private val preferences = Preferences.userRoot().node("dev.orestegabo.kaze")
 
             override suspend fun put(key: String, value: String) {
-                values[key] = value
+                preferences.put(key, value)
             }
 
-            override suspend fun get(key: String): String? = values[key]
+            override suspend fun get(key: String): String? = preferences.get(key, null)
 
             override suspend fun remove(key: String) {
-                values.remove(key)
+                preferences.remove(key)
             }
         },
     )

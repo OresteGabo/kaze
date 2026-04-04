@@ -128,6 +128,8 @@ internal fun StayHomeScreen(
         return
     }
 
+    val activeRequestCount = submittedServiceRequests.size + if (lateCheckoutRequest != null) 1 else 0
+
     Column(modifier = modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
         val pagerState = rememberPagerState(initialPage = selectedTab.ordinal, pageCount = { StayTab.entries.size })
 
@@ -148,7 +150,11 @@ internal fun StayHomeScreen(
             )
         }
         Spacer(Modifier.height(8.dp))
-        StaySegmentedTabs(selectedTab = selectedTab, onTabChange = onTabChange)
+        StaySegmentedTabs(
+            selectedTab = selectedTab,
+            onTabChange = onTabChange,
+            requestsBadgeCount = activeRequestCount,
+        )
         Spacer(Modifier.height(10.dp))
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
@@ -175,7 +181,11 @@ internal fun StayHomeScreen(
 }
 
 @Composable
-private fun StaySegmentedTabs(selectedTab: StayTab, onTabChange: (StayTab) -> Unit) {
+private fun StaySegmentedTabs(
+    selectedTab: StayTab,
+    onTabChange: (StayTab) -> Unit,
+    requestsBadgeCount: Int = 0,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -238,6 +248,20 @@ private fun StaySegmentedTabs(selectedTab: StayTab, onTabChange: (StayTab) -> Un
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
                     )
+                    if (tab == StayTab.REQUESTS && requestsBadgeCount > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = if (selected) 0.92f else 0.18f),
+                        ) {
+                            Text(
+                                text = requestsBadgeCount.coerceAtMost(9).toString(),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                    }
                 }
             }
         }

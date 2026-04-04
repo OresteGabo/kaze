@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -86,25 +89,14 @@ internal fun MapScreen(
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            Row(
+            FloorSelectorRail(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp, start = 20.dp, end = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                FloorSelectorChip(
-                    modifier = Modifier.weight(1f),
-                    label = floors.getOrNull(0)?.label ?: "Ground floor",
-                    selected = activeFloorId == (floors.getOrNull(0)?.id ?: "l1"),
-                    onClick = { floors.getOrNull(0)?.id?.let(onFloorSelected) },
-                )
-                FloorSelectorChip(
-                    modifier = Modifier.weight(1f),
-                    label = floors.getOrNull(1)?.label ?: "First floor",
-                    selected = activeFloorId == (floors.getOrNull(1)?.id ?: "l9"),
-                    onClick = { floors.getOrNull(1)?.id?.let(onFloorSelected) },
-                )
-            }
+                floors = floors,
+                activeFloorId = activeFloorId,
+                onFloorSelected = onFloorSelected,
+            )
             Spacer(Modifier.height(8.dp))
             Text(
                 activeRoute,
@@ -140,56 +132,89 @@ internal fun MapScreen(
 }
 
 @Composable
+private fun FloorSelectorRail(
+    modifier: Modifier = Modifier,
+    floors: List<FloorLevel>,
+    activeFloorId: String,
+    onFloorSelected: (String) -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+        tonalElevation = 2.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            floors.forEach { floor ->
+                FloorSelectorChip(
+                    label = floor.label,
+                    selected = activeFloorId == floor.id,
+                    onClick = { onFloorSelected(floor.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun FloorSelectorChip(
     modifier: Modifier = Modifier,
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(999.dp)
-    val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
-    }
-    val borderColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-    } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-    }
-    val textColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f)
-    }
-
-    Row(
+    val itemShape = RoundedCornerShape(18.dp)
+    Column(
         modifier = modifier
-            .clip(shape)
-            .background(containerColor)
-            .border(1.dp, borderColor, shape)
+            .clip(itemShape)
+            .background(
+                if (selected) {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                        ),
+                    )
+                } else {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.1f),
+                        ),
+                    )
+                },
+            )
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(if (selected) 9.dp else 7.dp)
-                .clip(CircleShape)
+                .width(if (selected) 28.dp else 18.dp)
+                .height(if (selected) 4.dp else 3.dp)
+                .clip(RoundedCornerShape(999.dp))
                 .background(
                     if (selected) {
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.92f)
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.74f)
                     } else {
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)
                     },
                 ),
         )
-        Spacer(Modifier.width(10.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = textColor,
+            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

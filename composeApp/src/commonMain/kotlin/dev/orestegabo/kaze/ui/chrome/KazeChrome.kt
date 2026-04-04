@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,7 +38,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
-import dev.orestegabo.kaze.ui.components.KazeGhostButton
 
 @Composable
 internal fun KazeAmbientBackground(modifier: Modifier = Modifier) {
@@ -231,28 +232,41 @@ internal fun KazeBottomBar(
 @Composable
 internal fun DemoFeedbackBanner(
     message: String,
-    onDismiss: () -> Unit,
 ) {
     if (message.isBlank()) return
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
         shape = RoundedCornerShape(22.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.24f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Surface(
+                shape = CircleShape,
+                color = Color(0xFF2E8B57).copy(alpha = 0.14f),
+            ) {
+                Box(
+                    modifier = Modifier.size(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF2E8B57),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
             Text(
                 text = message,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
-            Spacer(Modifier.size(12.dp))
-            KazeGhostButton(label = "Dismiss", onClick = onDismiss)
         }
     }
 }

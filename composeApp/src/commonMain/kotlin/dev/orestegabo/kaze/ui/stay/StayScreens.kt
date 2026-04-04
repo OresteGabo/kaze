@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -146,31 +147,68 @@ internal fun StayHomeScreen(
 
 @Composable
 private fun StaySegmentedTabs(selectedTab: StayTab, onTabChange: (StayTab) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f)).padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+        tonalElevation = 2.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        ),
     ) {
-        StayTab.entries.forEach { tab ->
-            val selected = selectedTab == tab
-            Surface(
-                modifier = Modifier.clickable { onTabChange(tab) },
-                shape = RoundedCornerShape(18.dp),
-                color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                tonalElevation = if (selected) 6.dp else 0.dp,
-                shadowElevation = if (selected) 4.dp else 0.dp,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            StayTab.entries.forEach { tab ->
+                val selected = selectedTab == tab
+                val itemShape = RoundedCornerShape(18.dp)
+                Column(
+                    modifier = Modifier
+                        .clip(itemShape)
+                        .background(
+                            if (selected) {
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                    ),
+                                )
+                            } else {
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.1f),
+                                    ),
+                                )
+                            },
+                        )
+                        .clickable { onTabChange(tab) }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Box(
-                        modifier = Modifier.size(if (selected) 10.dp else 8.dp).clip(CircleShape).background(
-                            if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
-                        ),
+                        modifier = Modifier
+                            .width(if (selected) 28.dp else 18.dp)
+                            .height(if (selected) 4.dp else 3.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.74f)
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.22f),
+                            ),
                     )
-                    Text(tab.label, maxLines = 1, style = MaterialTheme.typography.labelLarge, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        tab.label,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
+                    )
                 }
             }
         }

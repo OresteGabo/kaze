@@ -1,5 +1,7 @@
 package dev.orestegabo.kaze.platform
 
+import platform.Foundation.NSUserDefaults
+
 actual object PlatformServicesProvider {
     actual fun create(): PlatformServices = PlatformServices(
         roomKeyService = object : RoomKeyService {
@@ -15,16 +17,16 @@ actual object PlatformServicesProvider {
             override fun perform(effect: HapticEffect) = Unit
         },
         secureStore = object : SecureStore {
-            private val values = mutableMapOf<String, String>()
+            private val defaults = NSUserDefaults.standardUserDefaults
 
             override suspend fun put(key: String, value: String) {
-                values[key] = value
+                defaults.setObject(value, forKey = key)
             }
 
-            override suspend fun get(key: String): String? = values[key]
+            override suspend fun get(key: String): String? = defaults.stringForKey(key)
 
             override suspend fun remove(key: String) {
-                values.remove(key)
+                defaults.removeObjectForKey(key)
             }
         },
     )

@@ -24,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -70,24 +72,24 @@ internal fun KazeSecondaryButton(
     val containerColor = if (emphasized) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f)
     } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.26f)
     }
     val borderColor = if (emphasized) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.42f)
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.48f)
     } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.34f)
     }
     val textColor = if (emphasized) {
         MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.onSurface
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
     }
 
     Box(
         modifier = modifier
             .clip(shape)
             .background(containerColor)
-            .border(1.dp, borderColor, shape)
+            .border(1.4.dp, borderColor, shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center,
@@ -149,15 +151,19 @@ internal fun KazeRoundButton(
 }
 
 @Composable
-internal fun MetaPill(label: String) {
+internal fun MetaPill(
+    label: String,
+    containerColor: Color = MaterialTheme.colorScheme.primaryContainer // Default color
+) {
     Surface(
         shape = RoundedCornerShape(999.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
+        color = containerColor,
     ) {
         Text(
             label,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), // Slightly tighter vertical padding
             style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium
         )
     }
 }

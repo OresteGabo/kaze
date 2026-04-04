@@ -10,8 +10,10 @@ import dev.orestegabo.kaze.presentation.navigation.KazeNavigator
 import dev.orestegabo.kaze.presentation.navigation.MapNavigationTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal class KazeAppViewModel(
@@ -19,6 +21,7 @@ internal class KazeAppViewModel(
     private val navigator: KazeNavigator = KazeNavigator(),
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var feedbackDismissJob: Job? = null
 
     var uiState by mutableStateOf(
         KazeAppUiState(
@@ -72,11 +75,17 @@ internal class KazeAppViewModel(
     }
 
     fun dismissFeedback() {
+        feedbackDismissJob?.cancel()
         uiState = uiState.copy(feedbackMessage = "")
     }
 
     fun showFeedback(message: String) {
         uiState = uiState.copy(feedbackMessage = message)
+        feedbackDismissJob?.cancel()
+        feedbackDismissJob = scope.launch {
+            delay(FEEDBACK_DURATION_MS)
+            uiState = uiState.copy(feedbackMessage = "")
+        }
     }
 
     fun openMapRoute(route: String, floorId: String, floorLabel: String) {
@@ -110,5 +119,6 @@ internal class KazeAppViewModel(
     private companion object {
         const val HAS_SEEN_ONBOARDING_KEY = "app.has_seen_onboarding"
         const val TRUE_VALUE = "true"
+        const val FEEDBACK_DURATION_MS = 2400L
     }
 }

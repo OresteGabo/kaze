@@ -2,6 +2,8 @@ package dev.orestegabo.kaze.presentation.stay
 
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
+import dev.orestegabo.kaze.presentation.demo.ServiceRequestDraftUi
+import dev.orestegabo.kaze.presentation.demo.ServiceRequestRecord
 import dev.orestegabo.kaze.presentation.demo.ServiceOption
 import dev.orestegabo.kaze.presentation.demo.StayScreen
 import dev.orestegabo.kaze.presentation.demo.StayMoment
@@ -22,6 +24,8 @@ internal data class StayUiState(
     val activeStayScreen: StayScreen = StayScreen.HOME,
     val lateCheckoutRequest: LateCheckoutRequest? = null,
     val lateCheckoutDraft: LateCheckoutDraft = LateCheckoutDraft(),
+    val serviceRequestDraft: ServiceRequestDraftUi = ServiceRequestDraftUi(),
+    val submittedServiceRequests: List<ServiceRequestRecord> = emptyList(),
 )
 
 internal sealed interface StayActionResult {

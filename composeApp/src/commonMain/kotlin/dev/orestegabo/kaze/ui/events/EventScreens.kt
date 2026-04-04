@@ -63,7 +63,12 @@ internal fun EventScheduleScreen(
         }
         item {
             if (selectedDay != null) {
-                Text(selectedDay.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 2.dp))
+                Text(
+                    selectedDay.label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
         }
         item { Text("Today's schedule", style = MaterialTheme.typography.headlineSmall) }
@@ -131,7 +136,7 @@ private fun EventDayButton(
         Box(
             modifier = Modifier.size(if (selected) 8.dp else 6.dp).clip(CircleShape).background(
                 if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
-                else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.42f),
+                else MaterialTheme.colorScheme.secondary.copy(alpha = 0.42f),
             ),
         )
         Text(shortDay, style = MaterialTheme.typography.labelLarge, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f))
@@ -153,7 +158,7 @@ private fun SessionCard(
             Text(
                 "${session.startIso.takeLast(9).take(5)} - ${session.endIso.takeLast(9).take(5)}",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.tertiary,
+                color = MaterialTheme.colorScheme.secondary,
             )
             Text(session.title, style = MaterialTheme.typography.titleLarge)
             Text(session.description, style = MaterialTheme.typography.bodyMedium)

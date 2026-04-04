@@ -1270,7 +1270,7 @@ private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
                     border = BorderStroke(
                         1.dp,
                         MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f),
@@ -1283,7 +1283,7 @@ private fun StayMomentCard(moment: StayMoment, onOpen: () -> Unit) {
                         Text(
                             "UNTIL",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.78f),
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.96f),
                         )
                         Text(
                             moment.endTime,

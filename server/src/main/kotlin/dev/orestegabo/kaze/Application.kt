@@ -1,10 +1,12 @@
 package dev.orestegabo.kaze
 
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import dev.orestegabo.kaze.api.configureHttp
+import dev.orestegabo.kaze.api.registerApiRoutes
+import dev.orestegabo.kaze.application.createServerDependencies
+import dev.orestegabo.kaze.infrastructure.loadDatabaseConfig
+import io.ktor.server.application.Application
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 
 fun main() {
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
@@ -12,9 +14,9 @@ fun main() {
 }
 
 fun Application.module() {
-    routing {
-        get("/") {
-            call.respondText("Kaze server is running")
-        }
-    }
+    val databaseConfig = loadDatabaseConfig()
+    val dependencies = createServerDependencies()
+    configureHttp()
+    registerApiRoutes(dependencies)
+    environment.log.info("Kaze database configured for {}", databaseConfig.jdbcUrl)
 }

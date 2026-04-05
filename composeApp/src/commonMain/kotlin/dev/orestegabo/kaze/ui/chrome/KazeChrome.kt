@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -251,7 +250,7 @@ internal fun DemoFeedbackBanner(
         ) {
             Surface(
                 shape = CircleShape,
-                color = uiPalette.successContainer,
+                color = uiPalette.successContainerSoft,
             ) {
                 Box(
                     modifier = Modifier.size(32.dp),

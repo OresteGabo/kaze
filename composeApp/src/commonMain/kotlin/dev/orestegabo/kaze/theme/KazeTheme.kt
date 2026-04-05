@@ -55,7 +55,8 @@ data class KazeUiPalette(
     val ambientPanelBottom: Color,
     val floatingShell: Color,
     val floatingShellBorder: Color,
-    val successContainer: Color,
+    val successContainerSoft: Color,
+    val successContainerStrong: Color,
     val successContent: Color,
 )
 
@@ -95,7 +96,8 @@ private val LocalUiPalette = staticCompositionLocalOf {
         ambientPanelBottom = Color(0x0A8C6B4F),
         floatingShell = Color(0xF0FFF9F0),
         floatingShellBorder = Color(0x268C6B4F),
-        successContainer = Color(0x1F2E8B57),
+        successContainerSoft = Color(0x1F2E8B57),
+        successContainerStrong = Color(0x332E8B57),
         successContent = Color(0xFF2E8B57),
     )
 }
@@ -238,7 +240,8 @@ private fun HotelBranding.toUiPalette(darkTheme: Boolean): KazeUiPalette {
             ambientPanelBottom = accent.lighten(0.12f).copy(alpha = 0.07f),
             floatingShell = surfaceHex.toColor().darken(0.76f).copy(alpha = 0.92f),
             floatingShellBorder = secondary.lighten(0.08f).copy(alpha = 0.22f),
-            successContainer = Color(0x1F66C38C),
+            successContainerSoft = Color(0x1F66C38C),
+            successContainerStrong = Color(0x3366C38C),
             successContent = Color(0xFF8EDFAE),
         )
     } else {
@@ -252,7 +255,8 @@ private fun HotelBranding.toUiPalette(darkTheme: Boolean): KazeUiPalette {
             ambientPanelBottom = accent.copy(alpha = 0.028f),
             floatingShell = surfaceHex.toColor().copy(alpha = 0.94f),
             floatingShellBorder = secondary.copy(alpha = 0.16f),
-            successContainer = Color(0x1F2E8B57),
+            successContainerSoft = Color(0x1F2E8B57),
+            successContainerStrong = Color(0x332E8B57),
             successContent = Color(0xFF2E8B57),
         )
     }

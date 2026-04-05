@@ -85,6 +85,7 @@ internal fun KazeSecondaryButton(
     emphasized: Boolean = false,
     shape: RoundedCornerShape = RoundedCornerShape(18.dp),
     leadingIcon: ImageVector? = null,
+    leadingIconTint: Color? = null,
 ) {
     val containerColor = if (emphasized) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f)
@@ -119,7 +120,7 @@ internal fun KazeSecondaryButton(
                 Icon(
                     imageVector = it,
                     contentDescription = null,
-                    tint = textColor,
+                    tint = leadingIconTint ?: textColor,
                     modifier = Modifier.size(18.dp),
                 )
             }

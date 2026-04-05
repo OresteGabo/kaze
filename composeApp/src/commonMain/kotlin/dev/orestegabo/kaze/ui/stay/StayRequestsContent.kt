@@ -143,64 +143,53 @@ internal fun ServiceOptionCard(
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            androidx.compose.material3.Icon(
-                imageVector = option.serviceIcon(),
-                contentDescription = null,
-                tint = readableAccentColor.copy(alpha = 0.08f),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 12.dp, bottom = 14.dp)
-                    .size(68.dp),
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .fillMaxWidth()
+                    .height(86.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(accentColor.copy(alpha = 0.12f))
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(86.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(accentColor.copy(alpha = 0.12f))
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(fraction = 0.18f)
-                                .height(4.dp)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(readableAccentColor.copy(alpha = 0.9f)),
-                        )
-                        Text(
-                            option.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(fraction = 0.18f)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(readableAccentColor.copy(alpha = 0.9f)),
+                    )
+                    Text(
+                        option.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-                Text(
-                    option.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.weight(1f))
-                KazeSecondaryButton(
-                    label = if (option.title == "Late checkout" && hasExistingLateCheckout) "Edit request" else "Request",
-                    onClick = onClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = option.serviceIcon(),
-                    leadingIconTint = readableAccentColor,
-                )
             }
+            Text(
+                option.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.weight(1f))
+            KazeSecondaryButton(
+                label = if (option.title == "Late checkout" && hasExistingLateCheckout) "Edit request" else "Request",
+                onClick = onClick,
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = option.serviceIcon(),
+                leadingIconTint = readableAccentColor,
+            )
         }
     }
 }
@@ -225,7 +214,7 @@ internal fun ServiceRequestHistoryCard(request: ServiceRequestRecord) {
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = KazeTheme.ui.successContainer,
+                        color = KazeTheme.ui.successContainerSoft,
                     ) {
                         Box(
                             modifier = Modifier.size(30.dp),
@@ -321,7 +310,7 @@ internal fun LateCheckoutStatusCard(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = KazeTheme.ui.successContainer,
+                        color = KazeTheme.ui.successContainerSoft,
                     ) {
                         Box(
                             modifier = Modifier.size(30.dp),

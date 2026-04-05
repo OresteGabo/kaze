@@ -15,6 +15,6 @@ class ApplicationTest {
         }
         val response = client.get("/")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("Kaze server is running", response.bodyAsText())
+        assertTrue(response.bodyAsText().contains("\"name\": \"Kaze API\""))
     }
 }

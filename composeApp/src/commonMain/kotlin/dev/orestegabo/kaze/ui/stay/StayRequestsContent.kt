@@ -13,12 +13,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CleaningServices
@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Iron
 import androidx.compose.material.icons.filled.LocalDrink
 import androidx.compose.material.icons.filled.LocalLaundryService
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.RoomService
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SupportAgent
@@ -42,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -227,7 +225,7 @@ internal fun ServiceRequestHistoryCard(request: ServiceRequestRecord) {
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF2E8B57).copy(alpha = 0.14f),
+                        color = KazeTheme.ui.successContainer,
                     ) {
                         Box(
                             modifier = Modifier.size(30.dp),
@@ -236,7 +234,7 @@ internal fun ServiceRequestHistoryCard(request: ServiceRequestRecord) {
                             androidx.compose.material3.Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = Color(0xFF2E8B57),
+                                tint = KazeTheme.ui.successContent,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -323,7 +321,7 @@ internal fun LateCheckoutStatusCard(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF2E8B57).copy(alpha = 0.14f),
+                        color = KazeTheme.ui.successContainer,
                     ) {
                         Box(
                             modifier = Modifier.size(30.dp),
@@ -332,7 +330,7 @@ internal fun LateCheckoutStatusCard(
                             androidx.compose.material3.Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = Color(0xFF2E8B57),
+                                tint = KazeTheme.ui.successContent,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -373,7 +371,7 @@ internal fun LateCheckoutStatusCard(
                 InfoToken(
                     label = request.paymentOption.label,
                     accentColor = MaterialTheme.colorScheme.secondary,
-                    leadingIcon = Icons.Default.ReceiptLong,
+                    leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
                 )
                 InfoToken(
                     label = request.followUpOption.label,

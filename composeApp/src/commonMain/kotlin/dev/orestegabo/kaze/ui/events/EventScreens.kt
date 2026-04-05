@@ -17,6 +17,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +59,7 @@ internal fun EventScheduleScreen(
                 eyebrow = "What's On",
                 title = "East Africa Finance Summit",
                 subtitle = "A clean schedule view with day switching, venue references, and direct map transitions.",
+                icon = Icons.Default.CalendarMonth,
             )
         }
         item {
@@ -163,11 +169,11 @@ private fun SessionCard(
             Text(session.title, style = MaterialTheme.typography.titleLarge)
             Text(session.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill(session.venueLabel,)
-                session.hostLabel?.let { MetaPill(it,) }
-                MetaPill("Open map",)
+                MetaPill(session.venueLabel, leadingIcon = Icons.Default.Place)
+                session.hostLabel?.let { MetaPill(it, leadingIcon = Icons.Default.CalendarMonth) }
+                MetaPill("Open map", leadingIcon = Icons.Default.Map)
             }
-            KazeSecondaryButton(label = "Open map", onClick = onOpenMap)
+            KazeSecondaryButton(label = "Open map", onClick = onOpenMap, leadingIcon = Icons.Default.Map)
         }
     }
 }

@@ -228,6 +228,8 @@ internal class StayViewModel(
             "In-room dining" -> ServiceRequestType.DINING
             "Laundry pickup" -> ServiceRequestType.LAUNDRY
             "Concierge help" -> ServiceRequestType.CONCIERGE
+            "Airport transfer" -> ServiceRequestType.CONCIERGE
+            "Wake-up call" -> ServiceRequestType.CONCIERGE
             else -> ServiceRequestType.HOUSEKEEPING
         }
 }

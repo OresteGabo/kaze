@@ -21,6 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,6 +50,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.map.FloorLevel
 import dev.orestegabo.kaze.presentation.map.GuestAccessContext
+import dev.orestegabo.kaze.ui.components.InfoToken
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeRoundButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
@@ -98,14 +103,13 @@ internal fun MapScreen(
                 onFloorSelected = onFloorSelected,
             )
             Spacer(Modifier.height(8.dp))
-            Text(
-                activeRoute,
-                modifier = Modifier.padding(horizontal = 20.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                InfoToken(
+                    label = activeRoute,
+                    accentColor = MaterialTheme.colorScheme.secondary,
+                    leadingIcon = Icons.Default.Place,
+                )
+            }
             Spacer(Modifier.weight(1f))
             Row(
                 modifier = Modifier
@@ -117,6 +121,7 @@ internal fun MapScreen(
                     label = "Start navigation",
                     onClick = onStartNavigation,
                     modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Map,
                 )
                 KazeSecondaryButton(
                     label = "Switch floor",
@@ -124,6 +129,7 @@ internal fun MapScreen(
                         onSwitchFloor()
                     },
                     modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Layers,
                 )
             }
             Spacer(Modifier.height(12.dp))
@@ -198,6 +204,30 @@ private fun FloorSelectorChip(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) {
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
+                    },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.material3.Icon(
+                imageVector = Icons.Default.Layers,
+                contentDescription = null,
+                modifier = Modifier.size(13.dp),
+                tint = if (selected) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f)
+                },
+            )
+        }
         Box(
             modifier = Modifier
                 .width(if (selected) 28.dp else 18.dp)

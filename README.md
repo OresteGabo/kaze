@@ -31,6 +31,15 @@ The app combines itinerary management, indoor wayfinding, access-aware venue map
 - [Map Access Control](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/map-access-control.md)
 - [UI Architecture](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/ui-architecture.md)
 - [API Contracts](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/kaze-api-contracts.md)
+- [Roadmap](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/ROADMAP.md)
+
+## Legal And Project Policies
+
+- [Privacy Policy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/PRIVACY_POLICY.md)
+- [Terms of Use](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/TERMS_OF_USE.md)
+- [Proprietary License Notice](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/LICENSE.md)
+- [Contribution Policy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/CONTRIBUTING.md)
+- [Security Policy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/SECURITY.md)
 
 ## Build
 

@@ -240,8 +240,15 @@ internal val stayMoments = listOf(
 
 internal val requestOptions = listOf(
     ServiceOption("Fresh towels", "Send towels and bath amenities to the room."),
+    ServiceOption("Bottled water", "Bring chilled or room-temperature water to the room."),
+    ServiceOption("Extra pillows", "Request extra pillows or a blanket for the room."),
+    ServiceOption("Iron & board", "Have an iron and ironing board delivered to the room."),
+    ServiceOption("Housekeeping touch-up", "Refresh the room while you are out or resting."),
     ServiceOption("In-room dining", "Browse menu and order directly from the app."),
     ServiceOption("Laundry pickup", "Request express or standard garment collection."),
+    ServiceOption("Minibar refill", "Restock drinks and in-room refreshments."),
+    ServiceOption("Airport transfer", "Ask for airport pickup or drop-off arrangements."),
+    ServiceOption("Wake-up call", "Schedule a morning wake-up call from reception."),
     ServiceOption("Concierge help", "Ask for transport, reservations, or local assistance."),
     ServiceOption("Late checkout", "Stay a little longer before checkout."),
     ServiceOption("Custom request", "Ask for something else.", isCustom = true),

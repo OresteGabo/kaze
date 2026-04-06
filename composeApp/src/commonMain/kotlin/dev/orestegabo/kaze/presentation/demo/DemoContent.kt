@@ -47,6 +47,8 @@ internal data class StayMoment(
     val title: String,
     val detail: String,
     val place: String,
+    val bookingLabel: String,
+    val accessLabel: String,
     val action: String,
 )
 
@@ -129,6 +131,8 @@ internal data class ExploreHighlight(
     val description: String,
     val location: String,
     val time: String,
+    val contextLabel: String,
+    val accessLabel: String,
     val cta: String,
 )
 
@@ -218,6 +222,8 @@ internal val stayMoments = listOf(
         title = "Signature massage",
         detail = "Reserved treatment slot with a 15-minute arrival window.",
         place = "Ubumwe Spa",
+        bookingLabel = "Reserved",
+        accessLabel = "Already paid",
         action = "Open route",
     ),
     StayMoment(
@@ -226,6 +232,8 @@ internal val stayMoments = listOf(
         title = "Chef's tasting dinner",
         detail = "Window table reserved for two with vegetarian preference noted.",
         place = "Kivu Dining",
+        bookingLabel = "Reserved",
+        accessLabel = "Already paid",
         action = "View menu",
     ),
     StayMoment(
@@ -234,6 +242,8 @@ internal val stayMoments = listOf(
         title = "Airport transfer",
         detail = "Vehicle confirmed. Pickup point is the main porte-cochere.",
         place = "Front Drive",
+        bookingLabel = "Booked",
+        accessLabel = "Included",
         action = "Contact concierge",
     ),
 )
@@ -328,6 +338,8 @@ internal val exploreHighlights = listOf(
         description = "A calmer pool deck period curated for business travelers between meetings.",
         location = "Pool Deck",
         time = "06:00 - 09:00",
+        contextLabel = "Amenity",
+        accessLabel = "Included",
         cta = "Open amenity",
     ),
     ExploreHighlight(
@@ -335,6 +347,8 @@ internal val exploreHighlights = listOf(
         description = "A short self-guided route through the hotel’s featured Rwandan artists.",
         location = "Grand Lobby",
         time = "All day",
+        contextLabel = "Self-guided",
+        accessLabel = "Complimentary",
         cta = "Start route",
     ),
     ExploreHighlight(
@@ -342,6 +356,8 @@ internal val exploreHighlights = listOf(
         description = "Soft live music in the bar, recommended for summit delegates after sessions.",
         location = "Panorama Bar",
         time = "20:00",
+        contextLabel = "Evening experience",
+        accessLabel = "Extra charge",
         cta = "Reserve table",
     ),
 )
@@ -352,6 +368,8 @@ internal val suggestedActivities = listOf(
         description = "A wellness tea service is available in the relaxation lounge right after your treatment.",
         location = "Ubumwe Spa",
         time = "After 15:00",
+        contextLabel = "Recommended for you",
+        accessLabel = "Included",
         cta = "Add to stay",
     ),
     ExploreHighlight(
@@ -359,6 +377,8 @@ internal val suggestedActivities = listOf(
         description = "A networking coffee point opens 20 minutes before the keynote near the ballroom entrance.",
         location = "Great Rift Foyer",
         time = "07:40",
+        contextLabel = "Recommended for you",
+        accessLabel = "Included for event guests",
         cta = "Open route",
     ),
     ExploreHighlight(
@@ -366,6 +386,8 @@ internal val suggestedActivities = listOf(
         description = "A late breakfast and pressing service bundle is available for departing guests.",
         location = "Kivu Dining",
         time = "Tomorrow morning",
+        contextLabel = "Recommended for you",
+        accessLabel = "Extra charge",
         cta = "Book bundle",
     ),
 )

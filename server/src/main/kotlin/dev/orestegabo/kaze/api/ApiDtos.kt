@@ -106,6 +106,8 @@ internal data class AmenityHighlightDto(
     val description: String,
     val locationLabel: String,
     val availabilityLabel: String,
+    val categoryLabel: String,
+    val accessLabel: String,
     val actionLabel: String,
 )
 

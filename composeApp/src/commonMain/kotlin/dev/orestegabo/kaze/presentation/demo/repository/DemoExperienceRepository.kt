@@ -42,6 +42,8 @@ internal class DemoExperienceRepository : ExperienceRepository {
                 description = highlight.description,
                 locationLabel = highlight.location,
                 availabilityLabel = highlight.time,
+                categoryLabel = highlight.contextLabel,
+                accessLabel = highlight.accessLabel,
                 actionLabel = highlight.cta,
             )
         }

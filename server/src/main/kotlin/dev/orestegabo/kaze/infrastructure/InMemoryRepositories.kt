@@ -243,6 +243,8 @@ internal class InMemoryExperienceRepository : ExperienceRepository {
                 description = "A calmer pool deck period curated for business travelers between meetings.",
                 locationLabel = "Pool Deck",
                 availabilityLabel = "06:00 - 09:00",
+                categoryLabel = "Amenity",
+                accessLabel = "Included",
                 actionLabel = "Open amenity",
             ),
             AmenityHighlight(
@@ -251,6 +253,8 @@ internal class InMemoryExperienceRepository : ExperienceRepository {
                 description = "A short self-guided route through the hotel’s featured Rwandan artists.",
                 locationLabel = "Grand Lobby",
                 availabilityLabel = "All day",
+                categoryLabel = "Self-guided",
+                accessLabel = "Complimentary",
                 actionLabel = "Start route",
             ),
             AmenityHighlight(
@@ -259,6 +263,8 @@ internal class InMemoryExperienceRepository : ExperienceRepository {
                 description = "Soft live music in the bar, recommended for summit delegates after sessions.",
                 locationLabel = "Panorama Bar",
                 availabilityLabel = "20:00",
+                categoryLabel = "Evening experience",
+                accessLabel = "Extra charge",
                 actionLabel = "Reserve table",
             ),
         )

@@ -74,13 +74,13 @@ internal fun FeaturedSuggestionHeader(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "Concierge Suggestions",
+                "Suggestions",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
-            Text("Curated for tonight", style = MaterialTheme.typography.headlineSmall)
+            Text("Recommended for your stay", style = MaterialTheme.typography.headlineSmall)
             Text(
-                "These recommendations are based on your stay, your event plan, and the pace of the hotel right now.",
+                "These are personalized ideas based on your stay and what is happening now. They are not booked yet.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
             )
@@ -122,7 +122,12 @@ internal fun SuggestionShowcaseCard(
                         .padding(horizontal = 18.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    MetaPill("Recommended", leadingIcon = Icons.Default.Explore)
+                    MetaPill(
+                        suggestion.contextLabel,
+                        containerColor = accentColor.copy(alpha = 0.16f),
+                        textColor = accentColor,
+                        leadingIcon = Icons.Default.Explore,
+                    )
                     Text(
                         suggestion.title,
                         style = MaterialTheme.typography.titleLarge,
@@ -143,6 +148,11 @@ internal fun SuggestionShowcaseCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    InfoToken(
+                        label = suggestion.accessLabel,
+                        accentColor = accentColor,
+                        leadingIcon = Icons.Default.Explore,
+                    )
                     InfoToken(
                         label = suggestion.location,
                         accentColor = accentColor,

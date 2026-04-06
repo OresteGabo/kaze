@@ -104,6 +104,8 @@ internal fun AmenityHighlight.toDto(): AmenityHighlightDto = AmenityHighlightDto
     description = description,
     locationLabel = locationLabel,
     availabilityLabel = availabilityLabel,
+    categoryLabel = categoryLabel,
+    accessLabel = accessLabel,
     actionLabel = actionLabel,
 )
 

@@ -18,8 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalBar
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
@@ -58,8 +60,8 @@ internal fun ExploreScreen(
         item {
             SectionIntroCard(
                 eyebrow = "Explore",
-                title = "Hotel life beyond the room",
-                subtitle = "Amenities, experiences, and social moments curated around the visitor's current context.",
+                title = "Discover the hotel",
+                subtitle = "Browse amenities and experiences available across the property, whether included or paid separately.",
                 icon = Icons.Default.Explore,
             )
         }
@@ -133,6 +135,13 @@ private fun ExploreCard(
             }
             Text(highlight.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetaPill(highlight.categoryLabel, leadingIcon = Icons.Default.Info)
+                MetaPill(
+                    highlight.accessLabel,
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    textColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    leadingIcon = Icons.Default.Payments,
+                )
                 MetaPill(highlight.locationLabel, leadingIcon = Icons.Default.Place)
                 MetaPill(highlight.availabilityLabel, leadingIcon = Icons.Default.Schedule)
                 MetaPill(highlight.actionLabel, leadingIcon = if (highlight.actionLabel.contains("route", ignoreCase = true) || highlight.actionLabel.contains("map", ignoreCase = true)) Icons.Default.Map else Icons.Default.Explore)

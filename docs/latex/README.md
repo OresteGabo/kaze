@@ -40,8 +40,18 @@ Recommended scripted build:
 
 ```sh
 cd docs/latex
-sh build-docs.sh
+./build-docs.sh
 ```
+
+Immediate cleanup after a build:
+
+```sh
+./clean-docs.sh
+```
+
+The cleanup script removes temporary LaTeX artifacts while keeping the final PDFs in `docs/latex/out`.
+It also removes stray LaTeX temporary files that some manual/IDE builds may write into the project-root `out/` folder, while leaving PDF files there untouched.
+The build script already calls the cleanup step automatically after a successful build.
 
 The script deletes the current generated PDFs first, then rebuilds fresh copies into the output folder.
 It automatically builds every standalone `.tex` document in this folder, so you do not need to maintain a manual file list in the script.
@@ -64,6 +74,12 @@ Per-document build logs are written into:
 
 ```text
 docs/latex/.latex-build/logs
+```
+
+If you want to remove temporary LaTeX artifacts without touching the generated PDFs, use:
+
+```sh
+./clean-docs.sh
 ```
 
 You can also choose a different output folder:

@@ -25,7 +25,7 @@ Suggested uses for LaTeX/PDF docs in this project:
 Example compile commands:
 
 ```sh
-cd /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex
+cd docs/latex
 pdflatex kaze-investor-brief.tex
 pdflatex kaze-technical-brief.tex
 pdflatex kaze-product-dossier.tex
@@ -34,7 +34,7 @@ pdflatex kaze-product-dossier.tex
 Recommended scripted build:
 
 ```sh
-cd /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex
+cd docs/latex
 sh build-docs.sh
 ```
 
@@ -44,28 +44,28 @@ It automatically builds every standalone `.tex` document in this folder, so you 
 This writes the generated files into:
 
 ```text
-/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/out
+docs/latex/out
 ```
 
 Temporary LaTeX build artifacts such as `.aux`, `.log`, `.fls`, `.fdb_latexmk`, and `.out` are written into:
 
 ```text
-/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/.latex-build
+docs/latex/.latex-build
 ```
 
 You can also choose a different output folder:
 
 ```sh
-sh build-docs.sh /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/out
+sh build-docs.sh out
 ```
 
 Or choose both PDF and artifact directories:
 
 ```sh
-sh build-docs.sh /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/out /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/.latex-build
+sh build-docs.sh out .latex-build
 ```
 
-The build script is the source of truth for output paths. If your IDE still writes PDFs to a project-level `out/` directory, that usually means it is using its own LaTeX runner instead of [build-docs.sh](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/build-docs.sh).
+The build script is the source of truth for output paths. If your IDE still writes PDFs to a project-level `out/` directory, that usually means it is using its own LaTeX runner instead of [build-docs.sh](build-docs.sh).
 
 If you want, these can later be split into:
 - a formal business plan

@@ -19,9 +19,9 @@ Some areas may be:
 The shared map domain supports access rules per map area.
 
 Relevant files:
-- [HotelMap.kt](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/map/HotelMap.kt)
-- [HotelMapDsl.kt](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/map/HotelMapDsl.kt)
-- [SampleHotelMaps.kt](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/map/SampleHotelMaps.kt)
+- [HotelMap.kt](../shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/map/HotelMap.kt)
+- [HotelMapDsl.kt](../shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/map/HotelMapDsl.kt)
+- [SampleHotelMaps.kt](../shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/map/SampleHotelMaps.kt)
 
 Core concepts:
 - `AccessLevel`

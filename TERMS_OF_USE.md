@@ -52,7 +52,7 @@ Some features may depend on third-party systems such as hotel property systems, 
 ## Privacy
 
 Use of the product may involve personal data and operational data. See:
-- [PRIVACY_POLICY.md](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/PRIVACY_POLICY.md)
+- [PRIVACY_POLICY.md](PRIVACY_POLICY.md)
 
 ## Disclaimer
 

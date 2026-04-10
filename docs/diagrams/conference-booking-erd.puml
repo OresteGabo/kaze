@@ -1,0 +1,142 @@
+@startuml
+title Conference / Wedding Venue Reservation ERD
+
+hide circle
+skinparam linetype ortho
+
+entity venue_site {
+  *id : uuid
+  --
+  name : varchar
+  venue_type : varchar
+  timezone_id : varchar
+}
+
+entity venue_space {
+  *id : uuid
+  --
+  site_id : uuid
+  name : varchar
+  space_type : varchar
+  base_capacity : int
+}
+
+entity layout_template {
+  *id : uuid
+  --
+  space_id : uuid
+  name : varchar
+  layout_type : varchar
+  recommended_guests : int
+  requires_approval : bool
+}
+
+entity reservation {
+  *id : uuid
+  --
+  site_id : uuid
+  space_id : uuid
+  layout_template_id : uuid
+  reservation_type : varchar
+  status : varchar
+  attendee_count : int
+  start_at : timestamp
+  end_at : timestamp
+  quote_total : decimal
+}
+
+entity reservation_contact {
+  *id : uuid
+  --
+  reservation_id : uuid
+  full_name : varchar
+  phone_number : varchar
+  email : varchar
+}
+
+entity reservation_addon {
+  *id : uuid
+  --
+  reservation_id : uuid
+  addon_type : varchar
+  vendor_id : uuid
+  quantity : int
+  amount : decimal
+}
+
+entity payment_transaction {
+  *id : uuid
+  --
+  reservation_id : uuid
+  provider : varchar
+  payment_method : varchar
+  external_ref : varchar
+  amount : decimal
+  currency : varchar
+  status : varchar
+  paid_at : timestamp
+}
+
+entity payment_provider {
+  *id : uuid
+  --
+  code : varchar
+  display_name : varchar
+  market : varchar
+}
+
+entity pass_entitlement {
+  *id : uuid
+  --
+  reservation_id : uuid
+  guest_ref : varchar
+  pass_code : varchar
+  access_scope : varchar
+  status : varchar
+}
+
+entity venue_vendor {
+  *id : uuid
+  --
+  site_id : uuid
+  vendor_type : varchar
+  name : varchar
+  phone_number : varchar
+}
+
+entity pricing_rule {
+  *id : uuid
+  --
+  site_id : uuid
+  applies_to : varchar
+  charge_type : varchar
+  amount : decimal
+}
+
+venue_site ||--o{ venue_space
+venue_space ||--o{ layout_template
+venue_site ||--o{ reservation
+venue_space ||--o{ reservation
+layout_template ||--o{ reservation
+reservation ||--|| reservation_contact
+reservation ||--o{ reservation_addon
+reservation ||--o{ payment_transaction
+payment_provider ||--o{ payment_transaction
+reservation ||--o{ pass_entitlement
+venue_vendor ||--o{ reservation_addon
+venue_site ||--o{ venue_vendor
+venue_site ||--o{ pricing_rule
+
+note bottom of reservation_addon
+Use add-ons for event styling/decor,
+cleaning, insurance, photo, video,
+and live streaming services.
+end note
+
+note bottom of layout_template
+This models layout planning:
+round tables, rectangles, theater,
+classroom, boardroom, mixed.
+end note
+
+@enduml

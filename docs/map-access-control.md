@@ -11,6 +11,8 @@ Some areas may be:
 - VIP-only
 - staff-only
 - hidden/private
+- reservation-only
+- pass-required
 
 ## Shared Model
 
@@ -41,6 +43,9 @@ This allows the same floor plan to look different for different users.
 - staff corridor hidden from guests
 - VIP lounge hidden from standard visitors
 - day-pass visitor sees pool but not room corridors
+- wedding reception hall requires a valid Kaze Pass after payment
+- conference breakout room becomes accessible only to confirmed attendees
+- stadium section access depends on ticketed seat/zone entitlements
 
 ## Future Direction
 
@@ -52,3 +57,6 @@ That should include:
 - VIP level
 - hotel policy
 - time window
+- reservation state
+- payment state
+- venue-specific pass entitlements

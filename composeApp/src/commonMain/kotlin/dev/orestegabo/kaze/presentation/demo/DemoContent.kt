@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DoorFront
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.orestegabo.kaze.domain.AccessCardStyle
@@ -23,11 +24,36 @@ internal enum class KazeDestination(
     val label: String,
     val icon: ImageVector,
 ) {
+    HOME("Home", Icons.Filled.Home),
     STAY("Stay", Icons.Filled.DoorFront),
     EVENTS("Events", Icons.Filled.CalendarMonth),
     EXPLORE("Explore", Icons.Filled.Explore),
     MAP("Map", Icons.Filled.Map),
 }
+
+internal data class VenueCategoryPreview(
+    val title: String,
+    val description: String,
+    val supportingLabel: String,
+)
+
+internal data class PublicVenuePreview(
+    val name: String,
+    val typeLabel: String,
+    val locationLabel: String,
+    val priceLabel: String,
+    val capacityLabel: String,
+    val accessLabel: String,
+    val actionLabel: String,
+)
+
+internal data class InvitationPreview(
+    val title: String,
+    val subtitle: String,
+    val code: String,
+    val phoneLabel: String,
+    val statusLabel: String,
+)
 
 internal enum class StayTab(val label: String) {
     MY_STAY("My Stay"),
@@ -389,6 +415,76 @@ internal val suggestedActivities = listOf(
         contextLabel = "Recommended for you",
         accessLabel = "Extra charge",
         cta = "Book bundle",
+    ),
+)
+
+internal val publicVenueCategories = listOf(
+    VenueCategoryPreview(
+        title = "Hotels",
+        description = "Browse stays, amenities, and guest-ready services before booking or joining.",
+        supportingLabel = "Stays and guest services",
+    ),
+    VenueCategoryPreview(
+        title = "Conference",
+        description = "Find rooms, venue capacity, meeting layouts, and event-ready access control.",
+        supportingLabel = "Rooms and business events",
+    ),
+    VenueCategoryPreview(
+        title = "Wedding",
+        description = "Compare venues, guest access, layout planning, and styling-ready event spaces.",
+        supportingLabel = "Venues and event layouts",
+    ),
+    VenueCategoryPreview(
+        title = "Apartments",
+        description = "Explore local stays and longer-visit alternatives as the marketplace expands.",
+        supportingLabel = "Coming next",
+    ),
+)
+
+internal val publicVenues = listOf(
+    PublicVenuePreview(
+        name = "Kigali Marriott",
+        typeLabel = "Hotel",
+        locationLabel = "KN 3 Ave, Kigali",
+        priceLabel = "From RWF 280,000",
+        capacityLabel = "Rooms and event spaces",
+        accessLabel = "Public browsing",
+        actionLabel = "View hotel",
+    ),
+    PublicVenuePreview(
+        name = "Great Rift Ballroom",
+        typeLabel = "Conference venue",
+        locationLabel = "Kigali Convention District",
+        priceLabel = "From RWF 1,200,000",
+        capacityLabel = "Up to 450 guests",
+        accessLabel = "Quote or reservation",
+        actionLabel = "View venue",
+    ),
+    PublicVenuePreview(
+        name = "Umucyo Garden Venue",
+        typeLabel = "Wedding venue",
+        locationLabel = "Rebero, Kigali",
+        priceLabel = "From RWF 2,400,000",
+        capacityLabel = "Up to 320 guests",
+        accessLabel = "Layout planning available",
+        actionLabel = "View venue",
+    ),
+)
+
+internal val invitationPreviews = listOf(
+    InvitationPreview(
+        title = "East Africa Finance Summit",
+        subtitle = "Invitation waiting for confirmation",
+        code = "EAFS24",
+        phoneLabel = "Matched to +250 78 123 4567",
+        statusLabel = "Invitation received",
+    ),
+    InvitationPreview(
+        title = "Uwase x Iradukunda",
+        subtitle = "Wedding access can be added to your Kaze Pass after confirmation.",
+        code = "LOVE28",
+        phoneLabel = "Invite prepared for guest phone",
+        statusLabel = "Pending acceptance",
     ),
 )
 

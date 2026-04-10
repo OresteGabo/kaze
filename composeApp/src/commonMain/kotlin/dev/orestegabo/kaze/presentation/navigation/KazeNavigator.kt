@@ -12,7 +12,7 @@ internal data class MapNavigationTarget(
 )
 
 internal data class KazeNavigationState(
-    val currentDestination: KazeDestination = KazeDestination.STAY,
+    val currentDestination: KazeDestination = KazeDestination.HOME,
     val mapTarget: MapNavigationTarget = MapNavigationTarget(),
 )
 

@@ -10,10 +10,15 @@ Instead of treating every user as a room guest, Kaze supports multiple visitor p
 
 The app combines itinerary management, indoor wayfinding, access-aware venue maps, service requests, venue reservations, payments, and a customizable digital access pass.
 
+Kaze is also moving toward a dual entry model:
+- public venue discovery without sign-in
+- private event or stay entry through invitations, search, and short codes
+
 Kaze is also evolving toward a reusable venue-mapping and venue-commerce platform that can support:
 - hotels
 - conference venues
 - wedding venues
+- apartments and other local stay options
 - stadiums
 - government buildings
 - transport spaces such as airports or airplanes
@@ -27,6 +32,8 @@ Kaze is also evolving toward a reusable venue-mapping and venue-commerce platfor
 
 ## Current Product Shape
 
+- public venue discovery for rooms, venues, and later apartments
+- join flow for invitations, short codes, and event/venue search
 - `My Stay`: confirmed itinerary, access pass, reservations, and linked services
 - `Requests`: late checkout, towels, room service, concierge, and other guest requests
 - `Suggestions`: personalized concierge-style recommendations

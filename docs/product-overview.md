@@ -9,6 +9,8 @@ It is designed for:
 - conference and summit venues
 - weddings and private events
 - day-access experiences like spa, pool, or dining passes
+- public venue browsing before authentication
+- future apartment discovery for local stay alternatives
 - future venue categories such as stadiums, government buildings, and transport spaces
 
 ## Core User Types
@@ -37,6 +39,8 @@ It is also growing toward:
 - venue add-on service sales
 - reusable map/data infrastructure for many types of spaces
 - seating and layout planning for reservable venues
+- invitation-based entry and short-code join flows
+- public venue search with pricing and discoverability
 
 ## Design Direction
 
@@ -54,10 +58,49 @@ It should avoid looking like:
 
 ## Current Navigation
 
+- `Entry`: explore venues, accept invitations, or enter a short code
 - `Stay`: itinerary and access identity
 - `Requests`: things the visitor wants to ask for
 - `Suggestions`: relevant recommendations, not yet confirmed
 - `Map`: venue and wayfinding experience
+
+## Entry And Access Model
+
+Kaze should support both open discovery and restricted access.
+
+### Public discovery
+
+Without signing in, a person should be able to:
+- browse venues
+- compare conference rooms
+- view wedding venues
+- see pricing and key details
+- later discover apartments and other local stay options
+
+### Private entry
+
+When a person already has a relationship with a venue or event, Kaze should support:
+- invitation-based entry
+- short code entry
+- search by venue, room, or event name
+
+Recommended first-run flow after onboarding:
+- `Explore venues`
+- `I have an invitation`
+- `Enter code`
+
+## Invitation And Pass Flow
+
+For conferences, weddings, and private events, organizers should be able to invite people directly.
+
+Suggested flow:
+1. organizer creates an event
+2. organizer invites guests, likely by phone number and optional name
+3. invitee receives an invitation
+4. Kaze matches the invitation or lets the person confirm it manually
+5. after confirmation, Kaze generates the correct pass
+
+This is stronger than requiring every user to search manually, while still keeping short codes and search available as fallback entry paths.
 
 ## Product Principle
 
@@ -78,6 +121,7 @@ Important commercial directions:
 - conference room bookings
 - wedding venue bookings
 - paid amenity/day-pass reservations
+- public venue discovery with conversion into reservation or invitation flows
 - event deposits and balance collection
 - venue add-on services sold during booking
 
@@ -149,3 +193,5 @@ However, Kaze can still create strong value by:
 - offering direct relationships for venues that want more control
 
 Room reservation support can still be explored later if it becomes commercially attractive.
+
+Apartments are also a reasonable future category, especially if Kaze becomes a broader local discovery and booking platform rather than only a hotel product.

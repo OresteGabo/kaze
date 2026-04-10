@@ -1,0 +1,40 @@
+@startuml
+title Reservation / Payment To Kaze Pass Access Flow
+
+actor Customer
+participant "Venue App" as App
+participant "Reservation Service" as Reservation
+participant "Payment Service" as Payment
+participant "Pass Service" as Pass
+participant "Venue Access Control" as Access
+
+Customer -> App : Select venue space and layout
+App -> Reservation : Create quote / draft reservation
+Reservation --> App : Reservation draft + price
+
+Customer -> App : Confirm reservation
+App -> Payment : Start payment
+Payment --> App : Payment instructions\n(MoMo / Airtel Money / BK-RSwitch / other)
+
+Customer -> Payment : Complete payment
+Payment -> Reservation : Mark deposit or full payment
+Reservation -> Pass : Generate entitlement if required
+Pass -> Access : Register allowed zones / time window
+
+App -> Pass : Fetch Kaze Pass details
+Pass --> App : Pass code + access scope + status
+
+Customer -> Access : Present Kaze Pass at entry
+Access -> Pass : Validate entitlement
+Pass --> Access : Valid / invalid
+Access --> Customer : Allow or deny entry
+
+note over Reservation,Pass
+Pass generation may depend on:
+- reservation approval
+- payment state
+- event rules
+- guest category
+end note
+
+@enduml

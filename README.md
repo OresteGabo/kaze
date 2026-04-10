@@ -1,6 +1,6 @@
 # Kaze
 
-Kaze is a Kotlin Multiplatform digital concierge and access platform for luxury hotels, conferences, weddings, and day-visitor experiences in Rwanda and East Africa.
+Kaze is a Kotlin Multiplatform venue experience, access, and commerce platform for hotels, conferences, weddings, and day-visitor experiences in Rwanda and East Africa.
 
 Instead of treating every user as a room guest, Kaze supports multiple visitor profiles:
 - in-house hotel guests
@@ -8,7 +8,15 @@ Instead of treating every user as a room guest, Kaze supports multiple visitor p
 - event-only visitors
 - amenity/day-pass visitors
 
-The app combines itinerary management, indoor wayfinding, access-aware venue maps, service requests, and a customizable digital access pass.
+The app combines itinerary management, indoor wayfinding, access-aware venue maps, service requests, venue reservations, payments, and a customizable digital access pass.
+
+Kaze is also evolving toward a reusable venue-mapping and venue-commerce platform that can support:
+- hotels
+- conference venues
+- wedding venues
+- stadiums
+- government buildings
+- transport spaces such as airports or airplanes
 
 ## Modules
 
@@ -24,9 +32,29 @@ The app combines itinerary management, indoor wayfinding, access-aware venue map
 - `Suggestions`: personalized concierge-style recommendations
 - `Map`: floor-based indoor navigation with restricted and hidden area support
 
+## Revenue Direction
+
+Kaze is not only a guest app. It can also grow into a venue monetization platform through:
+- conference-room reservations
+- wedding venue reservations
+- day-pass and amenity bookings
+- local payment support in Rwanda
+  - MTN MoMo
+  - Airtel Money
+  - BK / RSwitch and other compatible payment rails
+- add-on service sales
+  - decoration
+  - cleaning
+  - insurance
+  - photography and videography
+  - live streaming
+- lower-commission direct venue bookings compared with some international platforms
+
 ## Documentation
 
 - [Product Overview](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/product-overview.md)
+- [Venue Platform Strategy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/venue-platform-strategy.md)
+- [Architecture Diagrams](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/diagrams/README.md)
 - [Access Pass System](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/access-pass-system.md)
 - [Map Access Control](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/map-access-control.md)
 - [UI Architecture](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/ui-architecture.md)

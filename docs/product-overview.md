@@ -2,13 +2,14 @@
 
 ## What Kaze Is
 
-Kaze is a digital concierge and venue-navigation platform for hospitality and event environments.
+Kaze is a digital concierge, venue-navigation, and venue-commerce platform for hospitality and event environments.
 
 It is designed for:
 - luxury hotels
 - conference and summit venues
 - weddings and private events
 - day-access experiences like spa, pool, or dining passes
+- future venue categories such as stadiums, government buildings, and transport spaces
 
 ## Core User Types
 
@@ -29,6 +30,13 @@ Kaze combines five product ideas:
 - a concierge-style recommendation layer
 - indoor maps with access-aware areas
 - a digital access pass
+
+It is also growing toward:
+- venue reservation workflows
+- local payments
+- venue add-on service sales
+- reusable map/data infrastructure for many types of spaces
+- seating and layout planning for reservable venues
 
 ## Design Direction
 
@@ -61,3 +69,83 @@ That means the system can support:
 - restaurant privileges
 - pool/spa/day-pass access
 - restricted or hidden hotel zones
+
+## Commerce Direction
+
+Kaze should be able to support paid venue interactions, especially where local venues and organizers need a simpler and cheaper alternative to large international intermediaries.
+
+Important commercial directions:
+- conference room bookings
+- wedding venue bookings
+- paid amenity/day-pass reservations
+- event deposits and balance collection
+- venue add-on services sold during booking
+
+Potential add-on categories:
+- event styling / decoration
+- cleaning
+- insurance
+- camera and photography services
+- videography and live streaming
+
+Important terminology:
+- `layout planning` means how chairs, tables, aisles, and seating structures are arranged
+- `event styling` means flowers, lighting, decor, and other presentation services
+
+## Payments Direction
+
+For Rwanda, payment support should prioritize methods that users and venue operators already understand and trust.
+
+Priority methods:
+- MTN MoMo
+- Airtel Money
+- BK / RSwitch compatible flows
+- other locally relevant mobile or bank-backed payment rails
+
+## Platform Direction
+
+Kaze should not treat maps as a hotel-only feature.
+
+The venue-map capability can become a reusable platform that models:
+- sites
+- buildings
+- floors/levels
+- rooms
+- halls
+- seats
+- fixed objects
+- movable layout objects
+- zones
+- gates
+- amenities
+- restricted areas
+
+That would allow reuse across:
+- hotel apps
+- conference apps
+- wedding venue apps
+- stadium/ticketing apps
+- government/public-building guidance apps
+
+It can also support:
+- seating plans for wedding and conference venues
+- event entry controlled by Kaze Pass
+- different room-layout presets based on attendee count
+
+## Competitive Position
+
+Kaze does not need to start with hotel room inventory distribution.
+
+Why:
+- large international hotel-booking platforms already dominate that space
+- many local hotels already depend on those channels
+- room distribution is operationally complex
+
+However, Kaze can still create strong value by:
+- reducing venue booking friction
+- lowering commission pressure on venues
+- adding local payment options
+- bundling services around reservations
+- offering direct relationships for venues that want more control
+
+Room reservation support can still be explored later if it becomes commercially attractive.

@@ -20,10 +20,10 @@ Kaze is also evolving toward a reusable venue-mapping and venue-commerce platfor
 
 ## Modules
 
-- [/composeApp](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/composeApp/src): Compose Multiplatform client UI
-- [/shared](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/shared/src): shared domain models and map/access logic
-- [/server](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/server/src/main/kotlin): Ktor backend
-- [/iosApp](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/iosApp/iosApp): iOS entry app
+- [`composeApp/src`](composeApp/src): Compose Multiplatform client UI
+- [`shared/src`](shared/src): shared domain models and map/access logic
+- [`server/src/main/kotlin`](server/src/main/kotlin): Ktor backend
+- [`iosApp/iosApp`](iosApp/iosApp): iOS entry app
 
 ## Current Product Shape
 
@@ -52,22 +52,22 @@ Kaze is not only a guest app. It can also grow into a venue monetization platfor
 
 ## Documentation
 
-- [Product Overview](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/product-overview.md)
-- [Venue Platform Strategy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/venue-platform-strategy.md)
-- [Architecture Diagrams](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/diagrams/README.md)
-- [Access Pass System](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/access-pass-system.md)
-- [Map Access Control](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/map-access-control.md)
-- [UI Architecture](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/ui-architecture.md)
-- [API Contracts](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/kaze-api-contracts.md)
-- [Roadmap](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/ROADMAP.md)
+- [Product Overview](docs/product-overview.md)
+- [Venue Platform Strategy](docs/venue-platform-strategy.md)
+- [Architecture Diagrams](docs/diagrams/README.md)
+- [Access Pass System](docs/access-pass-system.md)
+- [Map Access Control](docs/map-access-control.md)
+- [UI Architecture](docs/ui-architecture.md)
+- [API Contracts](docs/kaze-api-contracts.md)
+- [Roadmap](ROADMAP.md)
 
 ## Legal And Project Policies
 
-- [Privacy Policy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/PRIVACY_POLICY.md)
-- [Terms of Use](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/TERMS_OF_USE.md)
-- [Proprietary License Notice](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/LICENSE.md)
-- [Contribution Policy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/CONTRIBUTING.md)
-- [Security Policy](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/SECURITY.md)
+- [Privacy Policy](PRIVACY_POLICY.md)
+- [Terms of Use](TERMS_OF_USE.md)
+- [Proprietary License Notice](LICENSE.md)
+- [Contribution Policy](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
 
 ## Build
 
@@ -91,4 +91,4 @@ Web:
 
 iOS:
 
-Open [/iosApp](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/iosApp) in Xcode.
+Open [`iosApp`](iosApp) in Xcode.

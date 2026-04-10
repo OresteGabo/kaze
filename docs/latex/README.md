@@ -31,6 +31,42 @@ pdflatex kaze-technical-brief.tex
 pdflatex kaze-product-dossier.tex
 ```
 
+Recommended scripted build:
+
+```sh
+cd /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex
+sh build-docs.sh
+```
+
+The script deletes the current generated PDFs first, then rebuilds fresh copies into the output folder.
+It automatically builds every standalone `.tex` document in this folder, so you do not need to maintain a manual file list in the script.
+
+This writes the generated files into:
+
+```text
+/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/out
+```
+
+Temporary LaTeX build artifacts such as `.aux`, `.log`, `.fls`, `.fdb_latexmk`, and `.out` are written into:
+
+```text
+/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/.latex-build
+```
+
+You can also choose a different output folder:
+
+```sh
+sh build-docs.sh /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/out
+```
+
+Or choose both PDF and artifact directories:
+
+```sh
+sh build-docs.sh /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/out /Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/.latex-build
+```
+
+The build script is the source of truth for output paths. If your IDE still writes PDFs to a project-level `out/` directory, that usually means it is using its own LaTeX runner instead of [build-docs.sh](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/docs/latex/build-docs.sh).
+
 If you want, these can later be split into:
 - a formal business plan
 - an investor memo

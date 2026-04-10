@@ -4,21 +4,19 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,11 +42,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.orestegabo.kaze.domain.DigitalAccessCard
 import dev.orestegabo.kaze.presentation.demo.StayMoment
 import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
 import dev.orestegabo.kaze.ui.access.StayAccessCardSection
+import dev.orestegabo.kaze.ui.components.InfoToken
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
@@ -61,22 +59,72 @@ internal fun StayTabContent(
     onPrimaryAction: (StayPrimaryAction) -> Unit,
 ) {
     val scrollState = rememberScrollState()
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        accessCard?.let { StayAccessCardSection(card = it) }
-        StayStatusHero(
-            onOpenRoute = { onPrimaryAction(StayPrimaryAction.OPEN_ROUTE) },
-            onViewFolio = { onPrimaryAction(StayPrimaryAction.VIEW_FOLIO) },
-        )
-        stayMoments.forEach { moment ->
-            StayMomentCard(
-                moment = moment,
-                onOpen = { onPrimaryAction(StayPrimaryAction.OpenStayMoment(moment)) },
-            )
+        val isExpanded = maxWidth >= 840.dp
+        val scheduleColumns = if (isExpanded) 2 else 1
+        val contentMaxWidth = if (isExpanded) 1100.dp else androidx.compose.ui.unit.Dp.Unspecified
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (contentMaxWidth != androidx.compose.ui.unit.Dp.Unspecified) {
+                        Modifier.widthIn(max = contentMaxWidth).align(Alignment.TopCenter)
+                    } else {
+                        Modifier
+                    },
+                ),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            if (isExpanded && accessCard != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Box(modifier = Modifier.weight(1.08f)) {
+                        StayAccessCardSection(card = accessCard)
+                    }
+                    Box(modifier = Modifier.weight(0.92f)) {
+                        StayStatusHero(
+                            expanded = true,
+                            onOpenRoute = { onPrimaryAction(StayPrimaryAction.OPEN_ROUTE) },
+                            onViewFolio = { onPrimaryAction(StayPrimaryAction.VIEW_FOLIO) },
+                        )
+                    }
+                }
+            } else {
+                accessCard?.let { StayAccessCardSection(card = it) }
+                StayStatusHero(
+                    expanded = false,
+                    onOpenRoute = { onPrimaryAction(StayPrimaryAction.OPEN_ROUTE) },
+                    onViewFolio = { onPrimaryAction(StayPrimaryAction.VIEW_FOLIO) },
+                )
+            }
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                maxItemsInEachRow = scheduleColumns,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                stayMoments.forEach { moment ->
+                    val cardModifier = if (scheduleColumns == 1) {
+                        Modifier.fillMaxWidth()
+                    } else {
+                        Modifier.weight(1f)
+                    }
+                    StayMomentCard(
+                        moment = moment,
+                        onOpen = { onPrimaryAction(StayPrimaryAction.OpenStayMoment(moment)) },
+                        modifier = cardModifier,
+                    )
+                }
+            }
         }
     }
 }
@@ -151,6 +199,7 @@ internal fun CompactStayHeader(
 
 @Composable
 internal fun StayStatusHero(
+    expanded: Boolean = false,
     onOpenRoute: () -> Unit,
     onViewFolio: () -> Unit,
 ) {
@@ -159,33 +208,119 @@ internal fun StayStatusHero(
         shape = RoundedCornerShape(28.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Ready now", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Open the map for your next destination or review your current hotel charges.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
-                )
-            }
+        if (expanded) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.Top,
             ) {
-                KazePrimaryButton(
-                    label = "Open route",
-                    onClick = onOpenRoute,
-                    leadingIcon = Icons.Default.Map,
-                )
-                KazeGhostButton(
-                    label = "My charges",
-                    onClick = onViewFolio,
-                    leadingIcon = Icons.Default.ReceiptLong,
-                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "Ready now",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            "Your next move is ready. Open the map or review your charges without leaving this page.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+                        )
+                    }
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        InfoToken(
+                            label = "Map ready",
+                            accentColor = MaterialTheme.colorScheme.secondary,
+                            leadingIcon = Icons.Default.Map,
+                        )
+                        InfoToken(
+                            label = "Charges available",
+                            accentColor = MaterialTheme.colorScheme.primary,
+                            leadingIcon = Icons.Default.ReceiptLong,
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier.weight(0.9f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(22.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                "Guest shortcuts",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            MetaPill(
+                                label = "Open your next route",
+                                leadingIcon = Icons.Default.Map,
+                            )
+                            MetaPill(
+                                label = "Check current room charges",
+                                leadingIcon = Icons.Default.ReceiptLong,
+                            )
+                        }
+                    }
+                    KazePrimaryButton(
+                        label = "Open route",
+                        onClick = onOpenRoute,
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Default.Map,
+                    )
+                    KazeSecondaryButton(
+                        label = "My charges",
+                        onClick = onViewFolio,
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Default.ReceiptLong,
+                    )
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Ready now", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Open the map for your next destination or review your current hotel charges.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    KazePrimaryButton(
+                        label = "Open route",
+                        onClick = onOpenRoute,
+                        leadingIcon = Icons.Default.Map,
+                    )
+                    KazeGhostButton(
+                        label = "My charges",
+                        onClick = onViewFolio,
+                        leadingIcon = Icons.Default.ReceiptLong,
+                    )
+                }
             }
         }
     }
@@ -197,8 +332,10 @@ internal fun StayStatusHero(
 internal fun StayMomentCard(
     moment: StayMoment,
     onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
+        modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),

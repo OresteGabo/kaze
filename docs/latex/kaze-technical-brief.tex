@@ -1,0 +1,197 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue
+}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\setlist[itemize]{leftmargin=1.5em}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE \textbf{Kaze Technical Brief}}\\[0.5em]
+    {\large Architecture and Platform Overview}\\[0.75em]
+    April 2026
+\end{center}
+
+\section{Purpose}
+
+This document gives future developers and technical stakeholders a high-level understanding of Kaze before they read the code.
+
+\section{Current System Shape}
+
+Kaze is currently structured as a Kotlin Multiplatform product with:
+\begin{itemize}
+    \item a shared domain layer
+    \item a Compose Multiplatform app
+    \item an initial Ktor backend
+    \item platform-specific targets for Android and iPhone
+\end{itemize}
+
+\section{Main Product Domains}
+
+Current and emerging domains include:
+\begin{itemize}
+    \item guest experience
+    \item service requests
+    \item event schedules
+    \item explore/discovery
+    \item venue maps and wayfinding
+    \item digital access pass
+    \item venue reservations
+    \item payments
+    \item add-on services
+\end{itemize}
+
+\section{Key Architectural Direction}
+
+Kaze is moving toward a reusable venue platform rather than a hotel-only app.
+
+The most important bounded domains are:
+\begin{itemize}
+    \item \textbf{Venue Maps}: reusable spatial data for hotels and non-hotel venues
+    \item \textbf{Venue Reservations}: booking conference rooms, wedding venues, and related spaces
+    \item \textbf{Payments}: local payment orchestration for Rwanda
+    \item \textbf{Access / Kaze Pass}: pass-based entitlements tied to venue rules
+    \item \textbf{Add-On Services}: event styling, cleaning, insurance, media, and related services
+\end{itemize}
+
+\section{Venue Maps Direction}
+
+The venue map domain should support:
+\begin{itemize}
+    \item sites
+    \item structures/buildings
+    \item levels/floors
+    \item spaces
+    \item nodes and paths
+    \item access rules
+    \item fixed objects
+    \item movable layout objects
+\end{itemize}
+
+This is important because the same model can support:
+\begin{itemize}
+    \item hotel rooms
+    \item conference halls
+    \item wedding spaces
+    \item stadium sections
+    \item government/public buildings
+\end{itemize}
+
+\section{Layout Planning Terminology}
+
+Two concepts should stay distinct:
+
+\subsection{Layout Planning}
+
+This means spatial arrangement:
+\begin{itemize}
+    \item chairs
+    \item tables
+    \item aisles
+    \item seating sections
+    \item fixed versus movable objects
+\end{itemize}
+
+\subsection{Event Styling}
+
+This means visual or service decoration:
+\begin{itemize}
+    \item flowers
+    \item lights
+    \item backdrops
+    \item wedding decor
+\end{itemize}
+
+Layout planning belongs near the map/space model. Event styling belongs nearer to venue commerce and add-on services.
+
+\section{Rendering Direction}
+
+The current UI already uses a canvas-oriented approach for venue maps. That direction remains valid for future venue layout planning.
+
+Expected rendering characteristics:
+\begin{itemize}
+    \item most geometry is static
+    \item spaces, walls, and fixed objects do not move continuously
+    \item layout changes happen when switching from one configuration to another
+    \item lightweight transitions are enough for the first versions
+\end{itemize}
+
+This is conceptually similar to scene-based or painter-driven spatial drawing: lines, rectangles, zones, symbols, and placed objects.
+
+\section{Service Boundary Direction}
+
+The venue-map capability is a likely candidate for a dedicated service and database because:
+\begin{itemize}
+    \item it can serve multiple apps
+    \item not every app needs to load map concerns
+    \item it can outgrow the hotel-only product context
+\end{itemize}
+
+Potential long-term services:
+\begin{itemize}
+    \item venue maps service
+    \item reservations service
+    \item payments/orchestration service
+    \item guest experience app/backend
+\end{itemize}
+
+\section{Payments Direction}
+
+Local payment support is strategically important. Early payment design should consider:
+\begin{itemize}
+    \item MTN MoMo
+    \item Airtel Money
+    \item BK / RSwitch flows
+    \item reservation deposits
+    \item full payment
+    \item refunds and status synchronization
+\end{itemize}
+
+\section{Access Direction}
+
+Kaze Pass should become more than a visual card. It should support entitlement logic such as:
+\begin{itemize}
+    \item reservation-based access
+    \item payment-based access
+    \item event-only access
+    \item VIP or restricted zone entry
+\end{itemize}
+
+\section{Recommended Reading Order}
+
+Before reading the code, future developers should review:
+\begin{enumerate}
+    \item product docs
+    \item venue platform strategy
+    \item PlantUML diagrams
+    \item shared domain models
+    \item backend boundaries
+    \item UI architecture
+\end{enumerate}
+
+\section{References}
+
+Useful project documents:
+\begin{itemize}
+    \item \texttt{docs/product-overview.md}
+    \item \texttt{docs/venue-platform-strategy.md}
+    \item \texttt{docs/map-access-control.md}
+    \item \texttt{docs/diagrams/}
+    \item \texttt{ROADMAP.md}
+\end{itemize}
+
+\end{document}

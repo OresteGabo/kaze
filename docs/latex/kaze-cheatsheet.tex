@@ -1,0 +1,281 @@
+\documentclass[11pt,a4paper]{article}
+\input{kaze-theme.tex}
+\newtcblisting{kazecodeblock}{
+  enhanced,
+  breakable,
+  colback=white,
+  colframe=KazeLine,
+  boxrule=0.6pt,
+  sharp corners,
+  left=3mm,
+  right=3mm,
+  top=2mm,
+  bottom=2mm,
+  listing only,
+  listing options={
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    columns=fullflexible
+  }
+}
+\newtcolorbox{kazeexamplebox}[1][]{
+  enhanced,
+  breakable,
+  colback=white,
+  colframe=KazeLine,
+  boxrule=0.6pt,
+  sharp corners,
+  fonttitle=\sffamily\bfseries\small,
+  coltitle=KazeInk,
+  title=#1,
+  left=4mm,
+  right=4mm,
+  top=3mm,
+  bottom=3mm
+}
+
+\begin{document}
+
+\KazeCover
+  {Kaze PDF Cheatsheet}
+  {Copy-paste guide for creating themed LaTeX documents}
+  {April 2026}
+  {Internal documentation aid}
+
+\KazePageTitle{PDF Cheatsheet}
+\KazeDocumentNotice
+
+\section{What This PDF Is For}
+
+This document shows the current Kaze LaTeX theme piece by piece so a new document can be assembled quickly.
+
+\begin{kazecalloutbox}[Recommended Use]
+Keep this PDF open while writing a new LaTeX document. Copy the relevant block, paste it into a new file, then replace the placeholder content.
+\end{kazecalloutbox}
+
+\section{Smallest Working File}
+
+Start from this exact structure:
+
+\begin{kazecodeblock}
+\documentclass[11pt,a4paper]{article}
+\input{kaze-theme.tex}
+
+\begin{document}
+
+\KazeCover
+  {Document Title}
+  {Short descriptive subtitle}
+  {April 2026}
+  {Audience or document type}
+
+\KazePageTitle{Document Scope}
+\KazeDocumentNotice
+
+\section{First Section}
+
+Your content here.
+
+\end{document}
+\end{kazecodeblock}
+
+\begin{kazehighlightbox}
+\textbf{Use this first:} If you only need one snippet from this cheatsheet, use the block above. It is the smallest complete file that matches the current Kaze theme.
+\end{kazehighlightbox}
+
+\section{Cover Block}
+
+Use this near the top of the document:
+
+\begin{kazecodeblock}
+\KazeCover
+  {Kaze Investor Brief}
+  {Venue Experience, Access, and Commerce Platform}
+  {April 2026}
+  {Investor and partner-facing summary}
+\end{kazecodeblock}
+
+Arguments:
+\begin{itemize}
+    \item first line: main title
+    \item second line: subtitle
+    \item third line: date
+    \item fourth line: document type or intended audience
+\end{itemize}
+
+\begin{kazeexamplebox}[Result Preview]
+\textbf{Visual effect:} a branded first page with the Kaze by GABO lockup, the main document title, subtitle, date, private-use notice, and contact line.
+\end{kazeexamplebox}
+
+\section{Document Scope and Notice}
+
+Use these directly after the cover:
+
+\begin{kazecodeblock}
+\KazePageTitle{Investor Brief}
+\KazeDocumentNotice
+\end{kazecodeblock}
+
+This gives the body a scope label and the standard confidentiality box.
+
+\begin{kazeexamplebox}[Result Preview]
+\KazePageTitle{Investor Brief}
+\KazeDocumentNotice
+\end{kazeexamplebox}
+
+\section{Normal Sections}
+
+\subsection{Section Heading}
+
+\begin{kazecodeblock}
+\section{Executive Summary}
+
+Kaze is a venue experience, access, and commerce platform.
+\end{kazecodeblock}
+
+\begin{kazeexamplebox}[Result Preview]
+\section*{Executive Summary}
+Kaze is a venue experience, access, and commerce platform.
+\end{kazeexamplebox}
+
+\subsection{Subsection Heading}
+
+\begin{kazecodeblock}
+\subsection{Payments}
+
+Kaze can support MTN MoMo, Airtel Money, and other local rails.
+\end{kazecodeblock}
+
+\begin{kazeexamplebox}[Result Preview]
+\subsection*{Payments}
+Kaze can support MTN MoMo, Airtel Money, and other local rails.
+\end{kazeexamplebox}
+
+\section{Highlight Box}
+
+Use this for strategic notes or key observations:
+
+\begin{kazecodeblock}
+\begin{kazehighlightbox}
+\textbf{Strategic note:} Kaze can reuse venue-map infrastructure
+across hotels, conferences, and weddings.
+\end{kazehighlightbox}
+\end{kazecodeblock}
+
+\begin{kazeexamplebox}[Result Preview]
+\begin{kazehighlightbox}
+\textbf{Strategic note:} Kaze can reuse venue-map infrastructure across hotels, conferences, and weddings.
+\end{kazehighlightbox}
+\end{kazeexamplebox}
+
+\section{Callout Box With Title}
+
+Use this for summary panels and explanatory notes:
+
+\begin{kazecodeblock}
+\begin{kazecalloutbox}[Why This Matters]
+This document helps future developers understand the architecture
+before reading the codebase.
+\end{kazecalloutbox}
+\end{kazecodeblock}
+
+\begin{kazeexamplebox}[Result Preview]
+\begin{kazecalloutbox}[Why This Matters]
+This document helps future developers understand the architecture before reading the codebase.
+\end{kazecalloutbox}
+\end{kazeexamplebox}
+
+\section{Lists}
+
+\begin{kazecodeblock}
+\begin{itemize}
+    \item hotels
+    \item conference venues
+    \item wedding venues
+\end{itemize}
+\end{kazecodeblock}
+
+\begin{kazeexamplebox}[Result Preview]
+\begin{itemize}
+    \item hotels
+    \item conference venues
+    \item wedding venues
+\end{itemize}
+\end{kazeexamplebox}
+
+\section{Simple Table Layout}
+
+Use this for structured comparisons or opportunity areas:
+
+\begin{kazecodeblock}
+\begin{longtable}{p{0.28\textwidth} p{0.64\textwidth}}
+\textbf{Area} & \textbf{Why It Matters} \\
+Hotels & strong starting market for guest flows and services \\
+Conference venues & good fit for bookings and access control \\
+\end{longtable}
+\end{kazecodeblock}
+
+\begin{kazeexamplebox}[Result Preview]
+\begin{longtable}{p{0.28\textwidth} p{0.56\textwidth}}
+\textbf{Area} & \textbf{Why It Matters} \\
+Hotels & strong starting market for guest flows and services \\
+Conference venues & good fit for bookings and access control \\
+\end{longtable}
+\end{kazeexamplebox}
+
+\section{Contact Block}
+
+\begin{kazecodeblock}
+\section{Contact}
+
+\begin{itemize}
+    \item \textbf{Email:} \href{mailto:orestegabo@icloud.com}{orestegabo@icloud.com}
+    \item \textbf{Website:} \href{https://orestegabo.dev}{https://orestegabo.dev}
+\end{itemize}
+\end{kazecodeblock}
+
+\begin{kazeexamplebox}[Result Preview]
+\begin{itemize}
+    \item \textbf{Email:} \href{mailto:orestegabo@icloud.com}{orestegabo@icloud.com}
+    \item \textbf{Website:} \href{https://orestegabo.dev}{orestegabo.dev}
+\end{itemize}
+\end{kazeexamplebox}
+
+\section{Recommended Workflow}
+
+\begin{itemize}
+    \item duplicate `kaze-template.tex` or start from the minimal file in this document
+    \item rename the file clearly
+    \item replace the cover values
+    \item write sections
+    \item add highlight and callout boxes where needed
+    \item build with `sh build-docs.sh`
+\end{itemize}
+
+\section{File Naming Advice}
+
+Good file names:
+\begin{itemize}
+    \item `kaze-investor-memo.tex`
+    \item `kaze-business-plan.tex`
+    \item `kaze-architecture-spec.tex`
+    \item `kaze-partner-brief.tex`
+\end{itemize}
+
+Avoid:
+\begin{itemize}
+    \item `doc1.tex`
+    \item `notes.tex`
+    \item `final-final.tex`
+\end{itemize}
+
+\section{Where To Look Next}
+
+For source references:
+\begin{itemize}
+    \item see `CHEATSHEET.md` for the Markdown version
+    \item see `kaze-template.tex` for a reusable starter file
+    \item see `kaze-theme.tex` only if you want to modify the global design
+\end{itemize}
+
+\end{document}

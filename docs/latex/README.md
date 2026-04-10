@@ -45,6 +45,8 @@ sh build-docs.sh
 
 The script deletes the current generated PDFs first, then rebuilds fresh copies into the output folder.
 It automatically builds every standalone `.tex` document in this folder, so you do not need to maintain a manual file list in the script.
+It also keeps terminal output clean by showing per-document progress instead of raw TeX engine internals.
+If a document fails, the script prints the saved log for that document.
 
 This writes the generated files into:
 
@@ -56,6 +58,12 @@ Temporary LaTeX build artifacts such as `.aux`, `.log`, `.fls`, `.fdb_latexmk`, 
 
 ```text
 docs/latex/.latex-build
+```
+
+Per-document build logs are written into:
+
+```text
+docs/latex/.latex-build/logs
 ```
 
 You can also choose a different output folder:

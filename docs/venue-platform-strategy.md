@@ -24,6 +24,7 @@ The strongest reusable foundation is:
 - venue reservations
 - local payments
 - add-on services
+- discovery and join flows for both public and invited users
 
 ## Why This Matters
 
@@ -31,6 +32,7 @@ This direction can unlock both product depth and new revenue streams.
 
 It can help Kaze:
 - serve more than one venue category
+- support both discovery users and invited users
 - power multiple branded apps
 - reuse the same venue data across different products
 - reduce dependency on single-use hardcoded hotel flows
@@ -149,6 +151,81 @@ These categories fit Kaze because they benefit from:
 - venue-specific rules
 - local payment methods
 - add-on service packaging
+
+## Discovery Before Authentication
+
+Kaze should not force every user into a login or private-event path immediately.
+
+A stronger entry model is:
+- public venue discovery
+- invitation-based entry
+- short code entry
+
+This matters because some users are:
+- actively looking for a venue
+- comparing prices before booking
+- exploring conference or wedding options
+- not yet linked to a hotel stay or event
+
+That means Kaze can work as:
+- a private access product
+- a public discovery and conversion product
+
+## First-Run Entry Flow
+
+After onboarding, the most useful first-run experience is likely:
+- `Explore venues`
+- `I have an invitation`
+- `Enter code`
+
+This is better than a purely closed flow because it supports:
+- new customers who only want to browse
+- invited attendees who need fast access
+- people who received a short conference or wedding code
+
+## Short Codes
+
+Conferences, weddings, and private events should support short entry codes.
+
+Good code characteristics:
+- short enough to type quickly
+- readable
+- usable in SMS, posters, invitation cards, and staff instructions
+
+Short codes are useful when:
+- the guest was not pre-identified
+- an organizer wants simple offline-friendly distribution
+- the user arrives with only a printed or verbal reference
+
+## Invitation Strategy
+
+Invitations should become a first-class access path.
+
+Recommended model:
+1. organizer creates event
+2. organizer adds invitees by phone number and optional name
+3. invitee receives invitation
+4. Kaze matches the invitation or lets the person confirm it
+5. Kaze generates the appropriate pass after confirmation
+
+Phone-number-based invitations are especially relevant in Rwanda because they fit how people already communicate and receive event instructions.
+
+## Public Pricing And Future Apartments
+
+Public venue browsing should include:
+- venue name
+- space type
+- pricing
+- capacity
+- basic amenities
+- location context
+
+This same discovery layer could later support:
+- apartments
+- local short-stay alternatives
+- non-hotel accommodation options
+
+That gives Kaze a broader marketplace surface without abandoning its venue-access strengths.
 
 ## Rwanda Payment Strategy
 

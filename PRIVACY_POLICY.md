@@ -9,8 +9,7 @@ Kaze is a private digital hospitality platform developed by GABO for hotel guest
 This Privacy Policy explains how Kaze may collect, use, store, and protect personal data when the product is used in business, pilot, or production environments.
 
 Contact:
-- Email: orestegabo@icloud.com
-- Website: [https://orestegabo.dev](https://orestegabo.dev)
+- See [CONTACT.md](CONTACT.md)
 
 ## Who We Are
 
@@ -137,7 +136,7 @@ Depending on applicable law, users may have rights to:
 - withdraw consent where consent is the legal basis
 
 Requests can be sent to:
-- orestegabo@icloud.com
+- See [CONTACT.md](CONTACT.md)
 
 ## Cookies And Tracking
 
@@ -171,5 +170,4 @@ This Privacy Policy may be updated as the product evolves. The latest version sh
 
 For privacy or data protection questions:
 
-- Email: orestegabo@icloud.com
-- Website: [https://orestegabo.dev](https://orestegabo.dev)
+- See [CONTACT.md](CONTACT.md)

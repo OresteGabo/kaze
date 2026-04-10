@@ -3,18 +3,19 @@ package dev.orestegabo.kaze.ui.explore
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Explore
@@ -34,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -52,31 +54,85 @@ internal fun ExploreScreen(
     onHeroPrimary: () -> Unit,
     onHeroSecondary: () -> Unit,
 ) {
-    LazyColumn(
+    BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            SectionIntroCard(
-                eyebrow = "Explore",
-                title = "Discover the hotel",
-                subtitle = "Browse amenities and experiences available across the property, whether included or paid separately.",
-                icon = Icons.Default.Explore,
-            )
-        }
-        item {
-            HighlightPanel(
-                title = "Tonight's highlighted experiences",
-                body = "Sunset jazz at the lounge, chef's table seating, and a guided art walk through the lobby collection.",
-                primaryLabel = "Reserve activity",
-                secondaryLabel = "Open amenity map",
-                onPrimaryClick = onHeroPrimary,
-                onSecondaryClick = onHeroSecondary,
-            )
-        }
-        items(highlights) { highlight ->
-            ExploreCard(highlight = highlight, onActionClick = { onHighlightAction(highlight) })
+        val isExpanded = maxWidth >= 860.dp
+        val columns = if (maxWidth >= 1180.dp) 3 else if (isExpanded) 2 else 1
+        val contentMaxWidth = if (isExpanded) 1160.dp else androidx.compose.ui.unit.Dp.Unspecified
+        val scrollState = rememberScrollState()
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(20.dp)
+                .then(
+                    if (contentMaxWidth != androidx.compose.ui.unit.Dp.Unspecified) {
+                        Modifier.widthIn(max = contentMaxWidth)
+                    } else {
+                        Modifier
+                    },
+                ),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (isExpanded) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Box(modifier = Modifier.weight(0.95f)) {
+                        SectionIntroCard(
+                            eyebrow = "Explore",
+                            title = "Discover the hotel",
+                            subtitle = "Browse amenities and experiences available across the property, whether included or paid separately.",
+                            icon = Icons.Default.Explore,
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1.05f)) {
+                        HighlightPanel(
+                            title = "Tonight's highlighted experiences",
+                            body = "Sunset jazz at the lounge, chef's table seating, and a guided art walk through the lobby collection.",
+                            primaryLabel = "Reserve activity",
+                            secondaryLabel = "Open amenity map",
+                            onPrimaryClick = onHeroPrimary,
+                            onSecondaryClick = onHeroSecondary,
+                        )
+                    }
+                }
+            } else {
+                SectionIntroCard(
+                    eyebrow = "Explore",
+                    title = "Discover the hotel",
+                    subtitle = "Browse amenities and experiences available across the property, whether included or paid separately.",
+                    icon = Icons.Default.Explore,
+                )
+                HighlightPanel(
+                    title = "Tonight's highlighted experiences",
+                    body = "Sunset jazz at the lounge, chef's table seating, and a guided art walk through the lobby collection.",
+                    primaryLabel = "Reserve activity",
+                    secondaryLabel = "Open amenity map",
+                    onPrimaryClick = onHeroPrimary,
+                    onSecondaryClick = onHeroSecondary,
+                )
+            }
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                maxItemsInEachRow = columns,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                highlights.forEach { highlight ->
+                    val cardModifier = if (columns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                    ExploreCard(
+                        highlight = highlight,
+                        onActionClick = { onHighlightAction(highlight) },
+                        modifier = cardModifier,
+                    )
+                }
+            }
         }
     }
 }
@@ -85,9 +141,11 @@ internal fun ExploreScreen(
 private fun ExploreCard(
     highlight: AmenityHighlight,
     onActionClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val icon = highlight.exploreIcon()
     Card(
+        modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(26.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),

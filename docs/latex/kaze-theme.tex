@@ -1,0 +1,197 @@
+\usepackage[a4paper,margin=1in,headsep=30pt,footskip=35pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{tgpagella}
+\usepackage[scale=0.92]{tgheros}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{tikz}
+\usepackage[most]{tcolorbox}
+
+% --- CORE COLOR IDENTITY ---
+\definecolor{KazePrimary}{HTML}{284F58}
+\definecolor{KazeSecondary}{HTML}{8A6538}
+\definecolor{KazeInk}{HTML}{1F292D}
+\definecolor{KazeMuted}{HTML}{5D676C}
+\definecolor{KazeSoft}{HTML}{F8F4ED}
+\definecolor{KazeLine}{HTML}{D8CCBC}
+\definecolor{KazePaper}{HTML}{FCFBF8}
+\definecolor{KazeLegal}{HTML}{7A2E2E}
+
+\hypersetup{colorlinks=true, linkcolor=KazePrimary, urlcolor=KazePrimary}
+
+\setlist[itemize]{leftmargin=1.5em, itemsep=0.4em}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\headheight}{35pt}
+
+\newcommand{\KazeLogoPath}{../../composeApp/src/commonMain/composeResources/drawable/k_logo_raster.png}
+\newcommand{\KazeMarkPath}{../../composeApp/src/commonMain/composeResources/drawable/k_mark_raster.png}
+\newcommand{\GaboLogoPath}{../../composeApp/src/commonMain/composeResources/drawable/gabo_mark_raster.png}
+\newcommand{\GaboGrayMarkPath}{../../composeApp/src/commonMain/composeResources/drawable/gabo_mark_gray_raster.png}
+\newcommand{\KazeWordmarkHeader}{{\fontfamily{qhv}\selectfont\sffamily\bfseries\small\textcolor{KazePrimary}{KAZE}}}
+\newcommand{\KazeWordmarkCover}{{\fontfamily{qhv}\selectfont\sffamily\bfseries\fontsize{30}{30}\selectfont\textcolor{KazePrimary}{KAZE}}}
+\newcommand{\KazeByGaboHeader}{{\raisebox{0.05cm}{\includegraphics[height=0.18cm]{\GaboLogoPath}}\hspace{0.2em}\sffamily\tiny\textcolor{KazeSecondary}{by GABO}}}
+\newcommand{\KazeByGaboCover}{{\includegraphics[height=0.45cm]{\GaboLogoPath}\hspace{0.4em}\sffamily\large\textcolor{KazeSecondary}{by GABO}}}
+\newcommand{\KazeCoverLabel}[1]{{\sffamily\normalsize\textcolor{KazeSecondary}{\textbf{#1}}}}
+\newcommand{\KazeCoverTitle}[1]{{\fontfamily{qpl}\selectfont\fontsize{38}{43}\selectfont\textcolor{KazeInk}{#1}}}
+\newcommand{\KazeCoverSubtitle}[1]{{\sffamily\Large\textcolor{KazePrimary}{#1}}}
+
+\pagecolor{KazePaper}
+
+\AddToHook{shipout/background}{%
+    \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=south east, opacity=0.035] at ([xshift=-0.45cm,yshift=0.65cm]current page.south east) {%
+            \includegraphics[width=4.8cm]{\KazeMarkPath}%
+        };
+        \node[anchor=north east, opacity=0.028] at ([xshift=-1.1cm,yshift=-1.2cm]current page.north east) {%
+            \includegraphics[width=2.2cm]{\GaboGrayMarkPath}%
+        };
+    \end{tikzpicture}%
+}
+
+% --- SECTION DESIGN: TECHNICAL PRECISION ---
+\titleformat{\section}
+{\sffamily\Large\bfseries\color{KazeInk}}
+{\thesection}
+{1em}
+{\MakeUppercase}
+[\vspace{0.2em}{\color{KazeSecondary}\hrule height 1.5pt width 2cm}\vspace{0.5em}]
+
+\titleformat{\subsection}
+{\sffamily\large\bfseries\color{KazePrimary}}
+{\thesubsection}
+{1em}
+{}
+
+% --- DUAL-BRANDED HEADER (HIGH VISIBILITY) ---
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+
+\fancyhead[L]{%
+    \begin{tabular}{@{}l l@{}}
+        \raisebox{-0.3\height}{\includegraphics[height=0.6cm]{\KazeLogoPath}} &
+        \begin{minipage}[b]{4cm}
+            \KazeWordmarkHeader\\
+            \vspace{-1mm}
+            \KazeByGaboHeader
+        \end{minipage}
+    \end{tabular}
+}
+\fancyhead[R]{\sffamily\tiny\textcolor{KazeMuted}{KAZE PROPRIETARY // \today}}
+
+\fancyfoot[L]{\sffamily\tiny\textcolor{KazeLegal}{\textbf{LEGAL NOTICE:} CONFIDENTIAL. PROPERTY OF KAZE.}}
+\fancyfoot[C]{\sffamily\footnotesize\textcolor{KazeMuted}{\thepage\ / \pageref*{LastPage}}}
+\fancyfoot[R]{\sffamily\tiny\textcolor{KazeInk}{EST. 2026}}
+
+% --- CLEAN REGISTRY BOXES ---
+\newtcolorbox{kazehighlightbox}{
+    enhanced,
+    colback=KazeSoft,      % Only a very faint paper-like tint
+    frame hidden,          % No borders at all
+    sharp corners,
+    left=5mm, right=5mm, top=4mm, bottom=4mm,
+% Use a small square bullet as an anchor instead of a line
+    overlay={
+        \fill[KazeSecondary] ([xshift=2mm,yshift=-4mm]frame.north west) rectangle ([xshift=3mm,yshift=-5mm]frame.north west);
+    }
+}
+\newtcolorbox{kazecalloutbox}[1][]{
+    enhanced,
+    colback=white,
+    colframe=KazeInk,
+    boxrule=1pt,
+    sharp corners,
+    fonttitle=\sffamily\bfseries\small,
+    coltitle=white,
+    attach boxed title to top left={yshift=-2mm, xshift=5mm},
+    boxed title style={colback=KazeInk, sharp corners, boxrule=0pt},
+    title=#1,
+    left=5mm, top=6mm, bottom=4mm
+}
+
+\newcommand{\KazePageTitle}[1]{%
+    \vspace{1em}
+    {\sffamily\small\textcolor{KazeSecondary}{\textbf{\MakeUppercase{Document Scope: #1}}}\par}
+    \vspace{0.5em}
+}
+
+\newcommand{\KazeDocumentNotice}{%
+    \begin{kazecalloutbox}[Security Disclosure]
+    \sffamily\small This dossier contains trade secrets and sensitive intellectual property. \textbf{Unauthorized distribution is strictly prohibited.} Access is limited to Kaze personnel and authorized external stakeholders for legal and investor review.
+    \end{kazecalloutbox}
+}
+
+% --- THE "Blueprints" COVER PAGE ---
+\newcommand{\KazeCover}[4]{
+    \hypersetup{pageanchor=false}
+    \begin{titlepage}
+    \thispagestyle{empty}
+
+% Background "Pillar" for institutional weight
+    \begin{tikzpicture}[remember picture,overlay]
+    \fill[KazePrimary] (current page.north west) rectangle ([xshift=0.5cm]current page.south west);
+    \end{tikzpicture}
+
+    \vspace*{0.5cm}
+    \begin{flushleft}
+    \hspace{1cm}
+    \begin{tabular}{@{}l l@{}}
+    \raisebox{-0.3\height}{\includegraphics[width=2.2cm]{\KazeLogoPath}} &
+    \begin{minipage}[b]{8cm}
+    {\KazeWordmarkCover\par}
+    \vspace{0.1cm}
+    {\KazeByGaboCover\par}
+    \end{minipage}
+    \end{tabular}
+    \end{flushleft}
+
+    \vspace{3.5cm}
+
+    \hspace{1cm}
+    \begin{minipage}{0.85\textwidth}
+    \raggedright
+    {\KazeCoverLabel{OFFICIAL DOSSIER / #4}\par}
+    \vspace{0.95cm}
+    {\KazeCoverTitle{#1}\par}
+    \vspace{0.7cm}
+    {\KazeCoverSubtitle{#2}\par}
+
+    \vspace{1.5cm}
+    {\color{KazeLine}\hrule height 2pt width 3cm}
+    \vspace{1.5cm}
+
+    {\sffamily\large\textcolor{KazeMuted}{#3}\par}
+    \end{minipage}
+
+    \vfill
+
+    \hspace{1cm}
+    \begin{minipage}{0.85\textwidth}
+    \begin{kazehighlightbox}
+    \sffamily\small
+    \textbf{\textcolor{KazeLegal}{RESTRICTED DOCUMENT:}} This information is intended for the recipient only. It contains proprietary strategic planning belonging to Kaze. By accessing this document, you agree to non-disclosure terms.
+    \end{kazehighlightbox}
+    \end{minipage}
+
+    \vspace{1.5cm}
+    \hspace{1cm}
+    \begin{minipage}{0.85\textwidth}
+    \sffamily\tiny\textcolor{KazeMuted}{AUTHORIZATION \& CONTACT:} \\
+    \sffamily\small\textbf{\href{mailto:orestegabo@icloud.com}{orestegabo@icloud.com}} \hfill \textbf{ORESTEGABO.DEV}
+    \end{minipage}
+
+    \end{titlepage}
+    \hypersetup{pageanchor=true}
+}

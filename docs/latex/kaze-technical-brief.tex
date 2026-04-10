@@ -1,34 +1,24 @@
 \documentclass[11pt,a4paper]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage{hyperref}
-\usepackage{enumitem}
-\usepackage{titlesec}
-\usepackage{parskip}
-
-\hypersetup{
-  colorlinks=true,
-  linkcolor=black,
-  urlcolor=blue
-}
-
-\titleformat{\section}{\large\bfseries}{}{0em}{}
-\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
-\setlist[itemize]{leftmargin=1.5em}
+\input{kaze-theme.tex}
 
 \begin{document}
 
-\begin{center}
-    {\LARGE \textbf{Kaze Technical Brief}}\\[0.5em]
-    {\large Architecture and Platform Overview}\\[0.75em]
-    April 2026
-\end{center}
+\KazeCover
+  {Kaze Technical Brief}
+  {Architecture and Platform Overview}
+  {April 2026}
+  {Technical onboarding and architecture summary}
+
+\KazePageTitle{Technical Brief}
+\KazeDocumentNotice
 
 \section{Purpose}
 
 This document gives future developers and technical stakeholders a high-level understanding of Kaze before they read the code.
+
+\begin{kazecalloutbox}[Use Before Reading Code]
+This brief is intended to reduce ramp-up time for future developers, architects, partners, and technical reviewers by explaining the platform direction before code-level implementation details.
+\end{kazecalloutbox}
 
 \section{Current System Shape}
 
@@ -148,6 +138,10 @@ Potential long-term services:
     \item payments/orchestration service
     \item guest experience app/backend
 \end{itemize}
+
+\begin{kazehighlightbox}
+\textbf{Architectural note:} the venue-maps capability is the strongest candidate for a reusable service boundary because it can outlive the hotel-specific product shape.
+\end{kazehighlightbox}
 
 \section{Payments Direction}
 

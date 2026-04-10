@@ -1,12 +1,20 @@
 #!/bin/sh
+# Author: Oreste Gabo
+# Purpose: Build every standalone LaTeX document in this folder, show friendly
+# terminal progress, and then clean temporary artifacts while keeping final PDFs.
 
 set -eu
 
+# Resolve paths relative to this script so the command works from any cwd.
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
 PDF_DIR="${1:-$SCRIPT_DIR/out}"
 BUILD_DIR="${2:-$SCRIPT_DIR/.latex-build}"
 LOG_DIR="$BUILD_DIR/logs"
 
+# Keep the companion cleanup script executable for normal `./clean-docs.sh` use.
+chmod +x "$SCRIPT_DIR/clean-docs.sh" 2>/dev/null || true
+
+# Use colors and animated progress only when stdout is a real terminal.
 if [ -t 1 ]; then
   COLOR_RESET="$(printf '\033[0m')"
   COLOR_FILLED="$(printf '\033[38;5;29m')"
@@ -25,6 +33,7 @@ fi
 
 mkdir -p "$PDF_DIR" "$BUILD_DIR" "$LOG_DIR"
 
+# Draw a compact block-based bar for the current document.
 build_bar() {
   filled="$1"
   width=24
@@ -51,6 +60,7 @@ build_bar() {
     "$COLOR_RESET"
 }
 
+# Print the final settled line for one completed document.
 print_done_step() {
   current="$1"
   total="$2"
@@ -63,6 +73,8 @@ print_done_step() {
     "$COLOR_LABEL" "$label" "$COLOR_RESET"
 }
 
+# Run one build command quietly, animate progress while it is running, and
+# print the saved log only if the command fails.
 run_with_progress() {
   current="$1"
   total="$2"
@@ -105,6 +117,8 @@ run_with_progress() {
   fi
 }
 
+# Auto-discover buildable docs by looking for real LaTeX entry files.
+# Helper/theme files like `kaze-theme.tex` are ignored automatically.
 discover_docs() {
   found=0
   for tex_file in "$SCRIPT_DIR"/*.tex; do
@@ -124,8 +138,10 @@ discover_docs() {
 DOCS="$(discover_docs)"
 DOC_COUNT="$(printf '%s\n' "$DOCS" | wc -l | tr -d ' ')"
 
+# Replace the previous PDF set with a fresh build.
 rm -f "$PDF_DIR"/*.pdf
 
+# Preferred path: latexmk handles references and reruns cleanly.
 build_with_latexmk() {
   current="$1"
   total="$2"
@@ -133,6 +149,7 @@ build_with_latexmk() {
   log_file="$LOG_DIR/$doc.log"
   run_with_progress "$current" "$total" "$doc.pdf" "$log_file" \
     latexmk \
+    -cd \
     -pdf \
     -silent \
     -interaction=nonstopmode \
@@ -143,13 +160,14 @@ build_with_latexmk() {
   mv "$BUILD_DIR/$doc.pdf" "$PDF_DIR/$doc.pdf"
 }
 
+# Fallback path when latexmk is not installed.
 build_with_pdflatex() {
   current="$1"
   total="$2"
   doc="$3"
   log_file="$LOG_DIR/$doc.log"
   run_with_progress "$current" "$total" "$doc.pdf" "$log_file" \
-    sh -c "pdflatex -interaction=nonstopmode -halt-on-error -output-directory=\"$BUILD_DIR\" \"$SCRIPT_DIR/$doc.tex\" && pdflatex -interaction=nonstopmode -halt-on-error -output-directory=\"$BUILD_DIR\" \"$SCRIPT_DIR/$doc.tex\""
+    sh -c "cd \"$SCRIPT_DIR\" && pdflatex -interaction=nonstopmode -halt-on-error -output-directory=\"$BUILD_DIR\" \"$doc.tex\" && pdflatex -interaction=nonstopmode -halt-on-error -output-directory=\"$BUILD_DIR\" \"$doc.tex\""
   mv "$BUILD_DIR/$doc.pdf" "$PDF_DIR/$doc.pdf"
 }
 
@@ -167,5 +185,5 @@ else
 fi
 
 printf '\n'
-printf 'Built PDFs in %s\n' "$PDF_DIR"
-printf 'Build artifacts in %s\n' "$BUILD_DIR"
+# Clean temporary artifacts immediately after the build, but keep final PDFs.
+"$SCRIPT_DIR/clean-docs.sh" "$PDF_DIR" "$BUILD_DIR"

@@ -5,7 +5,7 @@
 If you discover a security issue in Kaze, do not disclose it publicly.
 
 Please report it privately to:
-- orestegabo@icloud.com
+- See [CONTACT.md](CONTACT.md)
 
 ## What To Include
 

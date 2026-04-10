@@ -1,0 +1,164 @@
+@startuml
+title Kaze Venue Map Domain
+
+hide empty methods
+hide circle
+skinparam classAttributeIconSize 0
+
+class VenueSite {
+  +id: UUID
+  +name: String
+  +venueType: VenueType
+  +countryCode: String
+  +city: String
+  +timezoneId: String
+}
+
+class VenueStructure {
+  +id: UUID
+  +siteId: UUID
+  +name: String
+  +kind: StructureKind
+}
+
+class VenueLevel {
+  +id: UUID
+  +structureId: UUID
+  +label: String
+  +orderIndex: Int
+}
+
+class VenueSpace {
+  +id: UUID
+  +levelId: UUID
+  +name: String
+  +spaceType: SpaceType
+  +capacity: Int
+  +numberingCode: String
+}
+
+class MapNode {
+  +id: UUID
+  +levelId: UUID
+  +x: Double
+  +y: Double
+  +nodeType: NodeType
+}
+
+class MapEdge {
+  +id: UUID
+  +fromNodeId: UUID
+  +toNodeId: UUID
+  +distanceMeters: Double
+  +accessible: Boolean
+}
+
+class AccessRule {
+  +id: UUID
+  +spaceId: UUID
+  +accessLevel: AccessLevel
+  +requiresPass: Boolean
+  +requiresReservation: Boolean
+}
+
+class LayoutZone {
+  +id: UUID
+  +spaceId: UUID
+  +name: String
+  +movable: Boolean
+  +maxGuests: Int
+}
+
+class FixedObject {
+  +id: UUID
+  +spaceId: UUID
+  +objectType: FixedObjectType
+  +x: Double
+  +y: Double
+  +rotation: Double
+}
+
+class LayoutTemplate {
+  +id: UUID
+  +spaceId: UUID
+  +name: String
+  +layoutType: LayoutType
+  +recommendedGuests: Int
+  +requiresApproval: Boolean
+}
+
+class LayoutObject {
+  +id: UUID
+  +templateId: UUID
+  +objectType: LayoutObjectType
+  +styleCode: String
+  +quantity: Int
+}
+
+class LayoutPlacement {
+  +id: UUID
+  +layoutObjectId: UUID
+  +zoneId: UUID
+  +x: Double
+  +y: Double
+  +rotation: Double
+}
+
+class EventAccessPass {
+  +id: UUID
+  +reservationId: UUID
+  +guestId: UUID
+  +status: PassStatus
+}
+
+enum VenueType {
+  HOTEL
+  CONFERENCE_CENTER
+  WEDDING_VENUE
+  STADIUM
+  GOVERNMENT_BUILDING
+  AIRPORT
+  AIRPLANE
+}
+
+enum SpaceType {
+  ROOM
+  HALL
+  BALLROOM
+  SECTION
+  GATE
+  LOUNGE
+  AMENITY
+}
+
+enum LayoutType {
+  THEATER
+  CLASSROOM
+  BOARDROOM
+  ROUND_TABLE
+  RECTANGULAR_TABLE
+  STANDING
+  MIXED
+}
+
+VenueSite "1" --> "many" VenueStructure
+VenueStructure "1" --> "many" VenueLevel
+VenueLevel "1" --> "many" VenueSpace
+VenueLevel "1" --> "many" MapNode
+MapNode "1" --> "many" MapEdge : from
+VenueSpace "1" --> "many" AccessRule
+VenueSpace "1" --> "many" LayoutZone
+VenueSpace "1" --> "many" FixedObject
+VenueSpace "1" --> "many" LayoutTemplate
+LayoutTemplate "1" --> "many" LayoutObject
+LayoutObject "1" --> "many" LayoutPlacement
+LayoutZone "1" --> "many" LayoutPlacement
+EventAccessPass ..> AccessRule
+
+note right of LayoutTemplate
+Layout planning means seat/table arrangement.
+Event styling such as flowers and lights
+should live in commerce/services, not here.
+end note
+
+@enduml

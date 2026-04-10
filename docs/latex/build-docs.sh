@@ -5,8 +5,105 @@ set -eu
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
 PDF_DIR="${1:-$SCRIPT_DIR/out}"
 BUILD_DIR="${2:-$SCRIPT_DIR/.latex-build}"
+LOG_DIR="$BUILD_DIR/logs"
 
-mkdir -p "$PDF_DIR" "$BUILD_DIR"
+if [ -t 1 ]; then
+  COLOR_RESET="$(printf '\033[0m')"
+  COLOR_FILLED="$(printf '\033[38;5;29m')"
+  COLOR_EMPTY="$(printf '\033[38;5;245m')"
+  COLOR_LABEL="$(printf '\033[38;5;180m')"
+  COLOR_COUNT="$(printf '\033[1;38;5;66m')"
+  USE_DYNAMIC_BAR=1
+else
+  COLOR_RESET=""
+  COLOR_FILLED=""
+  COLOR_EMPTY=""
+  COLOR_LABEL=""
+  COLOR_COUNT=""
+  USE_DYNAMIC_BAR=0
+fi
+
+mkdir -p "$PDF_DIR" "$BUILD_DIR" "$LOG_DIR"
+
+build_bar() {
+  filled="$1"
+  width=24
+  empty=$((width - filled))
+
+  filled_bar=""
+  i=0
+  while [ "$i" -lt "$filled" ]; do
+    filled_bar="${filled_bar}■"
+    i=$((i + 1))
+  done
+
+  empty_bar=""
+  i=0
+  while [ "$i" -lt "$empty" ]; do
+    empty_bar="${empty_bar}□"
+    i=$((i + 1))
+  done
+
+  printf '%s[%s%s%s%s]%s' \
+    "$COLOR_EMPTY" \
+    "$COLOR_FILLED" "$filled_bar" \
+    "$COLOR_EMPTY" "$empty_bar" \
+    "$COLOR_RESET"
+}
+
+print_done_step() {
+  current="$1"
+  total="$2"
+  label="$3"
+  bar="$(build_bar 24)"
+  printf '%s  %s100%%%s  %s%s/%s%s  %s%s%s\n' \
+    "$bar" \
+    "$COLOR_COUNT" "$COLOR_RESET" \
+    "$COLOR_COUNT" "$current" "$total" "$COLOR_RESET" \
+    "$COLOR_LABEL" "$label" "$COLOR_RESET"
+}
+
+run_with_progress() {
+  current="$1"
+  total="$2"
+  label="$3"
+  log_file="$4"
+  shift 4
+
+  "$@" >"$log_file" 2>&1 &
+  cmd_pid=$!
+
+  if [ "$USE_DYNAMIC_BAR" -eq 1 ]; then
+    frame=0
+    while kill -0 "$cmd_pid" 2>/dev/null; do
+      filled=$(( (frame % 18) + 4 ))
+      bar="$(build_bar "$filled")"
+      printf '\r%s  %s...%s  %s%s/%s%s  %s%s%s' \
+        "$bar" \
+        "$COLOR_COUNT" "$COLOR_RESET" \
+        "$COLOR_COUNT" "$current" "$total" "$COLOR_RESET" \
+        "$COLOR_LABEL" "$label" "$COLOR_RESET"
+      frame=$((frame + 1))
+      sleep 0.12
+    done
+    wait "$cmd_pid" || {
+      printf '\nBuild failed for %s\n' "$label" >&2
+      printf 'Log: %s\n\n' "$log_file" >&2
+      cat "$log_file" >&2
+      exit 1
+    }
+    printf '\r'
+    print_done_step "$current" "$total" "$label"
+  else
+    if ! wait "$cmd_pid"; then
+      printf '\nBuild failed for %s\n' "$label" >&2
+      printf 'Log: %s\n\n' "$log_file" >&2
+      cat "$log_file" >&2
+      exit 1
+    fi
+    print_done_step "$current" "$total" "$label"
+  fi
+}
 
 discover_docs() {
   found=0
@@ -25,13 +122,19 @@ discover_docs() {
 }
 
 DOCS="$(discover_docs)"
+DOC_COUNT="$(printf '%s\n' "$DOCS" | wc -l | tr -d ' ')"
 
 rm -f "$PDF_DIR"/*.pdf
 
 build_with_latexmk() {
-  doc="$1"
-  latexmk \
+  current="$1"
+  total="$2"
+  doc="$3"
+  log_file="$LOG_DIR/$doc.log"
+  run_with_progress "$current" "$total" "$doc.pdf" "$log_file" \
+    latexmk \
     -pdf \
+    -silent \
     -interaction=nonstopmode \
     -halt-on-error \
     -outdir="$BUILD_DIR" \
@@ -41,21 +144,28 @@ build_with_latexmk() {
 }
 
 build_with_pdflatex() {
-  doc="$1"
-  pdflatex -interaction=nonstopmode -halt-on-error -output-directory="$BUILD_DIR" "$SCRIPT_DIR/$doc.tex"
-  pdflatex -interaction=nonstopmode -halt-on-error -output-directory="$BUILD_DIR" "$SCRIPT_DIR/$doc.tex"
+  current="$1"
+  total="$2"
+  doc="$3"
+  log_file="$LOG_DIR/$doc.log"
+  run_with_progress "$current" "$total" "$doc.pdf" "$log_file" \
+    sh -c "pdflatex -interaction=nonstopmode -halt-on-error -output-directory=\"$BUILD_DIR\" \"$SCRIPT_DIR/$doc.tex\" && pdflatex -interaction=nonstopmode -halt-on-error -output-directory=\"$BUILD_DIR\" \"$SCRIPT_DIR/$doc.tex\""
   mv "$BUILD_DIR/$doc.pdf" "$PDF_DIR/$doc.pdf"
 }
 
+step=0
 if command -v latexmk >/dev/null 2>&1; then
   for doc in $DOCS; do
-    build_with_latexmk "$doc"
+    step=$((step + 1))
+    build_with_latexmk "$step" "$DOC_COUNT" "$doc"
   done
 else
   for doc in $DOCS; do
-    build_with_pdflatex "$doc"
+    step=$((step + 1))
+    build_with_pdflatex "$step" "$DOC_COUNT" "$doc"
   done
 fi
 
+printf '\n'
 printf 'Built PDFs in %s\n' "$PDF_DIR"
 printf 'Build artifacts in %s\n' "$BUILD_DIR"

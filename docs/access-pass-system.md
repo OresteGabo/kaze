@@ -14,7 +14,7 @@ The pass can represent:
 ## Current Domain Model
 
 The shared model lives in:
-- [DigitalStayCard.kt](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/DigitalStayCard.kt)
+- [DigitalStayCard.kt](../shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/DigitalStayCard.kt)
 
 `DigitalAccessCard` currently carries:
 - `id`

@@ -18,3 +18,5 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 /out/
+/docs/latex/out/
+/docs/latex/.latex-build/

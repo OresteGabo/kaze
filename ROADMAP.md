@@ -70,6 +70,15 @@ Status guide:
 - [ ] map labels from live hotel data
 - [ ] restricted-area overlays from policy data
 - [ ] offline map caching strategy
+- [ ] reusable venue-maps service/database for hotels and non-hotel venues
+- [ ] generic venue-space model for stadiums, government buildings, and transport spaces
+- [ ] numbering/identification model for seats, zones, rooms, gates, and sections
+- [ ] standalone map-management API for reuse across multiple apps
+- [ ] fixed-versus-movable object model for venue layouts
+- [ ] conference/wedding seating layout planner
+- [ ] default seating templates for round tables, rectangles, theater, classroom, and boardroom
+- [ ] attendee-count-based layout suggestions
+- [ ] layout switching transitions in map/canvas renderer
 
 ## Branding And Design System
 
@@ -134,6 +143,12 @@ Status guide:
 
 - [~] backend module exists
 - [ ] production API endpoints
+- [ ] venue reservations API
+- [ ] venue commerce API for add-on services
+- [ ] payment orchestration layer
+- [ ] Rwanda mobile-money integrations
+- [ ] card/bank payment integrations for local rails
+- [ ] reservation-to-pass entitlement integration
 - [ ] hotel PMS integration
 - [ ] room assignment integration
 - [ ] billing / folio integration
@@ -153,6 +168,37 @@ Status guide:
 - [ ] hotel-by-hotel configuration management
 - [ ] event overrides for spaces and labels
 - [ ] seed data strategy for pilots
+
+## Venue Reservations And Commerce
+
+- [ ] conference-room reservation flow
+- [ ] wedding venue reservation flow
+- [ ] venue availability calendar and slot logic
+- [ ] booking deposit logic
+- [ ] quote generation flow
+- [ ] negotiation-resistant booking flow with platform-only add-ons
+- [ ] layout planning flow for reservable venues
+- [ ] event styling/decor service catalog
+- [ ] cleaning service catalog
+- [ ] insurance add-on flow
+- [ ] camera, photography, and video streaming add-ons
+- [ ] direct booking checkout with Rwanda payment methods
+- [ ] Kaze Pass-gated event entry after reservation/payment
+- [ ] venue operator dashboard for reservation approvals
+- [ ] cancellation and refund policy engine
+- [ ] commission and payout model
+- [ ] tax and invoicing model for Rwanda
+
+## Platform Expansion
+
+- [ ] venue-type abstraction beyond hotels
+- [ ] stadium support
+- [ ] government-building support
+- [ ] airport/airplane cabin mapping feasibility review
+- [ ] reusable map-and-space API for third-party apps
+- [ ] white-label venue app model
+- [ ] separate venue-maps service deployment strategy
+- [ ] platform pricing for map/data reuse
 
 ## Testing And Quality
 
@@ -195,17 +241,22 @@ Status guide:
 - [ ] SLA / support process
 - [ ] pricing and packaging model
 - [ ] commercial rollout checklist
+- [ ] venue-commerce pricing model
+- [ ] operator commission strategy
+- [ ] partner onboarding for decorators, cleaners, insurers, and media providers
+- [ ] anti-bypass commercial strategy for hotels and venues
+- [ ] merchant/payment compliance review for Rwanda
 
 ## Highest-Priority Next Steps
 
 1. Replace demo data with real repositories for stay, events, explore, and maps.
 2. Build the first real backend-backed service request flow.
-3. Finish a real map asset/data pipeline for hotel floor plans.
-4. Add local/push notifications for request updates and stay reminders.
-5. Add authentication, session handling, and secure guest identity flow.
-6. Add crash reporting, analytics, and production observability.
-7. Prepare signed Android/TestFlight release pipelines.
-8. Complete accessibility, privacy, and release-readiness review.
+3. Design the reusable venue-maps service and generic venue-space model.
+4. Add seating/layout planning for conference rooms and wedding venues.
+5. Build the first venue reservation flow for conference rooms and wedding spaces.
+6. Add Rwanda payment support strategy for MoMo, Airtel Money, BK/RSwitch, and related methods.
+7. Add Kaze Pass-gated entry for paid or restricted events.
+8. Add platform add-on services that reduce off-platform negotiation pressure.
 
 ## Notes
 

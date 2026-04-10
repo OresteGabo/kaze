@@ -24,5 +24,4 @@ This project contains private product strategy, business logic, proprietary bran
 
 For business collaboration or authorized development inquiries:
 
-- Email: orestegabo@icloud.com
-- Website: [https://orestegabo.dev](https://orestegabo.dev)
+- See [CONTACT.md](CONTACT.md)

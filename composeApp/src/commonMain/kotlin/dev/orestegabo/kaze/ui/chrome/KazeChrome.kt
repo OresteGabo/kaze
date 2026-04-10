@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -225,6 +227,123 @@ internal fun KazeBottomBar(
                             maxLines = 1,
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun KazeNavigationRail(
+    modifier: Modifier = Modifier,
+    currentDestination: KazeDestination,
+    onDestinationSelected: (KazeDestination) -> Unit,
+) {
+    val uiPalette = KazeTheme.ui
+    Surface(
+        modifier = modifier
+            .fillMaxHeight()
+            .width(108.dp)
+            .padding(start = 12.dp, top = 18.dp, bottom = 18.dp),
+        shape = RoundedCornerShape(30.dp),
+        color = uiPalette.floatingShell,
+        tonalElevation = 8.dp,
+        shadowElevation = 14.dp,
+        border = BorderStroke(1.dp, uiPalette.floatingShellBorder),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = 10.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            KazeDestination.entries.forEach { destination ->
+                val selected = currentDestination == destination
+                val itemShape = RoundedCornerShape(
+                    topStart = 22.dp,
+                    topEnd = 12.dp,
+                    bottomEnd = 22.dp,
+                    bottomStart = 12.dp,
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(itemShape)
+                        .background(
+                            if (selected) {
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.24f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                    ),
+                                )
+                            } else {
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.08f),
+                                        Color.Transparent,
+                                    ),
+                                )
+                            },
+                        )
+                        .border(
+                            1.dp,
+                            if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.26f)
+                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                            itemShape,
+                        )
+                        .clickable { onDestinationSelected(destination) }
+                        .padding(horizontal = 10.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .height(28.dp)
+                            .width(4.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.55f)
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.18f),
+                            ),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (selected) {
+                                    Brush.linearGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.92f),
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.78f),
+                                        ),
+                                    )
+                                } else {
+                                    Brush.linearGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                                        ),
+                                    )
+                                },
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = destination.icon,
+                            contentDescription = destination.label,
+                            tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f),
+                        )
+                    }
+                    Text(
+                        destination.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                        maxLines = 1,
+                    )
                 }
             }
         }

@@ -2,6 +2,11 @@
 
 This folder contains printable LaTeX documentation for Kaze.
 
+Helpful starter files:
+- [CHEATSHEET.md](CHEATSHEET.md)
+- [kaze-cheatsheet.tex](kaze-cheatsheet.tex)
+- [kaze-template.tex](kaze-template.tex)
+
 Current documents:
 - `kaze-investor-brief.tex`
   - investor and partner-facing overview

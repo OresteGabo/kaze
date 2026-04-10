@@ -20,6 +20,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
+import dev.orestegabo.kaze.presentation.demo.InvitationPreview
+import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
+import dev.orestegabo.kaze.presentation.demo.invitationPreviews
+import dev.orestegabo.kaze.presentation.demo.publicVenueCategories
+import dev.orestegabo.kaze.presentation.demo.publicVenues
 import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import dev.orestegabo.kaze.presentation.di.rememberKazeDependencies
 import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
@@ -38,6 +43,7 @@ import dev.orestegabo.kaze.ui.chrome.KazeBottomBar
 import dev.orestegabo.kaze.ui.chrome.KazeNavigationRail
 import dev.orestegabo.kaze.ui.events.EventScheduleScreen
 import dev.orestegabo.kaze.ui.explore.ExploreScreen
+import dev.orestegabo.kaze.ui.home.HomeScreen
 import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
 import dev.orestegabo.kaze.ui.stay.StayHomeScreen
@@ -118,6 +124,36 @@ fun App() {
             }
         }
 
+        fun openPublicBrowse(query: String) {
+            val trimmedQuery = query.trim()
+            appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
+            if (trimmedQuery.isNotEmpty()) {
+                appViewModel.showFeedback("Showing venues related to \"$trimmedQuery\".")
+            } else {
+                appViewModel.showFeedback("Browse venues, prices, and public spaces from here.")
+            }
+        }
+
+        fun handleJoinCode(code: String) {
+            val trimmedCode = code.trim()
+            if (trimmedCode.isBlank()) {
+                appViewModel.showFeedback("Enter a short event or invitation code first.")
+            } else {
+                appViewModel.onDestinationSelected(KazeDestination.EVENTS)
+                appViewModel.showFeedback("Code $trimmedCode matched. Review the linked event details.")
+            }
+        }
+
+        fun openInvitation(invitation: InvitationPreview) {
+            appViewModel.onDestinationSelected(KazeDestination.EVENTS)
+            appViewModel.showFeedback("${invitation.title} is ready to confirm from your phone.")
+        }
+
+        fun openVenue(venue: PublicVenuePreview) {
+            appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
+            appViewModel.showFeedback("Opening ${venue.name} in public browsing.")
+        }
+
         LaunchedEffect(uiState.activeMapTarget) {
             mapViewModel.applyNavigationTarget(uiState.activeMapTarget)
         }
@@ -163,6 +199,18 @@ fun App() {
                                             message = uiState.feedbackMessage,
                                         )
                                         when (uiState.currentDestination) {
+                                            KazeDestination.HOME -> HomeScreen(
+                                                modifier = Modifier.weight(1f),
+                                                venueCategories = publicVenueCategories,
+                                                featuredVenues = publicVenues,
+                                                invitations = invitationPreviews,
+                                                onExploreVenues = ::openPublicBrowse,
+                                                onEnterCode = ::handleJoinCode,
+                                                onOpenCategory = { openPublicBrowse(it.title) },
+                                                onOpenVenue = ::openVenue,
+                                                onOpenInvitation = ::openInvitation,
+                                            )
+
                                             KazeDestination.STAY -> StayHomeScreen(
                                                 modifier = Modifier.weight(1f),
                                                 hotelDisplayName = stayUiState.hotelDisplayName,
@@ -219,12 +267,24 @@ fun App() {
                                     }
                                 }
                             } else {
-                                Column(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
+                                Column(modifier = Modifier.fillMaxSize()) {
                                     DemoFeedbackBanner(
                                         message = uiState.feedbackMessage,
                                     )
 
                                     when (uiState.currentDestination) {
+                                        KazeDestination.HOME -> HomeScreen(
+                                            modifier = Modifier.weight(1f),
+                                            venueCategories = publicVenueCategories,
+                                            featuredVenues = publicVenues,
+                                            invitations = invitationPreviews,
+                                            onExploreVenues = ::openPublicBrowse,
+                                            onEnterCode = ::handleJoinCode,
+                                            onOpenCategory = { openPublicBrowse(it.title) },
+                                            onOpenVenue = ::openVenue,
+                                            onOpenInvitation = ::openInvitation,
+                                        )
+
                                         KazeDestination.STAY -> StayHomeScreen(
                                             modifier = Modifier.weight(1f),
                                             hotelDisplayName = stayUiState.hotelDisplayName,

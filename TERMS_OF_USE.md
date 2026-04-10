@@ -9,8 +9,7 @@ These Terms of Use describe the rules for access to and use of Kaze.
 Kaze is a private hospitality software product developed by GABO.
 
 Contact:
-- Email: orestegabo@icloud.com
-- Website: [https://orestegabo.dev](https://orestegabo.dev)
+- See [CONTACT.md](CONTACT.md)
 
 ## Acceptance
 
@@ -68,5 +67,4 @@ If a signed commercial agreement exists, that agreement may govern over these ge
 
 ## Contact
 
-- Email: orestegabo@icloud.com
-- Website: [https://orestegabo.dev](https://orestegabo.dev)
+- See [CONTACT.md](CONTACT.md)

@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -93,7 +95,7 @@ internal fun StayHomeScreen(
 
     val activeRequestCount = submittedServiceRequests.size + if (lateCheckoutRequest != null) 1 else 0
 
-    Column(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp, vertical = 12.dp),
@@ -102,60 +104,65 @@ internal fun StayHomeScreen(
             initialPage = selectedTab.ordinal,
             pageCount = { StayTab.entries.size },
         )
+        Column(
+            modifier = Modifier.fillMaxSize(),
+        ) {
 
-        LaunchedEffect(selectedTab) {
-            if (pagerState.currentPage != selectedTab.ordinal) {
-                pagerState.animateScrollToPage(selectedTab.ordinal)
+            LaunchedEffect(selectedTab) {
+                if (pagerState.currentPage != selectedTab.ordinal) {
+                    pagerState.animateScrollToPage(selectedTab.ordinal)
+                }
             }
-        }
-        LaunchedEffect(pagerState.currentPage) {
-            val pagerTab = StayTab.entries[pagerState.currentPage]
-            if (pagerTab != selectedTab) onTabChange(pagerTab)
-        }
+            LaunchedEffect(pagerState.currentPage) {
+                val pagerTab = StayTab.entries[pagerState.currentPage]
+                if (pagerTab != selectedTab) onTabChange(pagerTab)
+            }
 
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            CompactStayHeader(
-                hotelName = hotelDisplayName,
-                guestName = guestName,
-                roomLabel = accessProfileLabel,
-                stayLabel = accessStatusLabel,
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(24.dp),
+            ) {
+                CompactStayHeader(
+                    hotelName = hotelDisplayName,
+                    guestName = guestName,
+                    roomLabel = accessProfileLabel,
+                    stayLabel = accessStatusLabel,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            StaySegmentedTabs(
+                selectedTab = selectedTab,
+                onTabChange = onTabChange,
+                requestsBadgeCount = activeRequestCount,
             )
-        }
-        Spacer(Modifier.height(8.dp))
-        StaySegmentedTabs(
-            selectedTab = selectedTab,
-            onTabChange = onTabChange,
-            requestsBadgeCount = activeRequestCount,
-        )
-        Spacer(Modifier.height(10.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-            ) { page ->
-                when (StayTab.entries[page]) {
-                    StayTab.MY_STAY -> StayTabContent(
-                        accessCard = accessCard,
-                        stayMoments = stayMoments,
-                        onPrimaryAction = onPrimaryAction,
-                    )
-                    StayTab.REQUESTS -> ServiceRequestsTab(
-                        requestOptions = requestOptions,
-                        lateCheckoutRequest = lateCheckoutRequest,
-                        submittedServiceRequests = submittedServiceRequests,
-                        onPrimaryAction = onPrimaryAction,
-                    )
-                    StayTab.SUGGESTIONS -> SuggestedActivitiesTab(
-                        suggestionActivities = suggestionActivities,
-                        onPrimaryAction = onPrimaryAction,
-                    )
+            Spacer(Modifier.height(10.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                ) { page ->
+                    when (StayTab.entries[page]) {
+                        StayTab.MY_STAY -> StayTabContent(
+                            accessCard = accessCard,
+                            stayMoments = stayMoments,
+                            onPrimaryAction = onPrimaryAction,
+                        )
+                        StayTab.REQUESTS -> ServiceRequestsTab(
+                            requestOptions = requestOptions,
+                            lateCheckoutRequest = lateCheckoutRequest,
+                            submittedServiceRequests = submittedServiceRequests,
+                            onPrimaryAction = onPrimaryAction,
+                        )
+                        StayTab.SUGGESTIONS -> SuggestedActivitiesTab(
+                            suggestionActivities = suggestionActivities,
+                            onPrimaryAction = onPrimaryAction,
+                        )
+                    }
                 }
             }
         }

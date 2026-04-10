@@ -61,7 +61,6 @@ internal fun StayAccessCardSection(
     val hotelName = KazeTheme.hotelConfig.displayName
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Kaze pass", style = MaterialTheme.typography.titleMedium)
         SignatureStayCard(card = card, hotelName = hotelName, onClick = { showDetails = true })
         if (showDetails) {
             AccessCardDialog(card = card, hotelName = hotelName, onDismiss = { showDetails = false })

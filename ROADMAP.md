@@ -26,6 +26,13 @@ Status guide:
 ## Core Guest Experience
 
 - [x] onboarding flow
+- [ ] first-run entry screen after onboarding
+- [ ] public venue discovery without sign-in
+- [ ] venue/event search by name
+- [ ] short code entry flow for conferences, weddings, and private events
+- [ ] invitation-first join flow
+- [ ] invitation acceptance and identity confirmation flow
+- [ ] post-invitation Kaze Pass generation
 - [x] stay tab with pass, schedule, requests, and suggestions
 - [x] event schedule flow
 - [x] explore flow
@@ -130,6 +137,7 @@ Status guide:
 - [x] secure-store abstraction
 - [x] onboarding persistence
 - [ ] guest authentication
+- [ ] phone-number-based invitation matching
 - [ ] role and access control model
 - [ ] encrypted sensitive local data
 - [ ] API auth tokens and refresh flow
@@ -143,6 +151,11 @@ Status guide:
 
 - [~] backend module exists
 - [ ] production API endpoints
+- [ ] public venue catalog API
+- [ ] event/venue search API
+- [ ] short-code lookup and join API
+- [ ] invitation API
+- [ ] invitation-to-pass entitlement flow
 - [ ] venue reservations API
 - [ ] venue commerce API for add-on services
 - [ ] payment orchestration layer
@@ -163,6 +176,9 @@ Status guide:
 - [x] demo content separated from core app entry point
 - [~] demo content still used in UI flows
 - [ ] replace demo content with real repositories
+- [ ] public venue catalog content model
+- [ ] venue pricing model for public browsing
+- [ ] apartment listing model for future expansion
 - [ ] CMS/content strategy for hotel copy
 - [ ] feature flags
 - [ ] hotel-by-hotel configuration management
@@ -173,6 +189,7 @@ Status guide:
 
 - [ ] conference-room reservation flow
 - [ ] wedding venue reservation flow
+- [ ] public pricing and capacity display for reservable venues
 - [ ] venue availability calendar and slot logic
 - [ ] booking deposit logic
 - [ ] quote generation flow
@@ -192,6 +209,7 @@ Status guide:
 ## Platform Expansion
 
 - [ ] venue-type abstraction beyond hotels
+- [ ] apartment discovery support
 - [ ] stadium support
 - [ ] government-building support
 - [ ] airport/airplane cabin mapping feasibility review
@@ -249,14 +267,14 @@ Status guide:
 
 ## Highest-Priority Next Steps
 
-1. Replace demo data with real repositories for stay, events, explore, and maps.
-2. Build the first real backend-backed service request flow.
-3. Design the reusable venue-maps service and generic venue-space model.
-4. Add seating/layout planning for conference rooms and wedding venues.
-5. Build the first venue reservation flow for conference rooms and wedding spaces.
-6. Add Rwanda payment support strategy for MoMo, Airtel Money, BK/RSwitch, and related methods.
-7. Add Kaze Pass-gated entry for paid or restricted events.
-8. Add platform add-on services that reduce off-platform negotiation pressure.
+1. Build the first-run entry experience after onboarding with `Explore venues`, `Enter code`, and invitation-first access.
+2. Replace demo data with real repositories for stay, events, explore, maps, and public venue discovery.
+3. Build public venue browsing with pricing, capacity, and basic availability signals.
+4. Add short-code and invitation flows that lead into Kaze Pass generation.
+5. Design the reusable venue-maps service and generic venue-space model.
+6. Add seating/layout planning for conference rooms and wedding venues.
+7. Build the first venue reservation flow for conference rooms and wedding spaces.
+8. Add Rwanda payment support strategy for MoMo, Airtel Money, BK/RSwitch, and related methods.
 
 ## Notes
 

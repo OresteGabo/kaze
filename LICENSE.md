@@ -57,5 +57,4 @@ Commercial use, deployment, resale, licensing, white-labeling, or customer deliv
 
 ## Contact
 
-- Email: orestegabo@icloud.com
-- Website: [https://orestegabo.dev](https://orestegabo.dev)
+- See [CONTACT.md](CONTACT.md)

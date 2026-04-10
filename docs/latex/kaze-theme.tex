@@ -46,6 +46,15 @@
 \newcommand{\KazeCoverLabel}[1]{{\sffamily\normalsize\textcolor{KazeSecondary}{\textbf{#1}}}}
 \newcommand{\KazeCoverTitle}[1]{{\fontfamily{qpl}\selectfont\fontsize{38}{43}\selectfont\textcolor{KazeInk}{#1}}}
 \newcommand{\KazeCoverSubtitle}[1]{{\sffamily\Large\textcolor{KazePrimary}{#1}}}
+\newcommand{\KazeContactEmail}{orestegabo@icloud.com}
+\newcommand{\KazeContactWebsiteUrl}{https://orestegabo.dev}
+\newcommand{\KazeContactWebsiteLabel}{orestegabo.dev}
+\newcommand{\KazeContactBlock}{
+    \begin{itemize}
+        \item \textbf{Email:} \href{mailto:\KazeContactEmail}{\KazeContactEmail}
+        \item \textbf{Website:} \href{\KazeContactWebsiteUrl}{\KazeContactWebsiteLabel}
+    \end{itemize}
+}
 
 \pagecolor{KazePaper}
 
@@ -189,7 +198,7 @@
     \hspace{1cm}
     \begin{minipage}{0.85\textwidth}
     \sffamily\tiny\textcolor{KazeMuted}{AUTHORIZATION \& CONTACT:} \\
-    \sffamily\small\textbf{\href{mailto:orestegabo@icloud.com}{orestegabo@icloud.com}} \hfill \textbf{ORESTEGABO.DEV}
+    \sffamily\small\textbf{\href{mailto:\KazeContactEmail}{\KazeContactEmail}} \hfill \textbf{\MakeUppercase{\KazeContactWebsiteLabel}}
     \end{minipage}
 
     \end{titlepage}

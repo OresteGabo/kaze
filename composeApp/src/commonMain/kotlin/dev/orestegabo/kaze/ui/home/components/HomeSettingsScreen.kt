@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -76,7 +76,7 @@ internal fun HomeSettingsScreen(
         SettingsCard(
             title = "Appearance",
             subtitle = "Use your phone theme, or switch Kaze manually.",
-            icon = Icons.Default.Settings,
+            icon = Icons.Default.Palette,
         ) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 KazeThemeMode.entries.forEach { mode ->

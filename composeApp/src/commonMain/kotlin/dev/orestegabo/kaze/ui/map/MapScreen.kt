@@ -72,9 +72,10 @@ internal fun MapScreen(
     onFloorSelected: (String) -> Unit,
     onStartNavigation: () -> Unit,
     onSwitchFloor: () -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     val topChromeHeight = 112.dp
-    val bottomChromeHeight = 108.dp
+    val bottomChromeHeight = bottomContentPadding + 88.dp
     val selectedFloor = remember(floors, activeFloorId) {
         floors.firstOrNull { it.id == activeFloorId } ?: floors.firstOrNull()
     } ?: return
@@ -114,7 +115,7 @@ internal fun MapScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                    .padding(start = 20.dp, top = 10.dp, end = 20.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 KazePrimaryButton(
@@ -132,7 +133,7 @@ internal fun MapScreen(
                     leadingIcon = Icons.Default.Layers,
                 )
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(bottomContentPadding))
         }
     }
 }

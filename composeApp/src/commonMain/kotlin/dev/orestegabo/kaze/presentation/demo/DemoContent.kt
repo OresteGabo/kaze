@@ -56,6 +56,7 @@ internal data class InvitationPreview(
     val phoneLabel: String,
     val statusLabel: String,
     val state: InvitationState = InvitationState.ACTIVE,
+    val themeId: String? = null,
 )
 
 internal enum class InvitationState {

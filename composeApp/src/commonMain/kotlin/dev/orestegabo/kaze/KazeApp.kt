@@ -13,7 +13,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -94,6 +97,7 @@ fun App() {
         val exploreUiState = exploreViewModel.uiState
         val mapUiState = mapViewModel.uiState
         val pendingInvitationCount = invitationPreviews.count { it.state == InvitationState.ACTIVE }
+        var selectedInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
 
         fun handleStayResult(result: StayActionResult?) {
             when (result) {
@@ -148,8 +152,8 @@ fun App() {
         }
 
         fun openInvitation(invitation: InvitationPreview) {
-            appViewModel.onDestinationSelected(KazeDestination.EVENTS)
-            appViewModel.showFeedback("${invitation.title} is ready to confirm from your phone.")
+            selectedInvitation = invitation
+            appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
         }
 
         fun openVenue(venue: PublicVenuePreview) {
@@ -158,7 +162,13 @@ fun App() {
         }
 
         fun openInvitations() {
+            selectedInvitation = null
             appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+        }
+
+        fun openEventFromInvitation(invitation: InvitationPreview) {
+            appViewModel.onDestinationSelected(KazeDestination.EVENTS)
+            appViewModel.showFeedback("${invitation.title} event details are open.")
         }
 
         fun openVenueMap(venue: PublicVenuePreview) {
@@ -272,7 +282,9 @@ fun App() {
                                                 modifier = Modifier.weight(1f),
                                                 invitations = invitationPreviews,
                                                 onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
-                                                onOpenInvitation = ::openInvitation,
+                                                selectedInvitation = selectedInvitation,
+                                                onSelectedInvitationChange = { selectedInvitation = it },
+                                                onOpenEvent = ::openEventFromInvitation,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -361,7 +373,9 @@ fun App() {
                                             modifier = Modifier.weight(1f),
                                             invitations = invitationPreviews,
                                             onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
-                                            onOpenInvitation = ::openInvitation,
+                                            selectedInvitation = selectedInvitation,
+                                            onSelectedInvitationChange = { selectedInvitation = it },
+                                            onOpenEvent = ::openEventFromInvitation,
                                             bottomContentPadding = bottomContentPadding,
                                         )
 

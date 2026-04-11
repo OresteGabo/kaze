@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.FollowUpOption
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
@@ -67,10 +68,11 @@ internal fun LateCheckoutScreen(
     onBack: () -> Unit,
     onDraftChange: (LateCheckoutDraft) -> Unit,
     onSubmit: () -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
+        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
@@ -273,6 +275,7 @@ internal fun ServiceRequestScreen(
     onBack: () -> Unit,
     onDraftChange: (ServiceRequestDraftUi) -> Unit,
     onSubmit: () -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     val isTowelRequest = draft.option.title == "Fresh towels"
     val isCustomRequest = draft.option.isCustom
@@ -283,7 +286,7 @@ internal fun ServiceRequestScreen(
     val needsExplicitLocation = false
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
+        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {

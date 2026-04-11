@@ -36,21 +36,32 @@ internal fun HomeScreen(
     onOpenVenue: (PublicVenuePreview) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
 ) {
-    var venueQuery by rememberSaveable { mutableStateOf("") }
     var joinCode by rememberSaveable { mutableStateOf("") }
+    var showAllInvitations by rememberSaveable { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val isExpanded = maxWidth >= 860.dp
         val contentMaxWidth = if (isExpanded) 1180.dp else androidx.compose.ui.unit.Dp.Unspecified
         val categoryColumns = if (maxWidth >= 1160.dp) 4 else if (isExpanded) 2 else 1
         val venueColumns = if (maxWidth >= 1180.dp) 3 else if (isExpanded) 2 else 1
+        val bottomContentPadding = if (maxWidth < 900.dp) 116.dp else 20.dp
         val scrollState = rememberScrollState()
+
+        if (showAllInvitations) {
+            InvitationsScreen(
+                invitations = invitations,
+                onBack = { showAllInvitations = false },
+                onOpenInvitation = onOpenInvitation,
+                bottomContentPadding = bottomContentPadding,
+            )
+            return@BoxWithConstraints
+        }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(20.dp)
+                .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding)
                 .then(if (contentMaxWidth != androidx.compose.ui.unit.Dp.Unspecified) Modifier.fillMaxWidth() else Modifier),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -63,13 +74,6 @@ internal fun HomeScreen(
                     Box(modifier = Modifier.weight(1.12f)) {
                         HomeHeroCard()
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        VenueSearchCard(
-                            query = venueQuery,
-                            onQueryChange = { venueQuery = it },
-                            onSearch = { onExploreVenues(venueQuery) },
-                        )
-                    }
                     Box(modifier = Modifier.weight(0.82f)) {
                         CodeEntryCard(
                             code = joinCode,
@@ -80,11 +84,6 @@ internal fun HomeScreen(
                 }
             } else {
                 HomeHeroCard()
-                VenueSearchCard(
-                    query = venueQuery,
-                    onQueryChange = { venueQuery = it },
-                    onSearch = { onExploreVenues(venueQuery) },
-                )
                 CodeEntryCard(
                     code = joinCode,
                     onCodeChange = { joinCode = it.uppercase() },
@@ -92,13 +91,14 @@ internal fun HomeScreen(
                 )
             }
 
-            HomeShortcutRow(
-                onExploreVenues = { onExploreVenues(venueQuery) },
+            HomeServiceRail(
+                onOpenService = { serviceQuery -> onExploreVenues(serviceQuery) },
             )
 
             InvitationSection(
                 invitations = invitations,
                 onOpenInvitation = onOpenInvitation,
+                onSeeAll = { showAllInvitations = true },
             )
 
             SectionLabel("Browse venue types")
@@ -139,4 +139,3 @@ internal fun HomeScreen(
         }
     }
 }
-

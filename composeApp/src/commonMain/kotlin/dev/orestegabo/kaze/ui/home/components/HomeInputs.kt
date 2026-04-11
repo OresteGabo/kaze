@@ -70,7 +70,7 @@ internal fun CodeEntryCard(
 ) {
     CompactEntryCard(
         icon = Icons.Default.VpnKey,
-        title = "Shared code",
+        title = "Invitation code",
     ) {
         LuxurySingleLineField(
             value = code,
@@ -79,7 +79,7 @@ internal fun CodeEntryCard(
             leadingIcon = Icons.Default.Edit,
         )
         KazeSecondaryButton(
-            label = "Open",
+            label = "Open invitation",
             onClick = onSubmit,
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = Icons.Default.CalendarMonth,

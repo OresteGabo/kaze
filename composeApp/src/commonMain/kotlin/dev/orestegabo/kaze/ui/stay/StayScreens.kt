@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.DigitalAccessCard
 import dev.orestegabo.kaze.presentation.demo.ExploreHighlight
@@ -69,6 +70,7 @@ internal fun StayHomeScreen(
     onServiceRequestDraftChange: (ServiceRequestDraftUi) -> Unit,
     onServiceRequestSubmit: (ServiceRequestDraftUi) -> Unit,
     onPrimaryAction: (StayPrimaryAction) -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     if (activeStayScreen == StayScreen.LATE_CHECKOUT) {
         LateCheckoutScreen(
@@ -78,6 +80,7 @@ internal fun StayHomeScreen(
             onBack = onBackToStayHome,
             onDraftChange = onLateCheckoutDraftChange,
             onSubmit = { onLateCheckoutSubmit(lateCheckoutDraft) },
+            bottomContentPadding = bottomContentPadding,
         )
         return
     }
@@ -89,6 +92,7 @@ internal fun StayHomeScreen(
             onBack = onBackToStayHome,
             onDraftChange = onServiceRequestDraftChange,
             onSubmit = { onServiceRequestSubmit(serviceRequestDraft) },
+            bottomContentPadding = bottomContentPadding,
         )
         return
     }
@@ -151,16 +155,19 @@ internal fun StayHomeScreen(
                             accessCard = accessCard,
                             stayMoments = stayMoments,
                             onPrimaryAction = onPrimaryAction,
+                            bottomContentPadding = bottomContentPadding,
                         )
                         StayTab.REQUESTS -> ServiceRequestsTab(
                             requestOptions = requestOptions,
                             lateCheckoutRequest = lateCheckoutRequest,
                             submittedServiceRequests = submittedServiceRequests,
                             onPrimaryAction = onPrimaryAction,
+                            bottomContentPadding = bottomContentPadding,
                         )
                         StayTab.SUGGESTIONS -> SuggestedActivitiesTab(
                             suggestionActivities = suggestionActivities,
                             onPrimaryAction = onPrimaryAction,
+                            bottomContentPadding = bottomContentPadding,
                         )
                     }
                 }

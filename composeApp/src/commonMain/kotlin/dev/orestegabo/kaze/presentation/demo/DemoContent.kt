@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.DoorFront
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.orestegabo.kaze.domain.AccessCardStyle
 import dev.orestegabo.kaze.domain.DigitalAccessCard
@@ -27,6 +28,7 @@ internal enum class KazeDestination(
     HOME("Home", Icons.Filled.Home),
     STAY("Stay", Icons.Filled.DoorFront),
     EVENTS("Events", Icons.Filled.CalendarMonth),
+    INVITATIONS("Invites", Icons.Filled.MarkEmailUnread),
     EXPLORE("Explore", Icons.Filled.Explore),
     MAP("Map", Icons.Filled.Map),
 }

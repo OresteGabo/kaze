@@ -124,13 +124,25 @@ object KazeTheme {
         get() = LocalUiPalette.current
 }
 
+enum class KazeThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK,
+}
+
 @Composable
 fun KazeTheme(
     hotelConfig: HotelConfig,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: KazeThemeMode = KazeThemeMode.SYSTEM,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = hotelConfig.branding.toColorScheme(darkTheme)
+    val resolvedDarkTheme = when (themeMode) {
+        KazeThemeMode.SYSTEM -> darkTheme
+        KazeThemeMode.LIGHT -> false
+        KazeThemeMode.DARK -> true
+    }
+    val colorScheme = hotelConfig.branding.toColorScheme(resolvedDarkTheme)
     CompositionLocalProvider(
         LocalHotelConfig provides hotelConfig,
         LocalBrandAssets provides KazeBrandAssets(
@@ -139,20 +151,20 @@ fun KazeTheme(
         ),
         LocalAccentPalette provides KazeAccentPalette(
             editorialWarm = hotelConfig.branding.secondaryHex.toColor(),
-            editorialBotanical = if (darkTheme) hotelConfig.branding.accentHex.toColor().lighten(0.08f) else hotelConfig.branding.accentHex.toColor().copy(alpha = 0.86f),
-            editorialClay = if (darkTheme) hotelConfig.branding.primaryHex.toColor().lighten(0.14f) else hotelConfig.branding.primaryHex.toColor().copy(alpha = 0.62f),
+            editorialBotanical = if (resolvedDarkTheme) hotelConfig.branding.accentHex.toColor().lighten(0.08f) else hotelConfig.branding.accentHex.toColor().copy(alpha = 0.86f),
+            editorialClay = if (resolvedDarkTheme) hotelConfig.branding.primaryHex.toColor().lighten(0.14f) else hotelConfig.branding.primaryHex.toColor().copy(alpha = 0.62f),
         ),
         LocalPassPalette provides KazePassPalette(
-            cardBaseStart = if (darkTheme) hotelConfig.branding.primaryHex.toColor().darken(0.72f) else hotelConfig.branding.primaryHex.toColor().darken(0.62f),
-            cardBaseMiddle = if (darkTheme) hotelConfig.branding.primaryHex.toColor().darken(0.54f) else hotelConfig.branding.primaryHex.toColor().darken(0.42f),
-            cardBaseEnd = if (darkTheme) hotelConfig.branding.secondaryHex.toColor().darken(0.42f) else hotelConfig.branding.secondaryHex.toColor().darken(0.28f),
-            cardOverlay = hotelConfig.branding.accentHex.toColor().copy(alpha = if (darkTheme) 0.14f else 0.10f),
+            cardBaseStart = if (resolvedDarkTheme) hotelConfig.branding.primaryHex.toColor().darken(0.72f) else hotelConfig.branding.primaryHex.toColor().darken(0.62f),
+            cardBaseMiddle = if (resolvedDarkTheme) hotelConfig.branding.primaryHex.toColor().darken(0.54f) else hotelConfig.branding.primaryHex.toColor().darken(0.42f),
+            cardBaseEnd = if (resolvedDarkTheme) hotelConfig.branding.secondaryHex.toColor().darken(0.42f) else hotelConfig.branding.secondaryHex.toColor().darken(0.28f),
+            cardOverlay = hotelConfig.branding.accentHex.toColor().copy(alpha = if (resolvedDarkTheme) 0.14f else 0.10f),
             cardOnSurface = Color(0xFFFFFBF5),
             cardOnSurfaceMuted = Color(0xCCFFF8EE),
             cardChip = Color(0x2EFFF8EE),
             cardChipText = Color(0xFFFFFBF5),
         ),
-        LocalUiPalette provides hotelConfig.branding.toUiPalette(darkTheme),
+        LocalUiPalette provides hotelConfig.branding.toUiPalette(resolvedDarkTheme),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

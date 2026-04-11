@@ -188,6 +188,7 @@ fun App() {
                     } else {
                         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                             val useRail = maxWidth >= 900.dp
+                            val bottomContentPadding = if (useRail) 20.dp else 116.dp
                             if (useRail) {
                                 Row(modifier = Modifier.fillMaxSize()) {
                                     KazeNavigationRail(
@@ -209,6 +210,7 @@ fun App() {
                                                 onOpenCategory = { openPublicBrowse(it.title) },
                                                 onOpenVenue = ::openVenue,
                                                 onOpenInvitation = ::openInvitation,
+                                                bottomContentPadding = bottomContentPadding,
                                             )
 
                                             KazeDestination.STAY -> StayHomeScreen(
@@ -234,6 +236,7 @@ fun App() {
                                                 onServiceRequestDraftChange = stayViewModel::onServiceRequestDraftChange,
                                                 onServiceRequestSubmit = { draft -> handleStayResult(stayViewModel.submitServiceRequest(draft)) },
                                                 onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
+                                                bottomContentPadding = bottomContentPadding,
                                             )
 
                                             KazeDestination.EVENTS -> EventScheduleScreen(
@@ -243,6 +246,7 @@ fun App() {
                                                 sessions = eventsUiState.sessions,
                                                 onDaySelected = eventsViewModel::onDaySelected,
                                                 onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                                bottomContentPadding = bottomContentPadding,
                                             )
 
                                             KazeDestination.EXPLORE -> ExploreScreen(
@@ -251,6 +255,7 @@ fun App() {
                                                 onHighlightAction = { handleExploreResult(exploreViewModel.onHighlightAction(it)) },
                                                 onHeroPrimary = { handleExploreResult(exploreViewModel.reserveExperience()) },
                                                 onHeroSecondary = { handleExploreResult(exploreViewModel.openPoolDeckRoute()) },
+                                                bottomContentPadding = bottomContentPadding,
                                             )
 
                                             KazeDestination.MAP -> MapScreen(
@@ -262,6 +267,7 @@ fun App() {
                                                 onFloorSelected = mapViewModel::onFloorSelected,
                                                 onStartNavigation = {},
                                                 onSwitchFloor = mapViewModel::onSwitchFloor,
+                                                bottomContentPadding = bottomContentPadding,
                                             )
                                         }
                                     }
@@ -280,10 +286,11 @@ fun App() {
                                             invitations = invitationPreviews,
                                             onExploreVenues = ::openPublicBrowse,
                                             onEnterCode = ::handleJoinCode,
-                                            onOpenCategory = { openPublicBrowse(it.title) },
-                                            onOpenVenue = ::openVenue,
-                                            onOpenInvitation = ::openInvitation,
-                                        )
+                                                onOpenCategory = { openPublicBrowse(it.title) },
+                                                onOpenVenue = ::openVenue,
+                                                onOpenInvitation = ::openInvitation,
+                                                bottomContentPadding = bottomContentPadding,
+                                            )
 
                                         KazeDestination.STAY -> StayHomeScreen(
                                             modifier = Modifier.weight(1f),
@@ -308,6 +315,7 @@ fun App() {
                                             onServiceRequestDraftChange = stayViewModel::onServiceRequestDraftChange,
                                             onServiceRequestSubmit = { draft -> handleStayResult(stayViewModel.submitServiceRequest(draft)) },
                                             onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
+                                            bottomContentPadding = bottomContentPadding,
                                         )
 
                                         KazeDestination.EVENTS -> EventScheduleScreen(
@@ -317,6 +325,7 @@ fun App() {
                                             sessions = eventsUiState.sessions,
                                             onDaySelected = eventsViewModel::onDaySelected,
                                             onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                            bottomContentPadding = bottomContentPadding,
                                         )
 
                                         KazeDestination.EXPLORE -> ExploreScreen(
@@ -325,6 +334,7 @@ fun App() {
                                             onHighlightAction = { handleExploreResult(exploreViewModel.onHighlightAction(it)) },
                                             onHeroPrimary = { handleExploreResult(exploreViewModel.reserveExperience()) },
                                             onHeroSecondary = { handleExploreResult(exploreViewModel.openPoolDeckRoute()) },
+                                            bottomContentPadding = bottomContentPadding,
                                         )
 
                                         KazeDestination.MAP -> MapScreen(
@@ -336,6 +346,7 @@ fun App() {
                                             onFloorSelected = mapViewModel::onFloorSelected,
                                             onStartNavigation = {},
                                             onSwitchFloor = mapViewModel::onSwitchFloor,
+                                            bottomContentPadding = bottomContentPadding,
                                         )
                                     }
                                 }

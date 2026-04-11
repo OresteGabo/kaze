@@ -6,6 +6,13 @@
   <path d="M158 186V156C158 144 168 134 180 134C192 134 202 144 202 156V186" stroke="#335E62" stroke-width="9" stroke-linecap="round"/>
   <path d="M74 186H286" stroke="#335E62" stroke-width="8" stroke-linecap="round"/>
   <circle cx="290" cy="50" r="58" fill="#F2D59D" fill-opacity="0.28"/>
+  <g opacity="0.20" transform="translate(216 -10) rotate(-10 70 50) scale(1.18)">
+    <path d="M70 28H42L25 50L42 72H70M50.788 49.279L69.663 71.394M69.212 29.038L55.524 44.251L50.827 49.171" stroke="#FFF8EE" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+    <g transform="translate(50 52)">
+      <path d="M70 28H42L25 50L42 72H70M58 50H80" stroke="#FFF8EE" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+      <circle cx="80" cy="50" r="4.5" fill="#FFF8EE"/>
+    </g>
+  </g>
   <defs>
     <linearGradient id="hotels_bg" x1="0" y1="0" x2="360" y2="220" gradientUnits="userSpaceOnUse">
       <stop stop-color="#D8EEE8"/>

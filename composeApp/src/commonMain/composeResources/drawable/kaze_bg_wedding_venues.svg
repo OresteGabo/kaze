@@ -9,6 +9,13 @@
   <path d="M245 142C256 121 277 121 288 142C299 121 320 121 331 142C320 165 299 176 288 184C277 176 256 165 245 142Z" fill="#B75E6E" fill-opacity="0.74"/>
   <path d="M44 154C60 138 78 138 94 154" stroke="#7E4E3F" stroke-width="5" stroke-linecap="round"/>
   <path d="M52 170H86" stroke="#7E4E3F" stroke-width="5" stroke-linecap="round"/>
+  <g opacity="0.20" transform="translate(216 -10) rotate(-10 70 50) scale(1.18)">
+    <path d="M70 28H42L25 50L42 72H70M50.788 49.279L69.663 71.394M69.212 29.038L55.524 44.251L50.827 49.171" stroke="#FFF7EC" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+    <g transform="translate(50 52)">
+      <path d="M70 28H42L25 50L42 72H70M58 50H80" stroke="#FFF7EC" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+      <circle cx="80" cy="50" r="4.5" fill="#FFF7EC"/>
+    </g>
+  </g>
   <defs>
     <linearGradient id="wedding_bg" x1="18" y1="14" x2="338" y2="206" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFE1D5"/>

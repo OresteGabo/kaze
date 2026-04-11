@@ -70,7 +70,6 @@ internal fun HomeServiceRail(
             icon = Icons.Default.Apartment,
             accent = colors.secondary,
             query = "apartments",
-            isAvailable = false,
         ),
         HomeServiceAction(
             title = "Hotels",
@@ -89,28 +88,24 @@ internal fun HomeServiceRail(
             icon = Icons.Default.LocalFlorist,
             accent = colors.tertiary,
             query = "event styling",
-            isAvailable = false,
         ),
         HomeServiceAction(
             title = "Catering",
             icon = Icons.Default.Restaurant,
             accent = colors.primary,
             query = "catering",
-            isAvailable = false,
         ),
         HomeServiceAction(
             title = "Photo & video",
             icon = Icons.Default.Videocam,
             accent = colors.secondary,
             query = "photo video live streaming",
-            isAvailable = false,
         ),
         HomeServiceAction(
             title = "Transport",
             icon = Icons.Default.DirectionsCar,
             accent = colors.tertiary,
             query = "event transport",
-            isAvailable = false,
         ),
         HomeServiceAction(
             title = "Guest access",
@@ -129,7 +124,7 @@ internal fun HomeServiceRail(
             actions.forEach { action ->
                 HomeServiceActionCard(
                     action = action,
-                    onClick = { if (action.isAvailable) onOpenService(action.query) },
+                    onClick = { onOpenService(action.query) },
                 )
             }
             Spacer(Modifier.width(4.dp))
@@ -143,15 +138,14 @@ private fun HomeServiceActionCard(
     onClick: () -> Unit,
 ) {
     val alpha = if (action.isAvailable) 1f else 0.58f
-    val borderAlpha = if (action.isAvailable) 0.26f else 0.14f
+    val borderAlpha = if (action.isAvailable) 0.34f else 0.18f
     Surface(
         onClick = onClick,
-        enabled = action.isAvailable,
         modifier = Modifier
             .width(112.dp)
             .height(126.dp),
         shape = RoundedCornerShape(24.dp),
-        color = action.accent.copy(alpha = if (action.isAvailable) 0.08f else 0.04f),
+        color = action.accent.copy(alpha = if (action.isAvailable) 0.16f else 0.08f),
         border = BorderStroke(1.dp, action.accent.copy(alpha = borderAlpha)),
     ) {
         Box {
@@ -181,7 +175,7 @@ private fun HomeServiceActionCard(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = action.accent.copy(alpha = if (action.isAvailable) 0.18f else 0.10f),
+                    color = action.accent.copy(alpha = if (action.isAvailable) 0.24f else 0.14f),
                 ) {
                     Box(
                         modifier = Modifier.size(44.dp),

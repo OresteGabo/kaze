@@ -83,7 +83,7 @@ internal fun HomeHeroCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 MetaPill("Venues", leadingIcon = Icons.Default.Search)
-                MetaPill("Join with code", leadingIcon = Icons.Default.VpnKey)
+                MetaPill("Invitation code", leadingIcon = Icons.Default.VpnKey)
                 MetaPill("Invitations", leadingIcon = Icons.Default.Groups)
             }
             Row(
@@ -96,7 +96,7 @@ internal fun HomeHeroCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        "Search a venue, enter a shared code, or open an invitation.",
+                        "Browse venues, enter an invitation code, or open a pending invite.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
                     )

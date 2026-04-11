@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
 import dev.orestegabo.kaze.presentation.demo.VenueCategoryPreview
+import dev.orestegabo.kaze.theme.KazeThemeMode
 import dev.orestegabo.kaze.ui.home.components.*
 
 @Composable
@@ -38,9 +39,12 @@ internal fun HomeScreen(
     onOpenVenueMap: (PublicVenuePreview) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
     onSeeAllInvitations: () -> Unit,
+    themeMode: KazeThemeMode,
+    onThemeModeChange: (KazeThemeMode) -> Unit,
     bottomContentPadding: Dp = 20.dp,
 ) {
     var joinCode by rememberSaveable { mutableStateOf("") }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val isExpanded = maxWidth >= 860.dp
@@ -48,6 +52,16 @@ internal fun HomeScreen(
         val categoryColumns = if (maxWidth >= 1160.dp) 4 else if (isExpanded) 2 else 1
         val venueColumns = if (maxWidth >= 1180.dp) 3 else if (isExpanded) 2 else 1
         val scrollState = rememberScrollState()
+
+        if (showSettings) {
+            HomeSettingsScreen(
+                bottomContentPadding = bottomContentPadding,
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange,
+                onBack = { showSettings = false },
+            )
+            return@BoxWithConstraints
+        }
 
         Column(
             modifier = Modifier
@@ -57,6 +71,10 @@ internal fun HomeScreen(
                 .then(if (contentMaxWidth != androidx.compose.ui.unit.Dp.Unspecified) Modifier.fillMaxWidth() else Modifier),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            HomeTopBar(
+                onOpenSettings = { showSettings = true },
+            )
+
             if (isExpanded) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

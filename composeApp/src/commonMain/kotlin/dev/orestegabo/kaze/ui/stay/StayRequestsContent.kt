@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
 import dev.orestegabo.kaze.presentation.demo.ServiceOption
@@ -62,12 +63,14 @@ internal fun ServiceRequestsTab(
     lateCheckoutRequest: LateCheckoutRequest?,
     submittedServiceRequests: List<ServiceRequestRecord>,
     onPrimaryAction: (StayPrimaryAction) -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState),
+            .verticalScroll(scrollState)
+            .padding(bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         if (lateCheckoutRequest != null) {

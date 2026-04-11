@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.experience.AmenityHighlight
 import dev.orestegabo.kaze.ui.components.HighlightPanel
@@ -53,6 +54,7 @@ internal fun ExploreScreen(
     onHighlightAction: (AmenityHighlight) -> Unit,
     onHeroPrimary: () -> Unit,
     onHeroSecondary: () -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
@@ -66,7 +68,7 @@ internal fun ExploreScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(20.dp)
+                .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding)
                 .then(
                     if (contentMaxWidth != androidx.compose.ui.unit.Dp.Unspecified) {
                         Modifier.widthIn(max = contentMaxWidth)

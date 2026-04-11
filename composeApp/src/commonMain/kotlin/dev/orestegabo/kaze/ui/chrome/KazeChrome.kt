@@ -135,8 +135,8 @@ internal fun KazeBottomBar(
         KazeDestination.STAY,
         KazeDestination.EVENTS,
         KazeDestination.HOME,
+        KazeDestination.INVITATIONS,
         KazeDestination.EXPLORE,
-        KazeDestination.MAP,
     )
     KazeNavigationContainer(
         modifier = modifier
@@ -299,7 +299,7 @@ internal fun KazeNavigationRail(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            KazeDestination.entries.forEach { destination ->
+            kazePrimaryDestinations.forEach { destination ->
                 KazeSideNavItem(
                     destination = destination,
                     selected = currentDestination == destination,
@@ -310,6 +310,14 @@ internal fun KazeNavigationRail(
         }
     }
 }
+
+private val kazePrimaryDestinations = listOf(
+    KazeDestination.STAY,
+    KazeDestination.EVENTS,
+    KazeDestination.HOME,
+    KazeDestination.INVITATIONS,
+    KazeDestination.EXPLORE,
+)
 
 @Composable
 private fun KazeSideNavItem(

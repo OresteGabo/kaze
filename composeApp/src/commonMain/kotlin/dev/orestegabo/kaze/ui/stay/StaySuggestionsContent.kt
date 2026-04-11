@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.ExploreHighlight
 import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
@@ -33,12 +34,14 @@ import dev.orestegabo.kaze.ui.components.MetaPill
 internal fun SuggestedActivitiesTab(
     suggestionActivities: List<ExploreHighlight>,
     onPrimaryAction: (StayPrimaryAction) -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState),
+            .verticalScroll(scrollState)
+            .padding(bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         FeaturedSuggestionHeader(

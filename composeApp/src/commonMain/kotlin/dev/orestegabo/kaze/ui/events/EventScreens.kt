@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.experience.EventDay
 import dev.orestegabo.kaze.domain.experience.ScheduledExperience
@@ -48,10 +49,11 @@ internal fun EventScheduleScreen(
     sessions: List<ScheduledExperience>,
     onDaySelected: (EventDay) -> Unit,
     onSessionAction: (ScheduledExperience) -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
+        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {

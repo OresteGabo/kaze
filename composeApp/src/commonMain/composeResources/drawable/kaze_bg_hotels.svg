@@ -1,0 +1,16 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="220" rx="32" fill="url(#hotels_bg)"/>
+  <path d="M0 150C65 118 120 140 180 112C232 88 296 82 360 98V220H0V150Z" fill="#FFFFFF" fill-opacity="0.22"/>
+  <rect x="92" y="48" width="176" height="138" rx="20" fill="#FFF8EE" fill-opacity="0.76"/>
+  <path d="M126 82H146M170 82H190M214 82H234M126 116H146M170 116H190M214 116H234" stroke="#335E62" stroke-width="8" stroke-linecap="round"/>
+  <path d="M158 186V156C158 144 168 134 180 134C192 134 202 144 202 156V186" stroke="#335E62" stroke-width="9" stroke-linecap="round"/>
+  <path d="M74 186H286" stroke="#335E62" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="290" cy="50" r="58" fill="#F2D59D" fill-opacity="0.28"/>
+  <defs>
+    <linearGradient id="hotels_bg" x1="0" y1="0" x2="360" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8EEE8"/>
+      <stop offset="0.52" stop-color="#8EB9B0"/>
+      <stop offset="1" stop-color="#30565D"/>
+    </linearGradient>
+  </defs>
+</svg>

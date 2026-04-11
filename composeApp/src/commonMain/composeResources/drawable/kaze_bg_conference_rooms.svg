@@ -1,0 +1,19 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="220" rx="32" fill="url(#conference_bg)"/>
+  <path d="M0 158C60 132 112 144 166 114C220 84 290 78 360 100V220H0V158Z" fill="#FFFFFF" fill-opacity="0.22"/>
+  <rect x="84" y="66" width="192" height="102" rx="18" fill="#F8FBF6" fill-opacity="0.74"/>
+  <rect x="104" y="86" width="152" height="56" rx="10" fill="#CFE5DC"/>
+  <path d="M125 112H206" stroke="#315E62" stroke-width="6" stroke-linecap="round"/>
+  <path d="M125 130H176" stroke="#315E62" stroke-width="6" stroke-linecap="round"/>
+  <path d="M116 168H244" stroke="#315E62" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="72" cy="76" r="42" fill="#9CC8BA" fill-opacity="0.32"/>
+  <circle cx="298" cy="52" r="64" fill="#FFFFFF" fill-opacity="0.14"/>
+  <path d="M68 176H292" stroke="#F2E7D2" stroke-width="10" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="conference_bg" x1="0" y1="0" x2="360" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9EFE6"/>
+      <stop offset="0.55" stop-color="#A7CEC3"/>
+      <stop offset="1" stop-color="#426E73"/>
+    </linearGradient>
+  </defs>
+</svg>

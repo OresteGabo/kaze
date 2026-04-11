@@ -35,11 +35,12 @@ internal fun HomeScreen(
     onEnterCode: (String) -> Unit,
     onOpenCategory: (VenueCategoryPreview) -> Unit,
     onOpenVenue: (PublicVenuePreview) -> Unit,
+    onOpenVenueMap: (PublicVenuePreview) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
+    onSeeAllInvitations: () -> Unit,
     bottomContentPadding: Dp = 20.dp,
 ) {
     var joinCode by rememberSaveable { mutableStateOf("") }
-    var showAllInvitations by rememberSaveable { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val isExpanded = maxWidth >= 860.dp
@@ -47,16 +48,6 @@ internal fun HomeScreen(
         val categoryColumns = if (maxWidth >= 1160.dp) 4 else if (isExpanded) 2 else 1
         val venueColumns = if (maxWidth >= 1180.dp) 3 else if (isExpanded) 2 else 1
         val scrollState = rememberScrollState()
-
-        if (showAllInvitations) {
-            InvitationsScreen(
-                invitations = invitations,
-                onBack = { showAllInvitations = false },
-                onOpenInvitation = onOpenInvitation,
-                bottomContentPadding = bottomContentPadding,
-            )
-            return@BoxWithConstraints
-        }
 
         Column(
             modifier = Modifier
@@ -99,7 +90,7 @@ internal fun HomeScreen(
             InvitationSection(
                 invitations = invitations,
                 onOpenInvitation = onOpenInvitation,
-                onSeeAll = { showAllInvitations = true },
+                onSeeAll = onSeeAllInvitations,
             )
 
             SectionLabel("Browse venue types")
@@ -133,6 +124,7 @@ internal fun HomeScreen(
                     PublicVenueCard(
                         venue = venue,
                         onClick = { onOpenVenue(venue) },
+                        onOpenMap = { onOpenVenueMap(venue) },
                         modifier = cardModifier,
                     )
                 }

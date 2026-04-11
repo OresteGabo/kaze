@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
-import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 
 @Composable
 internal fun VenueSearchCard(
@@ -71,19 +70,19 @@ internal fun CodeEntryCard(
     CompactEntryCard(
         icon = Icons.Default.VpnKey,
         title = "Invitation code",
+        subtitle = "Got a code from WhatsApp, SMS, or an organizer? Enter it here to open the event.",
     ) {
         LuxurySingleLineField(
             value = code,
             onValueChange = onCodeChange,
-            placeholder = "EAFS24",
+            placeholder = "Example: EAFS24",
             leadingIcon = Icons.Default.Edit,
         )
-        KazeSecondaryButton(
+        KazePrimaryButton(
             label = "Open invitation",
             onClick = onSubmit,
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = Icons.Default.CalendarMonth,
-            emphasized = true,
         )
     }
 }
@@ -92,6 +91,7 @@ internal fun CodeEntryCard(
 private fun CompactEntryCard(
     icon: ImageVector,
     title: String,
+    subtitle: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
@@ -123,11 +123,21 @@ private fun CompactEntryCard(
                         )
                     }
                 }
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    subtitle?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                        )
+                    }
+                }
             }
             content()
         }

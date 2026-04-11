@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import dev.orestegabo.kaze.presentation.explore.ExploreViewModel
 import dev.orestegabo.kaze.presentation.map.MapViewModel
 import dev.orestegabo.kaze.presentation.navigation.KazeNavigator
 import dev.orestegabo.kaze.theme.KazeTheme
+import dev.orestegabo.kaze.theme.KazeThemeMode
 import dev.orestegabo.kaze.presentation.stay.StayActionResult
 import dev.orestegabo.kaze.presentation.stay.StayViewModel
 import dev.orestegabo.kaze.ui.chrome.DemoFeedbackBanner
@@ -56,7 +58,8 @@ import dev.orestegabo.kaze.ui.stay.StayHomeScreen
 @Composable
 fun App() {
     val dependencies = rememberKazeDependencies()
-    KazeTheme(hotelConfig = sampleHotel.config) {
+    var themeMode by rememberSaveable { mutableStateOf(KazeThemeMode.SYSTEM) }
+    KazeTheme(hotelConfig = sampleHotel.config, themeMode = themeMode) {
         val navigator = remember { KazeNavigator() }
         val appViewModel = viewModel { KazeAppViewModel(dependencies.platformServices.secureStore, navigator) }
         val stayViewModel = viewModel {
@@ -239,6 +242,8 @@ fun App() {
                                                 onOpenVenueMap = ::openVenueMap,
                                                 onOpenInvitation = ::openInvitation,
                                                 onSeeAllInvitations = ::openInvitations,
+                                                themeMode = themeMode,
+                                                onThemeModeChange = { themeMode = it },
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -330,6 +335,8 @@ fun App() {
                                                 onOpenVenueMap = ::openVenueMap,
                                                 onOpenInvitation = ::openInvitation,
                                                 onSeeAllInvitations = ::openInvitations,
+                                                themeMode = themeMode,
+                                                onThemeModeChange = { themeMode = it },
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 

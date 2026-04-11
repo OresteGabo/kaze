@@ -32,7 +32,6 @@ internal fun HomeScreen(
     venueCategories: List<VenueCategoryPreview>,
     featuredVenues: List<PublicVenuePreview>,
     invitations: List<InvitationPreview>,
-    onExploreVenues: (String) -> Unit,
     onEnterCode: (String) -> Unit,
     onOpenCategory: (VenueCategoryPreview) -> Unit,
     onOpenVenue: (PublicVenuePreview) -> Unit,
@@ -45,6 +44,7 @@ internal fun HomeScreen(
 ) {
     var joinCode by rememberSaveable { mutableStateOf("") }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var selectedServiceQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val isExpanded = maxWidth >= 860.dp
@@ -59,6 +59,15 @@ internal fun HomeScreen(
                 themeMode = themeMode,
                 onThemeModeChange = onThemeModeChange,
                 onBack = { showSettings = false },
+            )
+            return@BoxWithConstraints
+        }
+
+        selectedServiceQuery?.let { serviceQuery ->
+            HomeServiceDetailScreen(
+                serviceQuery = serviceQuery,
+                bottomContentPadding = bottomContentPadding,
+                onBack = { selectedServiceQuery = null },
             )
             return@BoxWithConstraints
         }
@@ -102,7 +111,7 @@ internal fun HomeScreen(
             }
 
             HomeServiceRail(
-                onOpenService = { serviceQuery -> onExploreVenues(serviceQuery) },
+                onOpenService = { serviceQuery -> selectedServiceQuery = serviceQuery },
             )
 
             InvitationSection(

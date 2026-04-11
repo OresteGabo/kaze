@@ -18,6 +18,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
@@ -35,6 +36,7 @@ internal fun HomeScreen(
     onOpenCategory: (VenueCategoryPreview) -> Unit,
     onOpenVenue: (PublicVenuePreview) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     var joinCode by rememberSaveable { mutableStateOf("") }
     var showAllInvitations by rememberSaveable { mutableStateOf(false) }
@@ -44,7 +46,6 @@ internal fun HomeScreen(
         val contentMaxWidth = if (isExpanded) 1180.dp else androidx.compose.ui.unit.Dp.Unspecified
         val categoryColumns = if (maxWidth >= 1160.dp) 4 else if (isExpanded) 2 else 1
         val venueColumns = if (maxWidth >= 1180.dp) 3 else if (isExpanded) 2 else 1
-        val bottomContentPadding = if (maxWidth < 900.dp) 116.dp else 20.dp
         val scrollState = rememberScrollState()
 
         if (showAllInvitations) {

@@ -3,6 +3,7 @@ package dev.orestegabo.kaze.ui.home.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ import kaze.composeapp.generated.resources.kaze_bg_photo_video_raster
 import kaze.composeapp.generated.resources.kaze_bg_styling_decor_raster
 import kaze.composeapp.generated.resources.kaze_bg_transport_raster
 import kaze.composeapp.generated.resources.kaze_bg_wedding_venues_raster
+import kaze.composeapp.generated.resources.kotlinconf_ground_floor_light_raster
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -90,6 +92,11 @@ private data class HomeServiceResult(
     val priceLabel: String,
 )
 
+private enum class ServiceResultDetailTab(val label: String) {
+    DETAILS("Details"),
+    MAP("Map"),
+}
+
 @Composable
 internal fun HomeServiceDetailScreen(
     serviceQuery: String,
@@ -100,12 +107,25 @@ internal fun HomeServiceDetailScreen(
     val scrollState = rememberScrollState()
     var searchQuery by rememberSaveable(serviceQuery) { mutableStateOf("") }
     var selectedFilters by rememberSaveable(serviceQuery) { mutableStateOf(emptyList<String>()) }
+    var selectedResultTitle by rememberSaveable(serviceQuery) { mutableStateOf<String?>(null) }
     val filteredResults = content.results.filter { result ->
         val searchable = "${result.title} ${result.subtitle} ${result.metaLabel} ${result.priceLabel}".lowercase()
         val matchesSearch = searchQuery.isBlank() || searchQuery.lowercase() in searchable
         val matchesFilter = selectedFilters.all { filter -> filter.lowercase() in searchable }
         matchesSearch && matchesFilter
     }
+    val selectedResult = content.results.firstOrNull { it.title == selectedResultTitle }
+
+    if (selectedResult != null) {
+        HomeServiceResultDetailScreen(
+            content = content,
+            result = selectedResult,
+            bottomContentPadding = bottomContentPadding,
+            onBack = { selectedResultTitle = null },
+        )
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -160,6 +180,7 @@ internal fun HomeServiceDetailScreen(
                         accent = content.accent,
                         icon = content.icon,
                         background = content.background,
+                        onClick = { selectedResultTitle = result.title },
                     )
                 }
             }
@@ -318,8 +339,12 @@ private fun ServiceResultCard(
     accent: Color,
     icon: ImageVector,
     background: DrawableResource,
+    onClick: () -> Unit,
 ) {
     Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(28.dp),
@@ -398,6 +423,211 @@ private fun ServiceResultCard(
                     MetaPill(result.metaLabel)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HomeServiceResultDetailScreen(
+    content: HomeServicePageContent,
+    result: HomeServiceResult,
+    bottomContentPadding: Dp,
+    onBack: () -> Unit,
+) {
+    val scrollState = rememberScrollState()
+    var selectedTab by rememberSaveable(result.title) { mutableStateOf(ServiceResultDetailTab.DETAILS.name) }
+    val activeTab = ServiceResultDetailTab.valueOf(selectedTab)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        KazeGhostButton(
+            label = "Back to results",
+            onClick = onBack,
+            leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+        )
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+            shape = RoundedCornerShape(32.dp),
+            border = BorderStroke(1.dp, content.accent.copy(alpha = 0.20f)),
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(168.dp)
+                        .background(content.accent.copy(alpha = 0.15f)),
+                ) {
+                    Image(
+                        painter = painterResource(content.background),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 18.dp, bottom = 16.dp),
+                        shape = RoundedCornerShape(22.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        border = BorderStroke(1.dp, content.accent.copy(alpha = 0.22f)),
+                        tonalElevation = 2.dp,
+                    ) {
+                        Icon(
+                            imageVector = content.icon,
+                            contentDescription = null,
+                            tint = content.accent,
+                            modifier = Modifier
+                                .padding(13.dp)
+                                .size(24.dp),
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            result.title,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            result.subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
+                        )
+                    }
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        MetaPill(result.metaLabel)
+                        MetaPill(
+                            label = result.priceLabel,
+                            containerColor = content.accent.copy(alpha = 0.16f),
+                            textColor = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+        }
+
+        ServiceResultDetailTabs(
+            activeTab = activeTab,
+            accent = content.accent,
+            onTabSelected = { selectedTab = it.name },
+        )
+
+        when (activeTab) {
+            ServiceResultDetailTab.DETAILS -> {
+                SectionLabel("Details")
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ServiceDetailItem(
+                        text = "Category: ${content.title}",
+                        accent = content.accent,
+                    )
+                    ServiceDetailItem(
+                        text = "Good match for: ${result.metaLabel}",
+                        accent = content.accent,
+                    )
+                    ServiceDetailItem(
+                        text = "Estimated price: ${result.priceLabel}",
+                        accent = content.accent,
+                    )
+                }
+            }
+
+            ServiceResultDetailTab.MAP -> {
+                SectionLabel("Map")
+                ServiceResultMapCard(
+                    title = result.title,
+                    accent = content.accent,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServiceResultDetailTabs(
+    activeTab: ServiceResultDetailTab,
+    accent: Color,
+    onTabSelected: (ServiceResultDetailTab) -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+        tonalElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ServiceResultDetailTab.entries.forEach { tab ->
+                Surface(
+                    onClick = { onTabSelected(tab) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(999.dp),
+                    color = if (activeTab == tab) accent.copy(alpha = 0.18f) else Color.Transparent,
+                    border = if (activeTab == tab) BorderStroke(1.dp, accent.copy(alpha = 0.26f)) else null,
+                ) {
+                    Text(
+                        tab.label,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (activeTab == tab) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (activeTab == tab) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServiceResultMapCard(
+    title: String,
+    accent: Color,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(28.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.18f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.kotlinconf_ground_floor_light_raster),
+                    contentDescription = "$title map",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                        .padding(10.dp),
+                )
+            }
+            Text(
+                "Temporary map preview. This will later use the venue or room map connected to this item.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+            )
         }
     }
 }

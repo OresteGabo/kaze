@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Card
@@ -91,6 +92,7 @@ internal fun VenueCategoryCard(
 internal fun PublicVenueCard(
     venue: PublicVenuePreview,
     onClick: () -> Unit,
+    onOpenMap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val icon = venue.venueIcon()
@@ -161,12 +163,23 @@ internal fun PublicVenueCard(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
             )
-            KazePrimaryButton(
-                label = "View",
-                onClick = onClick,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = icon,
-            )
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                KazePrimaryButton(
+                    label = "View",
+                    onClick = onClick,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = icon,
+                )
+                KazeSecondaryButton(
+                    label = "Map",
+                    onClick = onOpenMap,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Map,
+                )
+            }
         }
     }
 }

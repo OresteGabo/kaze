@@ -130,6 +130,7 @@ internal fun KazeBottomBar(
     modifier: Modifier = Modifier,
     currentDestination: KazeDestination,
     onDestinationSelected: (KazeDestination) -> Unit,
+    pendingInvitationCount: Int = 0,
 ) {
     val destinations = listOf(
         KazeDestination.STAY,
@@ -155,6 +156,7 @@ internal fun KazeBottomBar(
                     destination = destination,
                     selected = currentDestination == destination,
                     onClick = { onDestinationSelected(destination) },
+                    badgeCount = if (destination == KazeDestination.INVITATIONS) pendingInvitationCount else 0,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -213,6 +215,7 @@ private fun KazeBottomNavItem(
     destination: KazeDestination,
     selected: Boolean,
     onClick: () -> Unit,
+    badgeCount: Int,
     modifier: Modifier = Modifier,
 ) {
     KazeNavigationItemFrame(
@@ -245,20 +248,26 @@ private fun KazeBottomNavItem(
                     )
                 }
             } else {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(
-                            if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f) else Color.Transparent,
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f) else Color.Transparent,
+                            )
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = destination.icon,
+                            contentDescription = destination.label,
+                            tint = contentColor,
+                            modifier = Modifier.size(20.dp),
                         )
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = destination.label,
-                        tint = contentColor,
-                        modifier = Modifier.size(20.dp),
+                    }
+                    NavigationBadge(
+                        count = badgeCount,
+                        modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-4).dp),
                     )
                 }
             }
@@ -285,6 +294,7 @@ internal fun KazeNavigationRail(
     modifier: Modifier = Modifier,
     currentDestination: KazeDestination,
     onDestinationSelected: (KazeDestination) -> Unit,
+    pendingInvitationCount: Int = 0,
 ) {
     KazeNavigationContainer(
         modifier = modifier
@@ -304,6 +314,7 @@ internal fun KazeNavigationRail(
                     destination = destination,
                     selected = currentDestination == destination,
                     onClick = { onDestinationSelected(destination) },
+                    badgeCount = if (destination == KazeDestination.INVITATIONS) pendingInvitationCount else 0,
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
@@ -324,6 +335,7 @@ private fun KazeSideNavItem(
     destination: KazeDestination,
     selected: Boolean,
     onClick: () -> Unit,
+    badgeCount: Int,
 ) {
     KazeNavigationItemFrame(
         selected = selected,
@@ -338,30 +350,36 @@ private fun KazeSideNavItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f) else Color.Transparent,
-                    )
-                    .padding(horizontal = if (isHome) 10.dp else 8.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (isHome) {
-                    Image(
-                        painter = painterResource(Res.drawable.k_mark_raster),
-                        contentDescription = destination.label,
-                        modifier = Modifier.size(26.dp),
-                        colorFilter = ColorFilter.tint(contentColor),
-                    )
-                } else {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = destination.label,
-                        tint = contentColor,
-                        modifier = Modifier.size(20.dp),
-                    )
+            Box {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f) else Color.Transparent,
+                        )
+                        .padding(horizontal = if (isHome) 10.dp else 8.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (isHome) {
+                        Image(
+                            painter = painterResource(Res.drawable.k_mark_raster),
+                            contentDescription = destination.label,
+                            modifier = Modifier.size(26.dp),
+                            colorFilter = ColorFilter.tint(contentColor),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = destination.icon,
+                            contentDescription = destination.label,
+                            tint = contentColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
+                NavigationBadge(
+                    count = badgeCount,
+                    modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-4).dp),
+                )
             }
             Text(
                 text = destination.label,
@@ -379,6 +397,29 @@ private fun KazeSideNavItem(
                     .background(if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent),
             )
         }
+    }
+}
+
+@Composable
+private fun NavigationBadge(
+    count: Int,
+    modifier: Modifier = Modifier,
+) {
+    if (count <= 0) return
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.36f)),
+    ) {
+        Text(
+            text = count.coerceAtMost(9).toString(),
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     }
 }
 

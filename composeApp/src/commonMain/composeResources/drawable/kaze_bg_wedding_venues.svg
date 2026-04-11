@@ -1,0 +1,19 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="220" rx="32" fill="url(#wedding_bg)"/>
+  <path d="M0 156C58 126 92 172 148 138C198 108 226 70 360 91V220H0V156Z" fill="#FFF7EC" fill-opacity="0.42"/>
+  <circle cx="296" cy="48" r="76" fill="#F2B8A2" fill-opacity="0.24"/>
+  <circle cx="70" cy="46" r="42" fill="#FFFFFF" fill-opacity="0.24"/>
+  <path d="M112 134C112 105 135 82 164 82C193 82 216 105 216 134V156H112V134Z" stroke="#7E4E3F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M139 92C150 110 178 110 189 92" stroke="#C77F68" stroke-width="7" stroke-linecap="round"/>
+  <path d="M124 156H204" stroke="#7E4E3F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M245 142C256 121 277 121 288 142C299 121 320 121 331 142C320 165 299 176 288 184C277 176 256 165 245 142Z" fill="#B75E6E" fill-opacity="0.74"/>
+  <path d="M44 154C60 138 78 138 94 154" stroke="#7E4E3F" stroke-width="5" stroke-linecap="round"/>
+  <path d="M52 170H86" stroke="#7E4E3F" stroke-width="5" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="wedding_bg" x1="18" y1="14" x2="338" y2="206" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE1D5"/>
+      <stop offset="0.52" stop-color="#F8CDB9"/>
+      <stop offset="1" stop-color="#D99B7A"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -53,7 +53,14 @@ internal data class InvitationPreview(
     val code: String,
     val phoneLabel: String,
     val statusLabel: String,
+    val state: InvitationState = InvitationState.ACTIVE,
 )
+
+internal enum class InvitationState {
+    ACTIVE,
+    PAST,
+    ARCHIVED,
+}
 
 internal enum class StayTab(val label: String) {
     MY_STAY("My Stay"),
@@ -485,6 +492,22 @@ internal val invitationPreviews = listOf(
         code = "LOVE28",
         phoneLabel = "Invite prepared for guest phone",
         statusLabel = "Pending acceptance",
+    ),
+    InvitationPreview(
+        title = "Kigali Founders Breakfast",
+        subtitle = "Event ended on 18 Mar 2026.",
+        code = "KFB18",
+        phoneLabel = "Matched to +250 78 123 4567",
+        statusLabel = "Past invitation",
+        state = InvitationState.PAST,
+    ),
+    InvitationPreview(
+        title = "Nyarutarama Garden Preview",
+        subtitle = "Archived after the venue walkthrough was completed.",
+        code = "GARDEN7",
+        phoneLabel = "Invite prepared for guest phone",
+        statusLabel = "Archived",
+        state = InvitationState.ARCHIVED,
     ),
 )
 

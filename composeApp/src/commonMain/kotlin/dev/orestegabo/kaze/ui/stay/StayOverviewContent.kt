@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.DigitalAccessCard
 import dev.orestegabo.kaze.presentation.demo.StayMoment
@@ -57,6 +58,7 @@ internal fun StayTabContent(
     accessCard: DigitalAccessCard?,
     stayMoments: List<StayMoment>,
     onPrimaryAction: (StayPrimaryAction) -> Unit,
+    bottomContentPadding: Dp = 20.dp,
 ) {
     val scrollState = rememberScrollState()
     BoxWithConstraints(
@@ -77,7 +79,8 @@ internal fun StayTabContent(
                     } else {
                         Modifier
                     },
-                ),
+                )
+                .padding(bottom = bottomContentPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (isExpanded && accessCard != null) {

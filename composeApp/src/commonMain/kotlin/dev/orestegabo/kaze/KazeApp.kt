@@ -44,6 +44,7 @@ import dev.orestegabo.kaze.ui.chrome.KazeNavigationRail
 import dev.orestegabo.kaze.ui.events.EventScheduleScreen
 import dev.orestegabo.kaze.ui.explore.ExploreScreen
 import dev.orestegabo.kaze.ui.home.HomeScreen
+import dev.orestegabo.kaze.ui.home.components.InvitationsScreen
 import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
 import dev.orestegabo.kaze.ui.stay.StayHomeScreen
@@ -154,6 +155,19 @@ fun App() {
             appViewModel.showFeedback("Opening ${venue.name} in public browsing.")
         }
 
+        fun openInvitations() {
+            appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+        }
+
+        fun openVenueMap(venue: PublicVenuePreview) {
+            appViewModel.openMapRoute(
+                route = "Route to ${venue.name}",
+                floorId = "l1",
+                floorLabel = venue.locationLabel,
+            )
+            appViewModel.showFeedback("Opening the map for ${venue.name}.")
+        }
+
         LaunchedEffect(uiState.activeMapTarget) {
             mapViewModel.applyNavigationTarget(uiState.activeMapTarget)
         }
@@ -209,7 +223,9 @@ fun App() {
                                                 onEnterCode = ::handleJoinCode,
                                                 onOpenCategory = { openPublicBrowse(it.title) },
                                                 onOpenVenue = ::openVenue,
+                                                onOpenVenueMap = ::openVenueMap,
                                                 onOpenInvitation = ::openInvitation,
+                                                onSeeAllInvitations = ::openInvitations,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -246,6 +262,14 @@ fun App() {
                                                 sessions = eventsUiState.sessions,
                                                 onDaySelected = eventsViewModel::onDaySelected,
                                                 onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                                bottomContentPadding = bottomContentPadding,
+                                            )
+
+                                            KazeDestination.INVITATIONS -> InvitationsScreen(
+                                                modifier = Modifier.weight(1f),
+                                                invitations = invitationPreviews,
+                                                onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
+                                                onOpenInvitation = ::openInvitation,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -288,7 +312,9 @@ fun App() {
                                             onEnterCode = ::handleJoinCode,
                                                 onOpenCategory = { openPublicBrowse(it.title) },
                                                 onOpenVenue = ::openVenue,
+                                                onOpenVenueMap = ::openVenueMap,
                                                 onOpenInvitation = ::openInvitation,
+                                                onSeeAllInvitations = ::openInvitations,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -325,6 +351,14 @@ fun App() {
                                             sessions = eventsUiState.sessions,
                                             onDaySelected = eventsViewModel::onDaySelected,
                                             onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                            bottomContentPadding = bottomContentPadding,
+                                        )
+
+                                        KazeDestination.INVITATIONS -> InvitationsScreen(
+                                            modifier = Modifier.weight(1f),
+                                            invitations = invitationPreviews,
+                                            onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
+                                            onOpenInvitation = ::openInvitation,
                                             bottomContentPadding = bottomContentPadding,
                                         )
 

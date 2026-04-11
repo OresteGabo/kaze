@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
+import dev.orestegabo.kaze.presentation.demo.InvitationState
 import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
 import dev.orestegabo.kaze.presentation.demo.invitationPreviews
 import dev.orestegabo.kaze.presentation.demo.publicVenueCategories
@@ -92,6 +93,7 @@ fun App() {
         val eventsUiState = eventsViewModel.uiState
         val exploreUiState = exploreViewModel.uiState
         val mapUiState = mapViewModel.uiState
+        val pendingInvitationCount = invitationPreviews.count { it.state == InvitationState.ACTIVE }
 
         fun handleStayResult(result: StayActionResult?) {
             when (result) {
@@ -208,6 +210,7 @@ fun App() {
                                     KazeNavigationRail(
                                         currentDestination = uiState.currentDestination,
                                         onDestinationSelected = appViewModel::onDestinationSelected,
+                                        pendingInvitationCount = pendingInvitationCount,
                                     )
                                     Column(modifier = Modifier.weight(1f)) {
                                         DemoFeedbackBanner(
@@ -396,6 +399,7 @@ fun App() {
                     KazeBottomBar(
                         currentDestination = uiState.currentDestination,
                         onDestinationSelected = appViewModel::onDestinationSelected,
+                        pendingInvitationCount = pendingInvitationCount,
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                         }

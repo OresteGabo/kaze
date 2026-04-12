@@ -3,7 +3,7 @@ package dev.orestegabo.kaze.ui.home.settings
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Gavel
-import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -29,7 +29,7 @@ internal enum class SettingsGroup(
     PREFERENCES(
         title = "Preferences",
         summary = "Language, alerts, accessibility, and device wallet options.",
-        icon = Icons.Default.Palette,
+        icon = Icons.Default.Tune,
         previewTokens = listOf("Language", "Notifications", "Accessibility", "Wallet"),
         pages = listOf(
             SettingsDetailPage.LANGUAGE,

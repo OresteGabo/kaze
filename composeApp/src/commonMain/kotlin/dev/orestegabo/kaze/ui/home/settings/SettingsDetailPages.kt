@@ -87,9 +87,9 @@ internal enum class SettingsDetailPage(
         title = "Payment methods",
         summary = "Ways to pay for venues, services, and event extras.",
         icon = Icons.Default.Payments,
-        tokens = listOf("MTN MoMo", "Airtel Money", "SPENN", "BK / Rswitch", "Card"),
+        tokens = listOf("Cash", "MTN MoMo", "Airtel Money", "SPENN", "BK / Rswitch", "Card"),
         sections = listOf(
-            LegalSection("Rwanda-ready payments", listOf("Use common local payment options such as MTN MoMo, Airtel Money, SPENN, BK/Rswitch, and card payments where available.")),
+            LegalSection("Payment options", listOf("Choose one of the payment methods accepted by the venue or event.")),
             LegalSection("Use cases", listOf("Payments can support conference room reservations, wedding venue deposits, decoration services, catering, transport, media services, and event access passes.")),
             LegalSection("Payment availability", listOf("Available payment methods can depend on your hotel, venue, event, and country.")),
         ),

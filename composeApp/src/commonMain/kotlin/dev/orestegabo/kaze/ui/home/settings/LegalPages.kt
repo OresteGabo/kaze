@@ -89,7 +89,7 @@ internal enum class LegalPage(
             ),
             LegalSection(
                 heading = "Contact",
-                body = listOf("For terms questions, contact orestegabo@icloud.com or visit https://orestegabo.dev."),
+                body = listOf("For terms questions, contact orestegabo@icloud.com or visit https://kazerwanda.com."),
             ),
         ),
     ),
@@ -165,7 +165,7 @@ internal enum class LegalPage(
             ),
             LegalSection(
                 heading = "Website",
-                body = listOf("https://orestegabo.dev"),
+                body = listOf("https://kazerwanda.com"),
             ),
             LegalSection(
                 heading = "Business requests",

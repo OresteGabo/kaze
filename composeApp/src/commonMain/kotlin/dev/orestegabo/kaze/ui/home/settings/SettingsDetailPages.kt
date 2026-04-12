@@ -150,7 +150,7 @@ internal enum class SettingsDetailPage(
             LegalSection("Why does cash need confirmation?", listOf("Cash is paid outside the app, so the venue or hotel confirms it after receiving the money.")),
             LegalSection("Where do I see my saved places?", listOf("Open Settings, then Activity & payments, then Saved places.")),
             LegalSection("What if event or venue information looks wrong?", listOf("Use Report a problem so the venue, organizer, or Kaze support can review it.")),
-            LegalSection("How can a hotel or venue join Kaze?", listOf("Contact GABO at orestegabo@icloud.com or visit orestegabo.dev to discuss onboarding.")),
+            LegalSection("How can a hotel or venue join Kaze?", listOf("Contact GABO at orestegabo@icloud.com or visit kazerwanda.com to discuss onboarding.")),
             LegalSection("Can I add my wedding venue or conference room?", listOf("Venue owners or managers can contact Kaze to add spaces, prices, photos, maps, and booking rules.")),
             LegalSection("Can Kaze be used for private events?", listOf("Yes. Organizers can use Kaze for invitations, guest access, event updates, and Kaze Pass entry.")),
             LegalSection("Can I use Kaze without a hotel stay?", listOf("Yes. Kaze can also be used for venues, invitations, apartments, events, and services.")),
@@ -172,7 +172,7 @@ internal enum class SettingsDetailPage(
             LegalSection("What Kaze does", listOf("Kaze brings venue discovery, hotel stays, event invitations, access passes, maps, service requests, and payments into one experience.")),
             LegalSection("Who it serves", listOf("Kaze is designed for hotel guests, event attendees, organizers, venues, hotels, and service providers.")),
             LegalSection("Owner", listOf("Kaze is developed by GABO as a private commercial product.")),
-            LegalSection("Contact", listOf("Website: https://orestegabo.dev", "Email: orestegabo@icloud.com")),
+            LegalSection("Contact", listOf("Website: https://kazerwanda.com", "Email: orestegabo@icloud.com")),
         ),
     ),
 }

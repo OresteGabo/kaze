@@ -44,14 +44,19 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -63,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
+import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.map.components.BuildingRegistryMapResourcePath
 import dev.orestegabo.kaze.ui.map.components.DemoBuildingMapResources
@@ -82,7 +88,7 @@ import kaze.composeapp.generated.resources.kaze_bg_wedding_venues_raster
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
-private data class HomeServicePageContent(
+internal data class HomeServicePageContent(
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
@@ -94,7 +100,7 @@ private data class HomeServicePageContent(
     val results: List<HomeServiceResult>,
 )
 
-private data class HomeServiceResult(
+internal data class HomeServiceResult(
     val title: String,
     val subtitle: String,
     val metaLabel: String,
@@ -102,6 +108,10 @@ private data class HomeServiceResult(
     val mapResourcePath: String? = null,
     val selectedMapFeatureId: String? = null,
     val selectedMapFeatureName: String? = null,
+    val locationLabel: String = "Kigali, Rwanda",
+    val availabilityLabel: String = "Availability on request",
+    val includedServices: List<String> = emptyList(),
+    val bookingNotes: List<String> = emptyList(),
 )
 
 private enum class ServiceResultDetailTab(val label: String) {
@@ -117,7 +127,11 @@ internal fun HomeServiceDetailScreen(
 ) {
     val content = servicePageContent(serviceQuery)
     val scrollState = rememberScrollState()
+    val showFloatingHeader by remember {
+        derivedStateOf { scrollState.value > 260 }
+    }
     var searchQuery by rememberSaveable(serviceQuery) { mutableStateOf("") }
+    var isFloatingSearchOpen by rememberSaveable(serviceQuery) { mutableStateOf(false) }
     var selectedFilters by rememberSaveable(serviceQuery) { mutableStateOf(emptyList<String>()) }
     var selectedResultTitle by rememberSaveable(serviceQuery) { mutableStateOf<String?>(null) }
     val filteredResults = content.results.filter { result ->
@@ -127,6 +141,9 @@ internal fun HomeServiceDetailScreen(
         matchesSearch && matchesFilter
     }
     val selectedResult = content.results.firstOrNull { it.title == selectedResultTitle }
+    LaunchedEffect(showFloatingHeader) {
+        if (!showFloatingHeader) isFloatingSearchOpen = false
+    }
 
     if (selectedResult != null) {
         HomeServiceResultDetailScreen(
@@ -138,72 +155,139 @@ internal fun HomeServiceDetailScreen(
         return
     }
 
-    Column(
+    Box(
         modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .fillMaxSize(),
     ) {
-        KazeGhostButton(
-            label = "Back",
-            onClick = onBack,
-            leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
-        )
-
-        ServiceHeroCard(content = content)
-
-        ServiceSearchField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = "Search ${content.title.lowercase()}",
-            accent = content.accent,
-        )
-
-        SectionLabel("Quick filters")
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            content.filters.forEach { filter ->
-                FilterPill(
-                    label = filter,
-                    selected = filter in selectedFilters,
-                    accent = content.accent,
-                    onClick = {
-                        selectedFilters = if (filter in selectedFilters) {
-                            selectedFilters - filter
-                        } else {
-                            selectedFilters + filter
-                        }
-                    },
-                )
-            }
-        }
+            KazeGhostButton(
+                label = "Back",
+                onClick = onBack,
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            )
 
-        SectionLabel("${filteredResults.size} demo result${if (filteredResults.size == 1) "" else "s"}")
-        if (filteredResults.isEmpty()) {
-            EmptyServiceResultsCard(accent = content.accent)
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                filteredResults.forEach { result ->
-                    ServiceResultCard(
-                        result = result,
+            ServiceHeroCard(content = content)
+
+            ServiceSearchField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = "Search ${content.title.lowercase()}",
+                accent = content.accent,
+            )
+
+            SectionLabel("Quick filters")
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                content.filters.forEach { filter ->
+                    FilterPill(
+                        label = filter,
+                        selected = filter in selectedFilters,
                         accent = content.accent,
-                        icon = content.icon,
-                        background = content.background,
-                        onClick = { selectedResultTitle = result.title },
+                        onClick = {
+                            selectedFilters = if (filter in selectedFilters) {
+                                selectedFilters - filter
+                            } else {
+                                selectedFilters + filter
+                            }
+                        },
+                    )
+                }
+            }
+
+            SectionLabel("${filteredResults.size} demo result${if (filteredResults.size == 1) "" else "s"}")
+            if (filteredResults.isEmpty()) {
+                EmptyServiceResultsCard(accent = content.accent)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    filteredResults.forEach { result ->
+                        ServiceResultCard(
+                            result = result,
+                            accent = content.accent,
+                            icon = content.icon,
+                            background = content.background,
+                            onClick = { selectedResultTitle = result.title },
+                        )
+                    }
+                }
+            }
+
+            SectionLabel("What you can check")
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                content.highlights.forEach { highlight ->
+                    ServiceDetailItem(
+                        text = highlight,
+                        accent = content.accent,
                     )
                 }
             }
         }
+        if (showFloatingHeader) {
+            ServiceFloatingTopPill(
+                title = content.title,
+                searchQuery = searchQuery,
+                isSearchOpen = isFloatingSearchOpen,
+                accent = content.accent,
+                onBack = onBack,
+                onSearchOpenChange = { isFloatingSearchOpen = it },
+                onSearchQueryChange = { searchQuery = it },
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+        }
+    }
+}
 
-        SectionLabel("What you can check")
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            content.highlights.forEach { highlight ->
-                ServiceDetailItem(
-                    text = highlight,
-                    accent = content.accent,
+@Composable
+private fun ServiceHeroCard(content: HomeServicePageContent) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = content.accent.copy(alpha = 0.16f),
+            border = BorderStroke(1.dp, content.accent.copy(alpha = 0.20f)),
+        ) {
+            Box(
+                modifier = Modifier.padding(13.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = content.icon,
+                    contentDescription = null,
+                    tint = content.accent,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                content.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                content.subtitle,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
+            )
+            if (!content.isAvailable) {
+                MetaPill(
+                    label = "Coming soon",
+                    containerColor = content.accent.copy(alpha = 0.16f),
+                    textColor = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -211,61 +295,118 @@ internal fun HomeServiceDetailScreen(
 }
 
 @Composable
-private fun ServiceHeroCard(content: HomeServicePageContent) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(30.dp),
-        border = BorderStroke(1.dp, content.accent.copy(alpha = 0.22f)),
+private fun ServiceFloatingTopPill(
+    title: String,
+    searchQuery: String,
+    isSearchOpen: Boolean,
+    accent: Color,
+    onBack: () -> Unit,
+    onSearchOpenChange: (Boolean) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val searchFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isSearchOpen) {
+        if (isSearchOpen) searchFocusRequester.requestFocus()
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            shadowElevation = 10.dp,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 6.dp, top = 6.dp, end = 8.dp, bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Surface(
+                    onClick = onBack,
                     shape = CircleShape,
-                    color = content.accent.copy(alpha = 0.18f),
-                    border = BorderStroke(1.dp, content.accent.copy(alpha = 0.22f)),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
                 ) {
-                    Box(
-                        modifier = Modifier.padding(14.dp),
-                        contentAlignment = Alignment.Center,
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(10.dp).size(18.dp),
+                    )
+                }
+                if (isSearchOpen) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(searchFocusRequester),
+                        singleLine = true,
+                        placeholder = { Text("Search $title") },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            disabledBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                        ),
+                        shape = RoundedCornerShape(999.dp),
+                    )
+                    Surface(
+                        onClick = { onSearchOpenChange(false) },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
                     ) {
                         Icon(
-                            imageVector = content.icon,
-                            contentDescription = null,
-                            tint = content.accent,
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close search",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(10.dp).size(18.dp),
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                    ) {
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            "Search and reserve",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                        )
+                    }
+                    Surface(
+                        onClick = { onSearchOpenChange(true) },
+                        shape = CircleShape,
+                        color = accent.copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, accent.copy(alpha = 0.22f)),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = accent,
+                            modifier = Modifier.padding(10.dp).size(18.dp),
                         )
                     }
                 }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Text(
-                        content.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        content.subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
-                    )
-                }
-            }
-            if (!content.isAvailable) {
-                MetaPill(
-                    label = "Coming soon",
-                    containerColor = content.accent.copy(alpha = 0.16f),
-                    textColor = MaterialTheme.colorScheme.onSurface,
-                )
             }
         }
     }
@@ -448,7 +589,17 @@ private fun HomeServiceResultDetailScreen(
 ) {
     val scrollState = rememberScrollState()
     var selectedTab by rememberSaveable(result.title) { mutableStateOf(ServiceResultDetailTab.DETAILS.name) }
+    var isReservationDraftOpen by rememberSaveable(result.title) { mutableStateOf(false) }
     val activeTab = ServiceResultDetailTab.valueOf(selectedTab)
+    if (isReservationDraftOpen) {
+        HomeReservationDraftScreen(
+            content = content,
+            result = result,
+            bottomContentPadding = bottomContentPadding,
+            onBack = { isReservationDraftOpen = false },
+        )
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -528,6 +679,12 @@ private fun HomeServiceResultDetailScreen(
                             textColor = MaterialTheme.colorScheme.onSurface,
                         )
                     }
+                    KazePrimaryButton(
+                        label = "Request to reserve",
+                        onClick = { isReservationDraftOpen = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Default.CheckCircle,
+                    )
                 }
             }
         }
@@ -540,21 +697,11 @@ private fun HomeServiceResultDetailScreen(
 
         when (activeTab) {
             ServiceResultDetailTab.DETAILS -> {
-                SectionLabel("Details")
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ServiceDetailItem(
-                        text = "Category: ${content.title}",
-                        accent = content.accent,
-                    )
-                    ServiceDetailItem(
-                        text = "Good match for: ${result.metaLabel}",
-                        accent = content.accent,
-                    )
-                    ServiceDetailItem(
-                        text = "Estimated price: ${result.priceLabel}",
-                        accent = content.accent,
-                    )
-                }
+                ServiceResultDetailsPage(
+                    content = content,
+                    result = result,
+                    onReserve = { isReservationDraftOpen = true },
+                )
             }
 
             ServiceResultDetailTab.MAP -> {
@@ -603,6 +750,189 @@ private fun ServiceResultDetailTabs(
                         color = if (activeTab == tab) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServiceResultDetailsPage(
+    content: HomeServicePageContent,
+    result: HomeServiceResult,
+    onReserve: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        SectionLabel("Snapshot")
+        ServiceSnapshotGrid(content = content, result = result)
+
+        SectionLabel("Included or useful")
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            result.includedServices.ifEmpty { defaultIncludedServices(content.title) }.forEach { item ->
+                MetaPill(
+                    label = item,
+                    containerColor = content.accent.copy(alpha = 0.14f),
+                    textColor = MaterialTheme.colorScheme.onSurface,
+                    leadingIcon = Icons.Default.CheckCircle,
+                )
+            }
+        }
+
+        SectionLabel("Gallery preview")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            defaultGalleryLabels(content.title).forEach { label ->
+                ServiceGalleryPreviewCard(
+                    label = label,
+                    content = content,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        SectionLabel("Before booking")
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            result.bookingNotes.ifEmpty { defaultBookingNotes(content.title) }.forEach { note ->
+                ServiceDetailItem(
+                    text = note,
+                    accent = content.accent,
+                )
+            }
+        }
+
+        // TODO Add richer venue pages from the backend: real photos, availability calendar, verified location, cancellation rules, reviews, and provider contacts.
+        KazePrimaryButton(
+            label = "Request to reserve",
+            onClick = onReserve,
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = Icons.Default.CheckCircle,
+        )
+    }
+}
+
+@Composable
+private fun ServiceSnapshotGrid(
+    content: HomeServicePageContent,
+    result: HomeServiceResult,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            ServiceSnapshotCard(
+                label = "Location",
+                value = result.displayLocationLabel(),
+                accent = content.accent,
+                modifier = Modifier.weight(1f),
+            )
+            ServiceSnapshotCard(
+                label = if (content.title == "Apartments") "Stay type" else "Capacity",
+                value = result.metaLabel,
+                accent = content.accent,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            ServiceSnapshotCard(
+                label = "Starting price",
+                value = result.priceLabel,
+                accent = content.accent,
+                modifier = Modifier.weight(1f),
+            )
+            ServiceSnapshotCard(
+                label = "Availability",
+                value = result.displayAvailabilityLabel(),
+                accent = content.accent,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ServiceSnapshotCard(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.18f)),
+        tonalElevation = 2.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = accent,
+            )
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ServiceGalleryPreviewCard(
+    label: String,
+    content: HomeServicePageContent,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = content.accent.copy(alpha = 0.12f)),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, content.accent.copy(alpha = 0.18f)),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(112.dp),
+        ) {
+            Image(
+                painter = painterResource(content.background),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(10.dp),
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+                border = BorderStroke(1.dp, content.accent.copy(alpha = 0.22f)),
+            ) {
+                Text(
+                    label,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
@@ -883,6 +1213,99 @@ private fun ServiceDetailItem(
             )
         }
     }
+}
+
+private fun defaultIncludedServices(categoryTitle: String): List<String> = when (categoryTitle) {
+    "Wedding venues" -> listOf("Guest seating", "Parking guidance", "Event access", "Layout planning")
+    "Conference rooms" -> listOf("Wi-Fi", "Projector", "Reception support", "Room setup")
+    "Apartments" -> listOf("Furnished", "Kitchen basics", "Guest support", "Nearby venue access")
+    "Hotels" -> listOf("Rooms", "Event spaces", "Restaurant", "Indoor map")
+    "Event layouts" -> listOf("Attendee count", "Table style", "Guest flow", "Kaze Pass entry")
+    "Styling & decor" -> listOf("Flowers", "Lighting", "Stage details", "Setup team")
+    "Catering" -> listOf("Menu options", "Guest count", "Service timing", "Drinks")
+    "Photo & video" -> listOf("Photography", "Video", "Delivery options", "Venue access")
+    "Transport" -> listOf("Pickup timing", "Driver contact", "Guest route", "Return plan")
+    "Guest access" -> listOf("Invitation code", "QR entry", "Guest list", "Kaze Pass")
+    else -> listOf("Availability", "Provider details", "Event connection", "Support")
+}
+
+private fun defaultBookingNotes(categoryTitle: String): List<String> = when (categoryTitle) {
+    "Wedding venues" -> listOf(
+        "Final capacity and decoration rules should be confirmed by the venue.",
+        "After reservation, you can create invitations and prepare Kaze Pass access.",
+        "Catering, styling, media, and transport can be attached later as event add-ons.",
+    )
+    "Conference rooms" -> listOf(
+        "Confirm the room setup before payment: boardroom, classroom, or theatre.",
+        "Guest access can be prepared after the room is approved.",
+        "Catering, livestreaming, and cleaning can be added to the reservation.",
+    )
+    "Apartments" -> listOf(
+        "Confirm check-in time and guest count before payment.",
+        "Apartment options can support guests attending an event nearby.",
+        "Transport or cleaning can be added after the host confirms availability.",
+    )
+    "Catering" -> listOf(
+        "Final menu and guest count should be confirmed before payment.",
+        "Attach catering to a venue or event so timing stays clear.",
+        "Service team and drinks can be adjusted after provider confirmation.",
+    )
+    "Photo & video" -> listOf(
+        "Confirm event timing, access rules, and delivery expectations.",
+        "Drone or livestream options may need venue approval.",
+        "Media team access can later be linked to Kaze Pass.",
+    )
+    "Transport" -> listOf(
+        "Confirm pickup points, passenger count, and return timing.",
+        "Guest transport can be attached to invitations later.",
+        "Cash or mobile payment confirmation should be tracked in-app.",
+    )
+    else -> listOf(
+        "Availability and final pricing should be confirmed by the provider.",
+        "This service can later be attached to an event or invitation.",
+        "Payment, access, and provider updates will become backend-backed.",
+    )
+}
+
+private fun defaultGalleryLabels(categoryTitle: String): List<String> = when (categoryTitle) {
+    "Wedding venues" -> listOf("Reception", "Garden", "Entrance")
+    "Conference rooms" -> listOf("Room", "Setup", "Access")
+    "Apartments" -> listOf("Living", "Bedroom", "Area")
+    "Hotels" -> listOf("Hotel", "Spaces", "Map")
+    "Event layouts" -> listOf("Tables", "Aisles", "Entry")
+    "Styling & decor" -> listOf("Flowers", "Lights", "Stage")
+    "Catering" -> listOf("Menu", "Service", "Drinks")
+    "Photo & video" -> listOf("Photo", "Video", "Delivery")
+    "Transport" -> listOf("Vehicle", "Pickup", "Route")
+    "Guest access" -> listOf("Pass", "Code", "Entry")
+    else -> listOf("Preview", "Details", "Access")
+}
+
+private fun HomeServiceResult.displayLocationLabel(): String = when (title) {
+    "Kigali Garden Pavilion" -> "Nyarutarama, Kigali"
+    "Umubano Grand Hall" -> "Kacyiru, Kigali"
+    "Lake View Wedding Lawn" -> "Gisenyi road area"
+    "Nyarutarama Boardroom" -> "Nyarutarama, Kigali"
+    "Kigali Training Suite" -> "Kigali CBD"
+    "Kivu Meeting Room" -> "Kigali, near convention area"
+    "Kacyiru Family Apartment" -> "Kacyiru, Kigali"
+    "Remera Short Stay Studio" -> "Remera, Kigali"
+    "Kigali Heights Residence" -> "Kimihurura, Kigali"
+    "Gishushu Executive Flat" -> "Gishushu, Kigali"
+    "Nyamirambo Family Stay" -> "Nyamirambo, Kigali"
+    "Kimihurura Event Guest Suite" -> "Kimihurura, Kigali"
+    "Airport VIP Pickup" -> "Kigali International Airport"
+    "Wedding Guest Shuttle" -> "Route agreed after booking"
+    else -> locationLabel
+}
+
+private fun HomeServiceResult.displayAvailabilityLabel(): String = when {
+    "From" in priceLabel -> "Request quote"
+    "night" in priceLabel.lowercase() -> "Check dates"
+    "half day" in priceLabel.lowercase() -> "Morning or afternoon"
+    "full day" in priceLabel.lowercase() -> "Full day slots"
+    priceLabel == "Included" -> "After event setup"
+    else -> availabilityLabel
 }
 
 @Composable

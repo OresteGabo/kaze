@@ -26,10 +26,12 @@ import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Chair
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.LocalFlorist
+import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Videocam
@@ -44,10 +46,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -56,8 +60,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.MetaPill
+import dev.orestegabo.kaze.ui.map.components.BuildingRegistryMapResourcePath
+import dev.orestegabo.kaze.ui.map.components.DemoBuildingMapResources
+import dev.orestegabo.kaze.ui.map.components.KazeMapView
+import dev.orestegabo.kaze.ui.map.components.NyarutaramaBoardroomFeatureId
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.kaze_bg_apartments_raster
 import kaze.composeapp.generated.resources.kaze_bg_catering_raster
@@ -69,7 +79,6 @@ import kaze.composeapp.generated.resources.kaze_bg_photo_video_raster
 import kaze.composeapp.generated.resources.kaze_bg_styling_decor_raster
 import kaze.composeapp.generated.resources.kaze_bg_transport_raster
 import kaze.composeapp.generated.resources.kaze_bg_wedding_venues_raster
-import kaze.composeapp.generated.resources.kotlinconf_ground_floor_light_raster
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -90,6 +99,9 @@ private data class HomeServiceResult(
     val subtitle: String,
     val metaLabel: String,
     val priceLabel: String,
+    val mapResourcePath: String? = null,
+    val selectedMapFeatureId: String? = null,
+    val selectedMapFeatureName: String? = null,
 )
 
 private enum class ServiceResultDetailTab(val label: String) {
@@ -460,7 +472,7 @@ private fun HomeServiceResultDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(168.dp)
+                        .height(104.dp)
                         .background(content.accent.copy(alpha = 0.15f)),
                 ) {
                     Image(
@@ -472,8 +484,8 @@ private fun HomeServiceResultDetailScreen(
                     Surface(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(start = 18.dp, bottom = 16.dp),
-                        shape = RoundedCornerShape(22.dp),
+                            .padding(start = 14.dp, bottom = 12.dp),
+                        shape = RoundedCornerShape(18.dp),
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                         border = BorderStroke(1.dp, content.accent.copy(alpha = 0.22f)),
                         tonalElevation = 2.dp,
@@ -483,19 +495,19 @@ private fun HomeServiceResultDetailScreen(
                             contentDescription = null,
                             tint = content.accent,
                             modifier = Modifier
-                                .padding(13.dp)
-                                .size(24.dp),
+                                .padding(10.dp)
+                                .size(20.dp),
                         )
                     }
                 }
                 Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             result.title,
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -550,6 +562,9 @@ private fun HomeServiceResultDetailScreen(
                 ServiceResultMapCard(
                     title = result.title,
                     accent = content.accent,
+                    mapResourcePath = result.mapResourcePath ?: BuildingRegistryMapResourcePath,
+                    selectedMapFeatureId = result.selectedMapFeatureId,
+                    selectedMapFeatureName = result.selectedMapFeatureName,
                 )
             }
         }
@@ -597,37 +612,217 @@ private fun ServiceResultDetailTabs(
 private fun ServiceResultMapCard(
     title: String,
     accent: Color,
+    mapResourcePath: String,
+    selectedMapFeatureId: String?,
+    selectedMapFeatureName: String?,
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.18f)),
+    var selectedRoomId by rememberSaveable(title, mapResourcePath) {
+        mutableStateOf(selectedMapFeatureId)
+    }
+    var selectedRoomName by rememberSaveable(title, mapResourcePath) {
+        mutableStateOf(selectedMapFeatureName)
+    }
+    var currentFloor by rememberSaveable(title, mapResourcePath) { mutableStateOf(1) }
+    var showFullscreenMap by rememberSaveable(title, mapResourcePath) { mutableStateOf(false) }
+    val mapJson by produceState<String?>(initialValue = null, mapResourcePath) {
+        value = runCatching {
+            Res.readBytes(mapResourcePath).decodeToString()
+        }.getOrNull()
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        if (mapJson != null && showFullscreenMap) {
+            ServiceResultFullscreenMap(
+                title = title,
+                accent = accent,
+                mapJson = mapJson.orEmpty(),
+                currentFloor = currentFloor,
+                selectedRoomId = selectedRoomId,
+                selectedRoomName = selectedRoomName,
+                onFloorSelected = { currentFloor = it },
+                onRoomSelected = { id, name ->
+                    selectedRoomId = id
+                    selectedRoomName = name
+                },
+                onDismiss = { showFullscreenMap = false },
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f)),
         ) {
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
-            ) {
-                Image(
-                    painter = painterResource(Res.drawable.kotlinconf_ground_floor_light_raster),
-                    contentDescription = "$title map",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp)
-                        .padding(10.dp),
+            if (mapJson == null) {
+                Text(
+                    "Loading map...",
+                    modifier = Modifier.padding(18.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                )
+            } else {
+                KazeMapView(
+                    jsonString = mapJson.orEmpty(),
+                    currentFloor = currentFloor,
+                    selectedRoomId = selectedRoomId,
+                    onRoomSelected = { feature ->
+                        selectedRoomId = feature.id
+                        selectedRoomName = feature.properties.name.ifBlank { feature.id }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
+            Surface(
+                onClick = { showFullscreenMap = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp),
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                border = BorderStroke(1.dp, accent.copy(alpha = 0.24f)),
+                tonalElevation = 3.dp,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.OpenInFull,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        "Full screen",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                listOf(1, 2).forEach { floor ->
+                    Surface(
+                        onClick = { currentFloor = floor },
+                        shape = RoundedCornerShape(999.dp),
+                        color = if (currentFloor == floor) accent.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+                        border = BorderStroke(1.dp, if (currentFloor == floor) accent.copy(alpha = 0.34f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+                    ) {
+                        Text(
+                            "Floor $floor",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (currentFloor == floor) FontWeight.SemiBold else FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
             Text(
-                "Temporary map preview. This will later use the venue or room map connected to this item.",
+                selectedRoomName?.let { "Selected: $it" } ?: "Tap a space to see it on the map.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
             )
+    }
+}
+
+@Composable
+private fun ServiceResultFullscreenMap(
+    title: String,
+    accent: Color,
+    mapJson: String,
+    currentFloor: Int,
+    selectedRoomId: String?,
+    selectedRoomName: String?,
+    onFloorSelected: (Int) -> Unit,
+    onRoomSelected: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            selectedRoomName?.let { "Selected: $it" } ?: "Pinch to zoom, drag to move.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                        )
+                    }
+                    Surface(
+                        onClick = onDismiss,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close map",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(10.dp).size(20.dp),
+                        )
+                    }
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    listOf(1, 2).forEach { floor ->
+                        Surface(
+                            onClick = { onFloorSelected(floor) },
+                            shape = RoundedCornerShape(999.dp),
+                            color = if (currentFloor == floor) accent.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+                            border = BorderStroke(1.dp, if (currentFloor == floor) accent.copy(alpha = 0.34f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+                        ) {
+                            Text(
+                                "Floor $floor",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (currentFloor == floor) FontWeight.SemiBold else FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                }
+                KazeMapView(
+                    jsonString = mapJson,
+                    currentFloor = currentFloor,
+                    selectedRoomId = selectedRoomId,
+                    onRoomSelected = { feature ->
+                        onRoomSelected(feature.id, feature.properties.name.ifBlank { feature.id })
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    height = null,
+                )
+            }
         }
     }
 }
@@ -705,7 +900,15 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             isAvailable = true,
             results = listOf(
                 HomeServiceResult("Kigali Garden Pavilion", "Outdoor reception venue with garden photo zones and covered dining.", "Garden • 450 guests", "From RWF 1.8M"),
-                HomeServiceResult("Umubano Grand Hall", "Banquet hall with parking, stage space, and guest entrance control.", "Banquet • Parking", "From RWF 2.4M"),
+                HomeServiceResult(
+                    title = "Umubano Grand Hall",
+                    subtitle = "Banquet hall with parking, stage space, and guest entrance control.",
+                    metaLabel = "Banquet • Parking",
+                    priceLabel = "From RWF 2.4M",
+                    mapResourcePath = DemoBuildingMapResources.UmubanoGrandHall,
+                    selectedMapFeatureId = "umubano_grand_hall",
+                    selectedMapFeatureName = "Umubano Grand Hall",
+                ),
                 HomeServiceResult("Lake View Wedding Lawn", "Reception lawn for sunset ceremonies and family seating layouts.", "Reception • Garden", "From RWF 1.5M"),
             ),
         )
@@ -719,8 +922,24 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             highlights = listOf("Compare room setup, capacity, and included equipment.", "Reserve a time slot and add attendee access later.", "Request extras like catering, cleaning, or livestreaming."),
             isAvailable = true,
             results = listOf(
-                HomeServiceResult("Nyarutarama Boardroom", "Quiet executive room with screen, Wi-Fi, and reception desk support.", "Boardroom • Projector", "RWF 180K half day"),
-                HomeServiceResult("Kigali Training Suite", "Flexible classroom setup for workshops and product launches.", "Training • Full day", "RWF 320K full day"),
+                HomeServiceResult(
+                    title = "Nyarutarama Boardroom",
+                    subtitle = "Quiet executive room with screen, Wi-Fi, and reception desk support.",
+                    metaLabel = "Boardroom • Projector",
+                    priceLabel = "RWF 180K half day",
+                    mapResourcePath = DemoBuildingMapResources.NyarutaramaBoardroom,
+                    selectedMapFeatureId = NyarutaramaBoardroomFeatureId,
+                    selectedMapFeatureName = "Nyarutarama Boardroom",
+                ),
+                HomeServiceResult(
+                    title = "Kigali Training Suite",
+                    subtitle = "Flexible classroom setup for workshops and product launches.",
+                    metaLabel = "Training • Full day",
+                    priceLabel = "RWF 320K full day",
+                    mapResourcePath = DemoBuildingMapResources.KigaliTrainingSuite,
+                    selectedMapFeatureId = "kigali_training_suite",
+                    selectedMapFeatureName = "Kigali Training Suite",
+                ),
                 HomeServiceResult("Kivu Meeting Room", "Compact meeting room for interviews and small planning sessions.", "Half day • 18 seats", "RWF 95K half day"),
             ),
         )
@@ -752,9 +971,42 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             highlights = listOf("See public hotel services before booking.", "Open venue maps when a hotel provides them.", "Connect stays, requests, and passes in one place."),
             isAvailable = true,
             results = listOf(
-                HomeServiceResult("Kaze Demo Hotel", "Rooms, event spaces, restaurant, and indoor guest navigation.", "Rooms • Map", "Rooms from RWF 120K"),
-                HomeServiceResult("Mille Collines Business Stay", "Business hotel with meeting spaces and central Kigali access.", "Events • Restaurant", "Rooms from RWF 160K"),
-                HomeServiceResult("Green Hill Boutique Hotel", "Small hotel for wedding guests and family groups.", "Pool • Rooms", "Rooms from RWF 90K"),
+                HomeServiceResult(
+                    title = "Kaze Demo Hotel",
+                    subtitle = "Rooms, event spaces, restaurant, and indoor guest navigation.",
+                    metaLabel = "Rooms • Map",
+                    priceLabel = "Rooms from RWF 120K",
+                    mapResourcePath = DemoBuildingMapResources.KazeDemoHotel,
+                    selectedMapFeatureId = "kaze_lobby",
+                    selectedMapFeatureName = "Kaze Lobby",
+                ),
+                HomeServiceResult(
+                    title = "Mille Collines Business Stay",
+                    subtitle = "Business hotel with meeting spaces and central Kigali access.",
+                    metaLabel = "Events • Restaurant",
+                    priceLabel = "Rooms from RWF 160K",
+                    mapResourcePath = DemoBuildingMapResources.MilleCollinesBusinessStay,
+                    selectedMapFeatureId = "mille_conference_wing",
+                    selectedMapFeatureName = "Conference Wing",
+                ),
+                HomeServiceResult(
+                    title = "Green Hill Boutique Hotel",
+                    subtitle = "Small hotel for wedding guests and family groups.",
+                    metaLabel = "Pool • Rooms",
+                    priceLabel = "Rooms from RWF 90K",
+                    mapResourcePath = DemoBuildingMapResources.GreenHillBoutiqueHotel,
+                    selectedMapFeatureId = "green_hill_garden",
+                    selectedMapFeatureName = "Garden Venue",
+                ),
+                HomeServiceResult(
+                    title = "Kigali Blueprint Hotel",
+                    subtitle = "Two-floor concept map with public areas, meeting zones, amenities, staff space, and connectors.",
+                    metaLabel = "2 floors • Complex map",
+                    priceLabel = "Demo map",
+                    mapResourcePath = DemoBuildingMapResources.KigaliBlueprintHotel,
+                    selectedMapFeatureId = "f1_conference_hall",
+                    selectedMapFeatureName = "Conference Hall",
+                ),
             ),
         )
         "event layouts" -> HomeServicePageContent(

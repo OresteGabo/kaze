@@ -22,12 +22,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -68,13 +67,13 @@ internal fun StayTabContent(
     ) {
         val isExpanded = maxWidth >= 840.dp
         val scheduleColumns = if (isExpanded) 2 else 1
-        val contentMaxWidth = if (isExpanded) 1100.dp else androidx.compose.ui.unit.Dp.Unspecified
+        val contentMaxWidth = if (isExpanded) 1100.dp else Dp.Unspecified
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(
-                    if (contentMaxWidth != androidx.compose.ui.unit.Dp.Unspecified) {
+                    if (contentMaxWidth != Dp.Unspecified) {
                         Modifier.widthIn(max = contentMaxWidth).align(Alignment.TopCenter)
                     } else {
                         Modifier
@@ -162,7 +161,7 @@ internal fun CompactStayHeader(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                androidx.compose.material3.Icon(
+                Icon(
                     imageVector = Icons.Default.Place,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.secondary,
@@ -247,7 +246,7 @@ internal fun StayStatusHero(
                         InfoToken(
                             label = "Charges available",
                             accentColor = MaterialTheme.colorScheme.primary,
-                            leadingIcon = Icons.Default.ReceiptLong,
+                            leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
                         )
                     }
                 }
@@ -277,7 +276,7 @@ internal fun StayStatusHero(
                             )
                             MetaPill(
                                 label = "Check current room charges",
-                                leadingIcon = Icons.Default.ReceiptLong,
+                                leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
                             )
                         }
                     }
@@ -291,7 +290,7 @@ internal fun StayStatusHero(
                         label = "My charges",
                         onClick = onViewFolio,
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = Icons.Default.ReceiptLong,
+                        leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
                     )
                 }
             }
@@ -321,7 +320,7 @@ internal fun StayStatusHero(
                     KazeGhostButton(
                         label = "My charges",
                         onClick = onViewFolio,
-                        leadingIcon = Icons.Default.ReceiptLong,
+                        leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
                     )
                 }
             }

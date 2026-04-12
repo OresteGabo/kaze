@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -40,6 +39,7 @@ import dev.orestegabo.kaze.ui.components.MetaPill
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.airtel_logo
 import kaze.composeapp.generated.resources.bk_logo
+import kaze.composeapp.generated.resources.cash_rwanda_note_raster
 import kaze.composeapp.generated.resources.momo
 import kaze.composeapp.generated.resources.spenn_logo
 import org.jetbrains.compose.resources.DrawableResource
@@ -144,7 +144,7 @@ private fun PaymentMethodsCard() {
                 PaymentMethodRow(
                     title = "Cash",
                     status = "Needs confirmation",
-                    icon = Icons.Default.Payments,
+                    logo = Res.drawable.cash_rwanda_note_raster,
                 )
                 PaymentMethodRow(
                     title = "MTN MoMo",
@@ -247,10 +247,10 @@ private fun PaymentCashNotice() {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Default.Payments,
-                contentDescription = null,
-                tint = KazeTheme.accents.editorialWarm,
+            Image(
+                painter = painterResource(Res.drawable.cash_rwanda_note_raster),
+                contentDescription = "Cash payment",
+                modifier = Modifier.size(34.dp),
             )
             Text(
                 "Cash payments are confirmed by the venue after they receive the money.",

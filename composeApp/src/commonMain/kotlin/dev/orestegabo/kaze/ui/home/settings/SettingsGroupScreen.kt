@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -88,35 +89,40 @@ internal fun SettingsHeader(
     subtitle: String,
     icon: ImageVector,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = KazeTheme.accents.editorialWarm.copy(alpha = 0.18f),
-            border = BorderStroke(1.dp, KazeTheme.accents.editorialWarm.copy(alpha = 0.28f)),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = KazeTheme.accents.editorialWarm,
-                modifier = Modifier.padding(10.dp),
-            )
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = KazeTheme.accents.editorialWarm.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, KazeTheme.accents.editorialWarm.copy(alpha = 0.18f)),
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = KazeTheme.accents.editorialWarm,
+                    modifier = Modifier
+                        .padding(7.dp)
+                        .size(16.dp),
+                )
+            }
             Text(
                 title,
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
-            )
         }
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+        )
     }
 }
 

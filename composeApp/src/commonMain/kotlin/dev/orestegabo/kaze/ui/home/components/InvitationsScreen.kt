@@ -280,24 +280,25 @@ private fun InvitationDetailScreen(
 }
 
 @Composable
-private fun CreateInvitationScreen(
+internal fun CreateInvitationScreen(
     onBack: () -> Unit,
     onCreateInvitation: (InvitationPreview) -> Unit,
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 20.dp,
+    seed: InvitationDraftSeed? = null,
 ) {
     val scrollState = rememberScrollState()
-    var eventType by remember { mutableStateOf(InvitationEventType.WEDDING) }
+    var eventType by remember(seed) { mutableStateOf(seed?.eventType ?: InvitationEventType.WEDDING) }
     var selectedTheme by remember(eventType) { mutableStateOf(themesForEventType(eventType).first()) }
-    var selectedLinkedEvent by remember(eventType) { mutableStateOf(invitationEventOptions(eventType).first()) }
+    var selectedLinkedEvent by remember(eventType, seed) { mutableStateOf(invitationEventOptions(eventType, seed).first()) }
     var isEventMenuOpen by remember { mutableStateOf(false) }
     var isThemeSheetOpen by remember { mutableStateOf(false) }
     var generatedCode by remember { mutableStateOf(generateInvitationCode()) }
-    var title by remember { mutableStateOf("") }
-    var eventDate by remember { mutableStateOf("") }
+    var title by remember(seed) { mutableStateOf(seed?.eventTitle.orEmpty()) }
+    var eventDate by remember(seed) { mutableStateOf(seed?.preferredDate.orEmpty()) }
     var eventTime by remember { mutableStateOf("") }
     var selectedContacts by remember { mutableStateOf(setOf<String>()) }
-    var note by remember { mutableStateOf("") }
+    var note by remember(seed) { mutableStateOf(seed?.note.orEmpty()) }
     val needsOrganizerApproval = selectedLinkedEvent.needsOrganizerApproval
     val statusLabel = if (needsOrganizerApproval) "Needs organizer approval" else "Draft invitation"
     val selectedContactLabel = if (selectedContacts.isEmpty()) {
@@ -364,8 +365,8 @@ private fun CreateInvitationScreen(
                                 selected = eventType == type,
                                 onClick = {
                                     eventType = type
-                                    selectedLinkedEvent = invitationEventOptions(type).first()
-                                    title = ""
+                                    selectedLinkedEvent = invitationEventOptions(type, seed).first()
+                                    title = if (seed?.eventType == type) seed.eventTitle else ""
                                 },
                             )
                         }
@@ -380,7 +381,7 @@ private fun CreateInvitationScreen(
                     }
                     EventDropdownField(
                         selectedEvent = selectedLinkedEvent,
-                        eventOptions = invitationEventOptions(eventType),
+                        eventOptions = invitationEventOptions(eventType, seed),
                         expanded = isEventMenuOpen,
                         onExpandedChange = { isEventMenuOpen = it },
                         onEventSelected = { eventOption ->
@@ -802,26 +803,42 @@ private data class InvitationEventOption(
     val isCreateNew: Boolean = false,
 )
 
-private fun invitationEventOptions(eventType: InvitationEventType): List<InvitationEventOption> = when (eventType) {
-    InvitationEventType.WEDDING -> listOf(
+private fun invitationEventOptions(
+    eventType: InvitationEventType,
+    seed: InvitationDraftSeed? = null,
+): List<InvitationEventOption> {
+    val seedOption = seed
+        ?.takeIf { it.eventType == eventType }
+        ?.let {
+            InvitationEventOption(
+                id = "reservation_${it.venueName.lowercase().filter { char -> char.isLetterOrDigit() }}",
+                title = it.eventTitle,
+                supportingLabel = "${it.venueName} • ${it.guestCount} guest${if (it.guestCount == 1) "" else "s"} • ${it.sourceLabel}",
+                needsOrganizerApproval = false,
+            )
+        }
+    val options = when (eventType) {
+        InvitationEventType.WEDDING -> listOf(
         InvitationEventOption("new_wedding", "Create a new wedding event", "You are the organizer for this event.", false, true),
         InvitationEventOption("uwase_iradukunda", "Uwase x Iradukunda", "Existing wedding. Organizer approval is required before guests can use the invitation.", true),
     )
-    InvitationEventType.BIRTHDAY -> listOf(
+        InvitationEventType.BIRTHDAY -> listOf(
         InvitationEventOption("new_birthday", "Create a birthday event", "Surprise birthdays can be created without organizer approval.", false, true),
         InvitationEventOption("aline_birthday", "Aline's birthday", "Small private event. Invitation can be created immediately.", false),
     )
-    InvitationEventType.MEETING -> listOf(
+        InvitationEventType.MEETING -> listOf(
         InvitationEventOption("new_meeting", "Create a meeting event", "You are the organizer for this meeting.", false, true),
         InvitationEventOption("strategy_meeting", "Team strategy meeting", "Existing meeting. Approval may be required by the organizer.", true),
     )
-    InvitationEventType.CONFERENCE -> listOf(
+        InvitationEventType.CONFERENCE -> listOf(
         InvitationEventOption("new_conference", "Create a conference event", "You are the organizer for this conference.", false, true),
         InvitationEventOption("eafs", "East Africa Finance Summit", "Existing conference. Organizer approval is required.", true),
     )
-    InvitationEventType.OTHER -> listOf(
+        InvitationEventType.OTHER -> listOf(
         InvitationEventOption("new_other", "Create another event type", "Use this when wedding, birthday, meeting, or conference does not fit.", false, true),
     )
+    }
+    return if (seedOption == null) options else listOf(seedOption) + options
 }
 
 private data class InvitationContactOption(

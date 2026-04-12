@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -141,35 +142,36 @@ private fun PaymentMethodsCard() {
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PaymentMethodRow(
+                    title = "Cash",
+                    status = "Needs confirmation",
+                    icon = Icons.Default.Payments,
+                )
+                PaymentMethodRow(
                     title = "MTN MoMo",
-                    description = "Mobile Money payments and refunds linked to an MTN number.",
                     status = "Verified",
                     logo = Res.drawable.momo,
                 )
                 PaymentMethodRow(
                     title = "Airtel Money",
-                    description = "Mobile payments linked to an Airtel number.",
                     status = "Available",
                     logo = Res.drawable.airtel_logo,
                 )
                 PaymentMethodRow(
                     title = "SPENN",
-                    description = "Wallet payments for users who prefer SPENN.",
                     status = "Available",
                     logo = Res.drawable.spenn_logo,
                 )
                 PaymentMethodRow(
                     title = "BK / Rswitch",
-                    description = "Bank and local switch payments where the venue accepts them.",
                     status = "Available",
                     logo = Res.drawable.bk_logo,
                 )
                 PaymentMethodRow(
                     title = "Card",
-                    description = "Card payments when supported by the venue or event.",
                     status = "Check required",
                 )
             }
+            PaymentCashNotice()
             // TODO Replace static payment method status with user account and provider verification data.
         }
     }
@@ -178,9 +180,9 @@ private fun PaymentMethodsCard() {
 @Composable
 private fun PaymentMethodRow(
     title: String,
-    description: String,
     status: String,
     logo: DrawableResource? = null,
+    icon: ImageVector = Icons.Default.VerifiedUser,
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -190,7 +192,7 @@ private fun PaymentMethodRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -208,7 +210,7 @@ private fun PaymentMethodRow(
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Default.VerifiedUser,
+                        imageVector = icon,
                         contentDescription = null,
                         tint = KazeTheme.accents.editorialBotanical,
                         modifier = Modifier.padding(8.dp),
@@ -217,7 +219,7 @@ private fun PaymentMethodRow(
             }
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     title,
@@ -225,13 +227,37 @@ private fun PaymentMethodRow(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
-                )
             }
             MetaPill(status)
+        }
+    }
+}
+
+@Composable
+private fun PaymentCashNotice() {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = KazeTheme.accents.editorialWarm.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, KazeTheme.accents.editorialWarm.copy(alpha = 0.22f)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Payments,
+                contentDescription = null,
+                tint = KazeTheme.accents.editorialWarm,
+            )
+            Text(
+                "Cash payments are confirmed by the venue after they receive the money.",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
+            )
         }
     }
 }

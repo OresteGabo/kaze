@@ -1,0 +1,35 @@
+{
+  "type": "FeatureCollection",
+  "name": "Umubano Grand Hall",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "umubano_grand_hall",
+      "properties": {
+        "name": "Grand Hall",
+        "floor": 1,
+        "type": "meeting",
+        "capacity": 420,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[8, 10], [92, 10], [92, 70], [8, 70], [8, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "umubano_stage",
+      "properties": {
+        "name": "Stage",
+        "floor": 1,
+        "type": "public",
+        "capacity": 30
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[24, 76], [76, 76], [76, 92], [24, 92], [24, 76]]]
+      }
+    }
+  ]
+}

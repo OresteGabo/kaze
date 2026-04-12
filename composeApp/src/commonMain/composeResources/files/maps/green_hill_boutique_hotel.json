@@ -1,0 +1,49 @@
+{
+  "type": "FeatureCollection",
+  "name": "Green Hill Boutique Hotel",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "green_hill_garden",
+      "properties": {
+        "name": "Garden Venue",
+        "floor": 1,
+        "type": "amenity",
+        "capacity": 180,
+        "outdoor": true,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 12], [90, 12], [90, 54], [10, 54], [10, 12]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "green_hill_lounge",
+      "properties": {
+        "name": "Lounge",
+        "floor": 1,
+        "type": "social",
+        "capacity": 45
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 62], [46, 62], [46, 88], [10, 88], [10, 62]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "green_hill_rooms",
+      "properties": {
+        "name": "Rooms",
+        "floor": 1,
+        "type": "private"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[54, 62], [90, 62], [90, 88], [54, 88], [54, 62]]]
+      }
+    }
+  ]
+}

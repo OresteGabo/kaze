@@ -1,0 +1,95 @@
+{
+  "type": "FeatureCollection",
+  "building": "Umubano Hotel & Resort",
+  "metadata": {
+    "version": "1.0.4",
+    "last_audit": "2026-04-11"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "f1_corridor_main",
+      "properties": { "name": "Main Artery", "floor": 1, "type": "circulation" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 40], [90, 40], [90, 45], [10, 45], [10, 40]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_ballroom_kigali",
+      "properties": {
+        "name": "Kigali Grand Ballroom",
+        "floor": 1,
+        "type": "meeting_large",
+        "capacity_max": 450,
+        "furniture_sim": "theater",
+        "sim_density": 0.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 10], [60, 10], [60, 38], [10, 38], [10, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_lift_bank_a",
+      "properties": { "name": "Elevator Bank A", "floor": 1, "type": "vertical_transit" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[62, 10], [70, 10], [70, 20], [62, 20], [62, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_restaurant_terrace",
+      "properties": {
+        "name": "The Terrace",
+        "floor": 1,
+        "type": "dining",
+        "furniture_sim": "dining_round"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[72, 10], [95, 10], [95, 38], [80, 38], [80, 25], [72, 25], [72, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "pool_olympic",
+      "properties": {
+        "name": "Olympic Pool",
+        "floor": 1,
+        "type": "amenity_water",
+        "access_level": "all_guests"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[40, 55], [85, 55], [85, 85], [40, 85], [40, 55]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_vip_lounge",
+      "properties": {
+        "name": "Excellence Lounge",
+        "floor": 2,
+        "type": "social_premium",
+        "access_level": "gold_members"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 10], [40, 10], [40, 30], [10, 30], [10, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_guest_wing_east",
+      "properties": { "name": "East Wing Guest Rooms", "floor": 2, "type": "private_accommodation" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[45, 10], [95, 10], [95, 25], [45, 25], [45, 10]]]
+      }
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "type": "FeatureCollection",
+  "name": "Nyarutarama Boardroom",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "nyarutarama_boardroom",
+      "properties": {
+        "name": "Nyarutarama Boardroom",
+        "floor": 1,
+        "type": "meeting",
+        "capacity": 24,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[18, 18], [82, 18], [82, 62], [18, 62], [18, 18]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "nyarutarama_reception",
+      "properties": {
+        "name": "Reception",
+        "floor": 1,
+        "type": "public",
+        "capacity": 12
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[18, 68], [52, 68], [52, 88], [18, 88], [18, 68]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "nyarutarama_service",
+      "properties": {
+        "name": "Service",
+        "floor": 1,
+        "type": "service"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[58, 68], [82, 68], [82, 88], [58, 88], [58, 68]]]
+      }
+    }
+  ]
+}

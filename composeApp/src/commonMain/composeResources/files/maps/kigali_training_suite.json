@@ -1,0 +1,49 @@
+{
+  "type": "FeatureCollection",
+  "name": "Kigali Training Suite",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "kigali_training_suite",
+      "properties": {
+        "name": "Training Suite",
+        "floor": 1,
+        "type": "meeting",
+        "capacity": 80,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[12, 12], [88, 12], [88, 58], [12, 58], [12, 12]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kigali_breakout",
+      "properties": {
+        "name": "Breakout",
+        "floor": 1,
+        "type": "work",
+        "capacity": 16,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[12, 64], [44, 64], [44, 88], [12, 88], [12, 64]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kigali_coffee",
+      "properties": {
+        "name": "Coffee",
+        "floor": 1,
+        "type": "amenity"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[50, 64], [88, 64], [88, 88], [50, 88], [50, 64]]]
+      }
+    }
+  ]
+}

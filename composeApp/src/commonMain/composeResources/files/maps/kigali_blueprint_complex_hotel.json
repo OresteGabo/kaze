@@ -1,0 +1,256 @@
+{
+  "type": "FeatureCollection",
+  "name": "Kigali Blueprint Complex Hotel",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "f1_building_exterior",
+      "properties": {
+        "name": "Building Exterior",
+        "floor": 1,
+        "type": "exterior",
+        "status": "boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[5, 12], [34, 12], [34, 28], [18, 28], [18, 44], [30, 44], [30, 76], [22, 76], [22, 86], [6, 86], [6, 78], [5, 78], [5, 12]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_lobby_north",
+      "properties": {
+        "name": "Lobby",
+        "floor": 1,
+        "type": "public",
+        "capacity": 90
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[8, 16], [32, 16], [32, 28], [18, 28], [18, 38], [8, 38], [8, 16]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_lobby_south",
+      "properties": {
+        "name": "Lobby",
+        "floor": 1,
+        "type": "public",
+        "capacity": 55
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[8, 56], [24, 56], [24, 72], [20, 72], [18, 76], [8, 76], [8, 56]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_conference_hall",
+      "properties": {
+        "name": "Conference Hall",
+        "floor": 1,
+        "type": "meeting",
+        "capacity": 120,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[20, 34], [30, 34], [30, 58], [22, 58], [22, 52], [20, 52], [20, 34]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_restrooms",
+      "properties": {
+        "name": "Restrooms",
+        "floor": 1,
+        "type": "amenity"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[18, 28], [30, 28], [30, 34], [18, 34], [18, 28]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_staff_area",
+      "properties": {
+        "name": "Staff Area",
+        "floor": 1,
+        "type": "restricted"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[18, 62], [30, 62], [30, 72], [18, 72], [18, 62]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_stairwell",
+      "properties": {
+        "name": "Stairwell",
+        "floor": 1,
+        "type": "connect"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[16, 32], [18, 32], [18, 44], [16, 44], [16, 32]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_outside_pool",
+      "properties": {
+        "name": "Outside Swimming Pool",
+        "floor": 1,
+        "type": "amenity",
+        "outdoor": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36, 38], [44, 38], [48, 42], [48, 54], [44, 58], [36, 58], [36, 38]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_building_exterior",
+      "properties": {
+        "name": "Building Exterior",
+        "floor": 2,
+        "type": "exterior",
+        "status": "boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[54, 12], [82, 12], [82, 72], [72, 72], [72, 80], [66, 80], [64, 84], [54, 84], [54, 12]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_stair_elevator_north",
+      "properties": {
+        "name": "Stair & Elevator",
+        "floor": 2,
+        "type": "connect"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[60, 16], [68, 16], [68, 28], [60, 28], [60, 16]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_pool",
+      "properties": {
+        "name": "Outside Pool",
+        "floor": 2,
+        "type": "amenity",
+        "outdoor": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[70, 16], [78, 16], [78, 28], [70, 28], [70, 16]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_gym",
+      "properties": {
+        "name": "Gym",
+        "floor": 2,
+        "type": "amenity",
+        "capacity": 30,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[68, 32], [82, 32], [82, 42], [74, 42], [74, 48], [68, 48], [68, 32]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_stair_elevator_central",
+      "properties": {
+        "name": "Stair & Elevator",
+        "floor": 2,
+        "type": "connect"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[64, 42], [68, 42], [68, 60], [64, 60], [64, 42]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_business_center",
+      "properties": {
+        "name": "Business Center",
+        "floor": 2,
+        "type": "work",
+        "capacity": 24,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[70, 58], [82, 58], [82, 70], [70, 70], [70, 58]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_lounge",
+      "properties": {
+        "name": "Lounge",
+        "floor": 2,
+        "type": "social",
+        "capacity": 45,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[68, 70], [82, 70], [82, 78], [68, 78], [68, 70]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_conference_hall",
+      "properties": {
+        "name": "Conference Hall",
+        "floor": 2,
+        "type": "meeting",
+        "capacity": 70,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[54, 62], [66, 62], [66, 84], [54, 84], [54, 62]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_internal_rooms_west",
+      "properties": {
+        "name": "Internal Rooms",
+        "floor": 2,
+        "type": "private"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[54, 20], [60, 20], [60, 58], [54, 58], [54, 20]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_internal_rooms_center",
+      "properties": {
+        "name": "Internal Rooms",
+        "floor": 2,
+        "type": "private"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[60, 30], [64, 30], [64, 58], [60, 58], [60, 30]]]
+      }
+    }
+  ]
+}

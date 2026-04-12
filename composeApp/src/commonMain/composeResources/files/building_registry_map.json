@@ -1,0 +1,117 @@
+{
+  "type": "FeatureCollection",
+  "name": "Kaze_Hotel_Layout",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "f1_lobby",
+      "properties": {
+        "name": "Grand Lobby",
+        "floor": 1,
+        "type": "public",
+        "capacity": 150
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 10], [48, 10], [48, 34], [10, 34], [10, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "nyarutarama_boardroom",
+      "properties": {
+        "name": "Nyarutarama Boardroom",
+        "floor": 1,
+        "type": "meeting",
+        "capacity": 24,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[55, 10], [90, 10], [90, 40], [55, 40], [55, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "pool_exterior",
+      "properties": {
+        "name": "Swimming Pool",
+        "floor": 1,
+        "type": "amenity",
+        "outdoor": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[60, 50], [95, 50], [95, 85], [60, 85], [60, 50]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f1_restrooms",
+      "properties": {
+        "name": "Restrooms",
+        "floor": 1,
+        "type": "service"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 45], [25, 45], [25, 58], [10, 58], [10, 45]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_business_center",
+      "properties": {
+        "name": "Business Center",
+        "floor": 2,
+        "type": "work",
+        "capacity": 20
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 10], [40, 10], [40, 35], [10, 35], [10, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_lounge",
+      "properties": {
+        "name": "Sky Lounge",
+        "floor": 2,
+        "type": "social",
+        "capacity": 40
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[45, 10], [90, 10], [90, 35], [45, 35], [45, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_room_201",
+      "properties": {
+        "name": "Suite 201",
+        "floor": 2,
+        "type": "private",
+        "status": "reserved"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 45], [35, 45], [35, 70], [10, 70], [10, 45]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f2_gym",
+      "properties": {
+        "name": "Fitness Center",
+        "floor": 2,
+        "type": "amenity"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[45, 45], [90, 45], [90, 80], [45, 80], [45, 45]]]
+      }
+    }
+  ]
+}

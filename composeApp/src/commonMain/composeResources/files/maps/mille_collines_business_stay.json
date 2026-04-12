@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "name": "Mille Collines Business Stay",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "mille_conference_wing",
+      "properties": {
+        "name": "Conference Wing",
+        "floor": 1,
+        "type": "meeting",
+        "capacity": 180,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[12, 12], [58, 12], [58, 50], [12, 50], [12, 12]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "mille_lobby",
+      "properties": {
+        "name": "Lobby",
+        "floor": 1,
+        "type": "public",
+        "capacity": 80
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[64, 12], [90, 12], [90, 50], [64, 50], [64, 12]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "mille_restaurant",
+      "properties": {
+        "name": "Restaurant",
+        "floor": 1,
+        "type": "amenity",
+        "capacity": 110,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[12, 58], [90, 58], [90, 88], [12, 88], [12, 58]]]
+      }
+    }
+  ]
+}

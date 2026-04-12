@@ -1,0 +1,64 @@
+{
+  "type": "FeatureCollection",
+  "name": "Kaze Demo Hotel",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "kaze_lobby",
+      "properties": {
+        "name": "Kaze Lobby",
+        "floor": 1,
+        "type": "public",
+        "capacity": 120
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 10], [48, 10], [48, 42], [10, 42], [10, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaze_restaurant",
+      "properties": {
+        "name": "Restaurant",
+        "floor": 1,
+        "type": "amenity",
+        "capacity": 90,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[54, 10], [90, 10], [90, 42], [54, 42], [54, 10]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaze_boardroom",
+      "properties": {
+        "name": "Boardroom",
+        "floor": 1,
+        "type": "meeting",
+        "capacity": 28,
+        "furniture_sim": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 52], [44, 52], [44, 84], [10, 84], [10, 52]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaze_pool",
+      "properties": {
+        "name": "Pool",
+        "floor": 1,
+        "type": "amenity",
+        "outdoor": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[52, 52], [90, 52], [90, 84], [52, 84], [52, 52]]]
+      }
+    }
+  ]
+}

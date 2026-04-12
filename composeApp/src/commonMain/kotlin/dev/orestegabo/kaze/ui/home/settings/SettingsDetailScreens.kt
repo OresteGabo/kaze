@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +41,7 @@ import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.airtel_logo
 import kaze.composeapp.generated.resources.bk_logo
 import kaze.composeapp.generated.resources.cash_rwanda_note_raster
+import kaze.composeapp.generated.resources.k_mark_raster
 import kaze.composeapp.generated.resources.momo
 import kaze.composeapp.generated.resources.spenn_logo
 import org.jetbrains.compose.resources.DrawableResource
@@ -79,38 +81,161 @@ internal fun SettingsDetailScreen(
         if (page == SettingsDetailPage.PAYMENTS) {
             PaymentMethodsCard()
         }
+        if (page == SettingsDetailPage.ABOUT) {
+            AboutKazeBrandCard()
+        }
 
-        Surface(
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
-            tonalElevation = 1.dp,
+        if (page == SettingsDetailPage.HELP) {
+            HelpSupportCard()
+        } else {
+            SettingsSectionCard(page = page)
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionCard(page: SettingsDetailPage) {
+    Surface(
+        shape = RoundedCornerShape(26.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+        tonalElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    page.tokens.forEach { token -> MetaPill(token) }
-                }
-                page.sections.forEach { section ->
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                page.tokens.forEach { token -> MetaPill(token) }
+            }
+            page.sections.forEach { section ->
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        section.heading,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    section.body.forEach { paragraph ->
                         Text(
-                            section.heading,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            paragraph,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
                         )
-                        section.body.forEach { paragraph ->
-                            Text(
-                                paragraph,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
-                            )
-                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HelpSupportCard() {
+    Surface(
+        shape = RoundedCornerShape(26.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+        tonalElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetaPill("FAQ")
+                MetaPill("Partners")
+                MetaPill("Payments")
+                MetaPill("Support")
+            }
+            HelpFaqCategory(
+                title = "Using Kaze",
+                items = listOf(
+                    "How do I use an invitation code?" to "Enter the code shared by the organizer to open the invitation and follow event updates.",
+                    "What is a Kaze Pass?" to "A digital access pass for an event, venue, or stay when entry control is enabled.",
+                    "Can I browse venues without signing in?" to "Yes. You can explore venues and prices first, then sign in when an action needs your account.",
+                    "Where do I see my saved places?" to "Open Settings, then Activity & payments, then Saved places.",
+                ),
+            )
+            HelpFaqCategory(
+                title = "Events and venues",
+                items = listOf(
+                    "Can I add my wedding venue or conference room?" to "Venue owners or managers can contact Kaze to add spaces, prices, photos, maps, and booking rules.",
+                    "Can Kaze be used for private events?" to "Yes. Organizers can use Kaze for invitations, guest access, event updates, and Kaze Pass entry.",
+                    "Can I change event details after sending invitations?" to "Yes. Invited guests can see updated event information when the organizer changes it.",
+                    "Can Kaze show a venue map?" to "Yes. Some venues can include maps so guests can find halls, rooms, entrances, or event areas.",
+                ),
+            )
+            HelpFaqCategory(
+                title = "Payments",
+                items = listOf(
+                    "Why does cash need confirmation?" to "Cash is paid outside the app, so the venue or hotel confirms it after receiving the money.",
+                    "Who confirms payments?" to "Digital payments can be tracked by the app when supported. Cash payments are confirmed by the venue or hotel.",
+                ),
+            )
+            HelpFaqCategory(
+                title = "For businesses",
+                items = listOf(
+                    "How can a hotel or venue join Kaze?" to "Contact GABO at orestegabo@icloud.com or visit orestegabo.dev to discuss onboarding.",
+                    "Can Kaze support other businesses?" to "Yes. Kaze can support conference rooms, wedding venues, apartments, stadiums, event spaces, and other mapped spaces.",
+                    "Can a business request a custom Kaze app?" to "Yes, if agreed with GABO. Kaze is a private commercial product, so custom use needs a business agreement.",
+                ),
+            )
+            HelpFaqCategory(
+                title = "Support",
+                items = listOf(
+                    "What if event or venue information looks wrong?" to "Use Report a problem so the venue, organizer, or Kaze support can review it.",
+                    "How do I contact support?" to "Contact support at orestegabo@icloud.com.",
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HelpFaqCategory(
+    title: String,
+    items: List<Pair<String, String>>,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items.forEach { (question, answer) ->
+                HelpFaqItem(question = question, answer = answer)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HelpFaqItem(
+    question: String,
+    answer: String,
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                question,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                answer,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+            )
         }
     }
 }
@@ -145,6 +270,7 @@ private fun PaymentMethodsCard() {
                     title = "Cash",
                     status = "Needs confirmation",
                     logo = Res.drawable.cash_rwanda_note_raster,
+                    logoSize = 36.dp,
                 )
                 PaymentMethodRow(
                     title = "MTN MoMo",
@@ -182,6 +308,7 @@ private fun PaymentMethodRow(
     title: String,
     status: String,
     logo: DrawableResource? = null,
+    logoSize: Dp = 28.dp,
     icon: ImageVector = Icons.Default.VerifiedUser,
 ) {
     Surface(
@@ -205,8 +332,8 @@ private fun PaymentMethodRow(
                         painter = painterResource(logo),
                         contentDescription = "$title logo",
                         modifier = Modifier
-                            .padding(8.dp)
-                            .size(28.dp),
+                            .padding(6.dp)
+                            .size(logoSize),
                     )
                 } else {
                     Icon(
@@ -250,7 +377,7 @@ private fun PaymentCashNotice() {
             Image(
                 painter = painterResource(Res.drawable.cash_rwanda_note_raster),
                 contentDescription = "Cash payment",
-                modifier = Modifier.size(34.dp),
+                modifier = Modifier.size(44.dp),
             )
             Text(
                 "Cash payments are confirmed by the venue after they receive the money.",
@@ -258,6 +385,80 @@ private fun PaymentCashNotice() {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
             )
+        }
+    }
+}
+
+@Composable
+private fun AboutKazeBrandCard() {
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+        tonalElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(22.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
+                    border = BorderStroke(1.dp, KazeTheme.accents.editorialWarm.copy(alpha = 0.16f)),
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.k_mark_raster),
+                        contentDescription = "Kaze logo",
+                        modifier = Modifier
+                            .padding(14.dp)
+                            .size(34.dp),
+                    )
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        "Kaze by GABO",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        "Hospitality, venues, invitations, and access passes.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.widthIn(max = 520.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    "Kaze helps people discover places, manage invitations, follow stay details, request services, view maps, and use access passes from one calm experience.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
+                )
+                Text(
+                    "Built by GABO as a private commercial product for hospitality, venues, and event experiences.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                )
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                MetaPill("Version 1.0")
+                MetaPill("Private product")
+                MetaPill("orestegabo.dev")
+            }
         }
     }
 }

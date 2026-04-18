@@ -1,0 +1,261 @@
+\documentclass[11pt,a4paper]{article}
+\input{kaze-theme.tex}
+
+\begin{document}
+
+\KazeCover
+  {Kaze Cahier des Charges}
+  {Requirements specification for the Kaze mobile platform, venue marketplace, guest access, and partner ecosystem}
+  {April 2026}
+  {Product and technical planning}
+
+\KazePageTitle{Cahier des Charges}
+\KazeDocumentNotice
+
+\section{Document Purpose}
+
+This document is the formal \textit{cahier des charges} for Kaze. In English, it can be read as a requirements specification or product and technical specification.
+
+It describes what Kaze is expected to support, who it serves, which workflows matter first, and which constraints should guide future product and engineering decisions.
+
+\begin{kazecalloutbox}[Intended Use]
+This document can be used for internal planning, future developer onboarding, investor discussions, partner conversations, and technical scoping before implementation work begins.
+\end{kazecalloutbox}
+
+\section{Project Identity}
+
+\begin{longtable}{p{0.28\textwidth} p{0.64\textwidth}}
+\textbf{Topic} & \textbf{Requirement} \\
+\midrule
+Product name & Kaze Rwanda / Kaze by GABO. \\
+Product type & Mobile-first hospitality, venue discovery, invitation, access-pass, and service-request platform. \\
+Primary market & Rwanda, with an initial focus on hotels, wedding venues, conference rooms, local stays, and event service providers. \\
+Business status & Private commercial product. Not open source. Use, copying, contribution, or distribution require authorization from GABO or a separate agreement. \\
+Primary contact & \href{mailto:\KazeContactEmail}{\KazeContactEmail} and \href{\KazeContactWebsiteUrl}{\KazeContactWebsiteLabel}. \\
+\end{longtable}
+
+\section{Product Vision}
+
+Kaze should reduce the friction around real hospitality moments: finding a place, joining an event, understanding a venue, paying locally, requesting support, and carrying a digital access pass.
+
+The product should not be limited to hotel-room guests. It should model access, context, and venue relationships.
+
+\begin{kazehighlightbox}
+\textbf{Core principle:} Kaze should model access, not only accommodation. A user may be a hotel guest, event attendee, day-pass visitor, VIP invitee, conference participant, or public venue browser.
+\end{kazehighlightbox}
+
+\section{Target Users}
+
+\begin{longtable}{p{0.30\textwidth} p{0.62\textwidth}}
+\textbf{User type} & \textbf{Needs} \\
+\midrule
+Hotel guest & See stay schedule, request services, understand included or paid services, use maps, and access relevant hotel areas. \\
+Wedding guest & Open an invitation code, view event information, receive updates, and use a Kaze Pass when entry is controlled. \\
+Conference attendee & Find rooms, view schedule, access restricted event zones, and receive practical event details. \\
+Venue shopper & Browse venues, compare capacity, pricing, location, and services before authentication. \\
+Organizer & Create or manage event invitations, coordinate guests, request venue services, and connect bookings to access. \\
+Venue or hotel operator & Publish spaces, manage booking interest, offer add-ons, and reduce phone-call friction for guests. \\
+Local service provider & Offer services such as catering, styling, media, transport, cleaning, or insurance around venue bookings. \\
+\end{longtable}
+
+\section{Functional Scope}
+
+\subsection{Public Discovery}
+
+Kaze should allow users to explore useful information before forcing login. This is important for people who are comparing venues, apartments, event spaces, or local services.
+
+\begin{itemize}
+    \item Browse wedding venues and conference rooms.
+    \item View basic venue details such as name, location, capacity, pricing, amenities, and service availability.
+    \item Later support apartments and local stay alternatives.
+    \item Provide a clear path from browsing into reservation, inquiry, invitation, or contact flows.
+\end{itemize}
+
+\subsection{Invitation and Code Entry}
+
+Kaze should support invitation-based access and short-code entry.
+
+\begin{itemize}
+    \item Users can enter a short event or invitation code.
+    \item Organizers can create an event and invite people, especially by phone number.
+    \item Invitation codes should be generated only after the invitation or event has been confirmed and saved.
+    \item Invited people should see relevant event details, updates, and pass state.
+    \item Kaze Pass generation should depend on confirmation, approval, payment, or event rules when required.
+\end{itemize}
+
+\subsection{Venue Reservation Draft Flow}
+
+Kaze should support reservation draft flows for venue categories where local booking is practical.
+
+\begin{itemize}
+    \item Wedding venue reservation request.
+    \item Conference room reservation request.
+    \item Amenity or day-pass booking direction.
+    \item Add-on service selection during reservation.
+    \item Payment preference capture using Rwanda-relevant methods.
+\end{itemize}
+
+\subsection{Stay and Hotel Services}
+
+For hotel-linked users, Kaze should support stay details and service requests without requiring unnecessary input from the guest.
+
+\begin{itemize}
+    \item Show stay schedules, reserved services, and relevant venue locations.
+    \item Distinguish included, free, paid, reserved, and optional services using simple language.
+    \item Allow service requests such as towels, water, in-room dining, laundry pickup, concierge support, housekeeping, and custom requests.
+    \item Avoid editable room number fields when the system already knows the user's room.
+    \item Use notes or text areas where user context is useful, such as special instructions.
+\end{itemize}
+
+\section{Venue Map Requirements}
+
+Kaze maps should be reusable across hotels, conference venues, wedding venues, stadiums, public buildings, and other structured spaces.
+
+\begin{longtable}{p{0.30\textwidth} p{0.62\textwidth}}
+\textbf{Map concept} & \textbf{Requirement} \\
+\midrule
+Site & A complete venue or property, such as a hotel, stadium, or public building. \\
+Building or structure & A physical structure inside a site. \\
+Floor or level & A navigable level within a structure. \\
+Room or hall & A mapped space that can be reserved, visited, restricted, or described. \\
+Zone & A defined area such as public, VIP, staff-only, event-only, or pass-required. \\
+Seat or section & A future element for stadiums, conference layouts, and wedding seating. \\
+Fixed object & Furniture or infrastructure that cannot be moved. \\
+Movable layout object & Tables, chairs, aisles, and layout templates that can change per event. \\
+Amenity or point of interest & Pool, gym, lounge, restaurant, restroom, gate, reception, or service point. \\
+\end{longtable}
+
+\subsection{Access-Aware Rendering}
+
+Maps should support access rules, not only geometry.
+
+\begin{itemize}
+    \item Public areas render normally.
+    \item Restricted areas can be marked or visually reduced.
+    \item Hidden areas can be omitted entirely when the user should not know they exist.
+    \item Access rules should eventually come from backend entitlements, not hardcoded local samples.
+    \item Access can depend on guest type, event role, VIP level, venue policy, time window, reservation state, payment state, and Kaze Pass entitlements.
+\end{itemize}
+
+\section{Layout Planning and Event Styling}
+
+Kaze should separate two different ideas that are often confused.
+
+\begin{longtable}{p{0.30\textwidth} p{0.62\textwidth}}
+\textbf{Term} & \textbf{Meaning} \\
+\midrule
+Layout planning & How chairs, tables, aisles, seating zones, fixed objects, and open spaces are arranged. This affects capacity, movement, and venue use. \\
+Event styling & Flowers, lights, backdrops, table styling, theme decoration, and presentation services. This affects event look and service pricing. \\
+\end{longtable}
+
+For wedding venues and conference rooms, layout planning should eventually support:
+
+\begin{itemize}
+    \item round-table layouts;
+    \item rectangular dining layouts;
+    \item classroom layouts;
+    \item theater seating;
+    \item boardroom setups;
+    \item standing reception zones;
+    \item attendee-count suggestions;
+    \item operator approval for layout choices.
+\end{itemize}
+
+\section{Payments and Commerce}
+
+Kaze should support Rwanda-relevant payment and settlement flows.
+
+\begin{itemize}
+    \item MTN MoMo.
+    \item Airtel Money.
+    \item BK / RSwitch compatible flows.
+    \item Card payments where available.
+    \item Cash as a visible option where appropriate, with clear confirmation or validation flow.
+    \item Deposits, balance collection, add-on service payments, and event-entry payments tied to access state.
+\end{itemize}
+
+\section{Business and Revenue Requirements}
+
+Kaze should create value beyond simple venue listing so users and venues have fewer reasons to bypass the platform.
+
+Potential revenue directions include:
+
+\begin{itemize}
+    \item venue discovery and booking commissions;
+    \item partner subscription or SaaS fees for hotels and venues;
+    \item add-on service marketplace fees;
+    \item custom branded venue or hotel apps;
+    \item event access and Kaze Pass infrastructure;
+    \item map data and venue-layout tooling for other industries;
+    \item lower-commission local alternatives to large international booking platforms where commercially useful.
+\end{itemize}
+
+\section{Non-Functional Requirements}
+
+\begin{longtable}{p{0.30\textwidth} p{0.62\textwidth}}
+\textbf{Area} & \textbf{Requirement} \\
+\midrule
+User experience & Premium, calm, fast, architectural, and easy to understand without long reading. \\
+Responsiveness & Mobile-first, with tablet, foldable, and larger-screen layouts where needed. \\
+Localization & English first, with future support for more languages. User-facing text should avoid developer-only wording. \\
+Security & Private user data, access entitlements, event invitations, payment state, and partner data must be protected. \\
+Privacy & The app should explain what data is collected and provide user controls where legally or product-wise appropriate. \\
+Maintainability & Large UI files should be split into logical components and packages. Hardcoded demo data should move toward APIs and database-backed sources. \\
+Extensibility & Venue maps, invitation themes, event types, and request flows should be data-driven where possible. \\
+Notifications & Notification permission and notification delivery should be implemented only where the user benefits from timely updates. \\
+\end{longtable}
+
+\section{Backend and Data Requirements}
+
+Kaze should move away from hardcoded data toward API and database-backed flows.
+
+Important backend domains:
+
+\begin{itemize}
+    \item users and identities;
+    \item venues, hotels, spaces, and amenities;
+    \item maps, floors, rooms, zones, and access rules;
+    \item reservations and booking drafts;
+    \item events and invitation codes;
+    \item Kaze Pass entitlements;
+    \item service requests and request history;
+    \item payment methods and payment state;
+    \item notifications and realtime updates.
+\end{itemize}
+
+\begin{kazecalloutbox}[Architecture Direction]
+Ktor is appropriate for the Kaze backend because it fits the Kotlin ecosystem and can support APIs, authentication, database access, realtime updates, and AI integrations when needed.
+\end{kazecalloutbox}
+
+\section{Future AI Scope}
+
+AI can be added later where it improves the user experience, but it should not replace deterministic product flows.
+
+Useful AI candidates:
+
+\begin{itemize}
+    \item answer practical guest questions such as whether the kitchen is open;
+    \item explain venue rules or event details in simple language;
+    \item help organizers draft invitations;
+    \item summarize venue options based on budget, capacity, and location;
+    \item support multilingual guest assistance.
+\end{itemize}
+
+AI responses should use trusted venue data and should not invent operational facts.
+
+\section{Open Questions}
+
+\begin{itemize}
+    \item Which venue category should be monetized first: wedding venues, conference rooms, or hotel services?
+    \item Which payment provider should be integrated first for production?
+    \item Should public browsing require account creation before requesting a reservation?
+    \item What approval rules are needed when one person creates an invitation for another organizer's event?
+    \item What minimum legal documents are required before production launch?
+    \item Which Kaze Pass formats should be prioritized: in-app pass, QR code, Apple Wallet, or Google Wallet?
+\end{itemize}
+
+\section{Contact}
+
+\KazeContactBlock
+
+\end{document}

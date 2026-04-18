@@ -8,6 +8,7 @@ import dev.orestegabo.kaze.platform.SecureStore
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.navigation.KazeNavigator
 import dev.orestegabo.kaze.presentation.navigation.MapNavigationTarget
+import dev.orestegabo.kaze.theme.KazeThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,10 +35,12 @@ internal class KazeAppViewModel(
     init {
         scope.launch {
             val hasSeenOnboarding = secureStore.get(HAS_SEEN_ONBOARDING_KEY) == TRUE_VALUE
+            val persistedThemeMode = secureStore.get(THEME_MODE_KEY).toThemeModeOrDefault()
             uiState = uiState.copy(
                 isReady = true,
                 isOnboardingVisible = !hasSeenOnboarding,
                 onboardingPage = 0,
+                themeMode = persistedThemeMode,
             )
         }
     }
@@ -88,6 +91,13 @@ internal class KazeAppViewModel(
         }
     }
 
+    fun onThemeModeChanged(themeMode: KazeThemeMode) {
+        uiState = uiState.copy(themeMode = themeMode)
+        scope.launch {
+            secureStore.put(THEME_MODE_KEY, themeMode.name)
+        }
+    }
+
     fun openMapRoute(route: String, floorId: String, floorLabel: String) {
         navigator.openMap(
             MapNavigationTarget(
@@ -116,8 +126,14 @@ internal class KazeAppViewModel(
         super.onCleared()
     }
 
+    private fun String?.toThemeModeOrDefault(): KazeThemeMode =
+        this?.let { value ->
+            KazeThemeMode.entries.firstOrNull { mode -> mode.name == value }
+        } ?: KazeThemeMode.SYSTEM
+
     private companion object {
         const val HAS_SEEN_ONBOARDING_KEY = "app.has_seen_onboarding"
+        const val THEME_MODE_KEY = "app.theme_mode"
         const val TRUE_VALUE = "true"
         const val FEEDBACK_DURATION_MS = 2400L
     }

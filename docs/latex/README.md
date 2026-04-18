@@ -8,6 +8,9 @@ Helpful starter files:
 - [kaze-template.tex](kaze-template.tex)
 
 Current documents:
+- `kaze-cahier-des-charges.tex`
+  - formal requirements specification for Kaze product, platform, maps, access, payments, and future backend scope
+  - useful for scoping, partner conversations, and developer onboarding
 - `kaze-investor-brief.tex`
   - investor and partner-facing overview
   - useful for fundraising, partnerships, and strategic discussions

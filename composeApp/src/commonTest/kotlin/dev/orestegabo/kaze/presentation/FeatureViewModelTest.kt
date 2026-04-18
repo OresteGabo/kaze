@@ -10,6 +10,7 @@ import dev.orestegabo.kaze.presentation.events.EventsViewModel
 import dev.orestegabo.kaze.presentation.explore.ExploreActionResult
 import dev.orestegabo.kaze.presentation.explore.ExploreViewModel
 import dev.orestegabo.kaze.presentation.map.MapViewModel
+import dev.orestegabo.kaze.theme.KazeThemeMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -73,6 +74,31 @@ class FeatureViewModelTest {
         advanceUntilIdle()
 
         assertEquals("", viewModel.uiState.feedbackMessage)
+    }
+
+    @Test
+    fun app_view_model_loads_persisted_theme_mode() = runTest(testDispatcher) {
+        val secureStore = RecordingSecureStore(
+            initialValues = mutableMapOf("app.theme_mode" to KazeThemeMode.DARK.name),
+        )
+
+        val viewModel = KazeAppViewModel(secureStore)
+        advanceUntilIdle()
+
+        assertEquals(KazeThemeMode.DARK, viewModel.uiState.themeMode)
+    }
+
+    @Test
+    fun app_view_model_persists_theme_mode_changes() = runTest(testDispatcher) {
+        val secureStore = RecordingSecureStore()
+        val viewModel = KazeAppViewModel(secureStore)
+        advanceUntilIdle()
+
+        viewModel.onThemeModeChanged(KazeThemeMode.DARK)
+        advanceUntilIdle()
+
+        assertEquals(KazeThemeMode.DARK, viewModel.uiState.themeMode)
+        assertEquals(KazeThemeMode.DARK.name, secureStore.values["app.theme_mode"])
     }
 
     @Test
@@ -181,8 +207,10 @@ class FeatureViewModelTest {
         assertEquals("l1", viewModel.uiState.selectedFloorId)
     }
 
-    private class RecordingSecureStore : SecureStore {
-        val values = mutableMapOf<String, String>()
+    private class RecordingSecureStore(
+        initialValues: MutableMap<String, String> = mutableMapOf(),
+    ) : SecureStore {
+        val values = initialValues
 
         override suspend fun put(key: String, value: String) {
             values[key] = value

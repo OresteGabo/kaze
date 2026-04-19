@@ -3,6 +3,7 @@ package dev.orestegabo.kaze.api
 import dev.orestegabo.kaze.application.ServerDependencies
 import io.ktor.server.application.Application
 import io.ktor.server.plugins.ratelimit.rateLimit
+import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
@@ -21,6 +22,8 @@ internal fun Application.registerApiRoutes(
         get("/health") {
             call.respond(ApiInfoDto(name = "Kaze API", status = "healthy", version = "1.0.0"))
         }
+
+        swaggerUI(path = "swagger", swaggerFile = "openapi/kaze-api.yaml")
 
         rateLimit(ApiRateLimit) {
             route("/api/v1") {

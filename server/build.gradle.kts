@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
+    implementation(libs.ktor.serverCallLogging)
     implementation(libs.ktor.serverCompression)
     implementation(libs.ktor.serverContentNegotiation)
     implementation(libs.ktor.serverRateLimit)

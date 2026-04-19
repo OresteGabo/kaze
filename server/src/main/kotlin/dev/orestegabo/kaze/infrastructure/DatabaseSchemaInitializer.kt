@@ -49,6 +49,8 @@ private fun Application.runSchemaStatements(
 }
 
 private val DROP_SCHEMA_SQL = listOf(
+    "DROP TABLE IF EXISTS user_auth_providers CASCADE",
+    "DROP TABLE IF EXISTS app_users CASCADE",
     "DROP TABLE IF EXISTS service_requests CASCADE",
     "DROP TABLE IF EXISTS late_checkout_requests CASCADE",
     "DROP TABLE IF EXISTS map_nodes CASCADE",
@@ -68,6 +70,30 @@ private val DROP_SCHEMA_SQL = listOf(
 )
 
 private val CREATE_SCHEMA_SQL = listOf(
+    "CREATE EXTENSION IF NOT EXISTS pgcrypto",
+    """
+    CREATE TABLE IF NOT EXISTS app_users (
+        id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        email VARCHAR(320) NOT NULL UNIQUE,
+        display_name VARCHAR(240),
+        password_hash TEXT,
+        roles TEXT[] NOT NULL DEFAULT ARRAY['CUSTOMER']::TEXT[],
+        disabled BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+    """.trimIndent(),
+    """
+    CREATE TABLE IF NOT EXISTS user_auth_providers (
+        id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        provider VARCHAR(40) NOT NULL,
+        provider_subject VARCHAR(320) NOT NULL,
+        email VARCHAR(320) NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE (provider, provider_subject)
+    )
+    """.trimIndent(),
     """
     CREATE TABLE IF NOT EXISTS service_places (
         id VARCHAR(120) PRIMARY KEY,
@@ -261,6 +287,8 @@ private val CREATE_SCHEMA_SQL = listOf(
     )
     """.trimIndent(),
     "CREATE INDEX IF NOT EXISTS guests_hotel_id_idx ON guests(hotel_id)",
+    "CREATE INDEX IF NOT EXISTS app_users_email_idx ON app_users(lower(email))",
+    "CREATE INDEX IF NOT EXISTS user_auth_providers_user_id_idx ON user_auth_providers(user_id)",
     "CREATE INDEX IF NOT EXISTS stays_guest_id_idx ON stays(guest_id)",
     "CREATE INDEX IF NOT EXISTS event_days_hotel_id_idx ON event_days(hotel_id)",
     "CREATE INDEX IF NOT EXISTS scheduled_experiences_day_id_idx ON scheduled_experiences(day_id)",

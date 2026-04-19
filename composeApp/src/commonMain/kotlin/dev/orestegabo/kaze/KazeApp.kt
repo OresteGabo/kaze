@@ -31,6 +31,7 @@ import dev.orestegabo.kaze.presentation.demo.publicVenueCategories
 import dev.orestegabo.kaze.presentation.demo.publicVenues
 import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import dev.orestegabo.kaze.presentation.di.rememberKazeDependencies
+import dev.orestegabo.kaze.presentation.app.KazeSessionMode
 import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
 import dev.orestegabo.kaze.presentation.events.EventsActionResult
 import dev.orestegabo.kaze.presentation.events.EventsViewModel
@@ -41,6 +42,7 @@ import dev.orestegabo.kaze.presentation.navigation.KazeNavigator
 import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.presentation.stay.StayActionResult
 import dev.orestegabo.kaze.presentation.stay.StayViewModel
+import dev.orestegabo.kaze.ui.auth.AuthEntryScreen
 import dev.orestegabo.kaze.ui.chrome.DemoFeedbackBanner
 import dev.orestegabo.kaze.ui.chrome.KazeAmbientBackground
 import dev.orestegabo.kaze.ui.chrome.KazeBottomBar
@@ -97,7 +99,29 @@ fun App() {
         val eventsUiState = eventsViewModel.uiState
         val exploreUiState = exploreViewModel.uiState
         val mapUiState = mapViewModel.uiState
-        val pendingInvitationCount = invitationPreviews.count { it.state == InvitationState.ACTIVE }
+        val isGuestMode = uiState.sessionMode == KazeSessionMode.GUEST
+        val visibleInvitations = if (isGuestMode) emptyList() else invitationPreviews
+        val pendingInvitationCount = visibleInvitations.count { it.state == InvitationState.ACTIVE }
+        val availableDestinations = when (uiState.sessionMode) {
+            KazeSessionMode.GUEST -> listOf(
+                KazeDestination.EVENTS,
+                KazeDestination.HOME,
+                KazeDestination.EXPLORE,
+                KazeDestination.SETTINGS,
+            )
+            else -> listOf(
+                KazeDestination.EVENTS,
+                KazeDestination.INVITATIONS,
+                KazeDestination.HOME,
+                KazeDestination.EXPLORE,
+                KazeDestination.SETTINGS,
+            )
+        }
+        val sessionLabel = when (uiState.sessionMode) {
+            KazeSessionMode.AUTHENTICATED -> uiState.sessionEmail.ifBlank { "Signed in to Kaze" }
+            KazeSessionMode.GUEST -> "Browsing Kaze as a guest"
+            null -> "Not signed in"
+        }
         var selectedInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
 
         fun handleStayResult(result: StayActionResult?) {
@@ -153,8 +177,12 @@ fun App() {
         }
 
         fun openInvitation(invitation: InvitationPreview) {
-            selectedInvitation = invitation
-            appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+            if (isGuestMode) {
+                appViewModel.showFeedback("Log in or create an account to open private invitations.")
+            } else {
+                selectedInvitation = invitation
+                appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+            }
         }
 
         fun openVenue(venue: PublicVenuePreview) {
@@ -163,8 +191,12 @@ fun App() {
         }
 
         fun openInvitations() {
-            selectedInvitation = null
-            appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+            if (isGuestMode) {
+                appViewModel.showFeedback("Invitations are private. Log in or create an account to view them.")
+            } else {
+                selectedInvitation = null
+                appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+            }
         }
 
         fun openEventFromInvitation(invitation: InvitationPreview) {
@@ -212,6 +244,15 @@ fun App() {
                             onNext = appViewModel::onOnboardingNext,
                             onGetStarted = appViewModel::completeOnboarding,
                         )
+                    } else if (uiState.sessionMode == null) {
+                        AuthEntryScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            feedbackMessage = uiState.feedbackMessage,
+                            onSignIn = appViewModel::signIn,
+                            onCreateAccount = appViewModel::createAccount,
+                            onSocialSignIn = appViewModel::signInWithSocialProvider,
+                            onContinueAsGuest = appViewModel::continueAsGuest,
+                        )
                     } else {
                         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                             val useRail = maxWidth >= 900.dp
@@ -222,6 +263,7 @@ fun App() {
                                         currentDestination = uiState.currentDestination,
                                         onDestinationSelected = appViewModel::onDestinationSelected,
                                         pendingInvitationCount = pendingInvitationCount,
+                                        destinations = availableDestinations,
                                     )
                                     Column(modifier = Modifier.weight(1f)) {
                                         DemoFeedbackBanner(
@@ -246,7 +288,8 @@ fun App() {
                                                 submittedServiceRequests = stayUiState.submittedServiceRequests,
                                                 venueCategories = publicVenueCategories,
                                                 featuredVenues = publicVenues,
-                                                invitations = invitationPreviews,
+                                                invitations = visibleInvitations,
+                                                isGuestMode = isGuestMode,
                                                 onBackToStayHome = stayViewModel::onBackToHome,
                                                 onLateCheckoutDraftChange = stayViewModel::onDraftChange,
                                                 onLateCheckoutSubmit = { draft -> handleStayResult(stayViewModel.submitLateCheckout(draft)) },
@@ -301,7 +344,7 @@ fun App() {
 
                                             KazeDestination.INVITATIONS -> InvitationsScreen(
                                                 modifier = Modifier.weight(1f),
-                                                invitations = invitationPreviews,
+                                                invitations = visibleInvitations,
                                                 onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                                 selectedInvitation = selectedInvitation,
                                                 onSelectedInvitationChange = { selectedInvitation = it },
@@ -333,7 +376,9 @@ fun App() {
                                             KazeDestination.SETTINGS -> HomeSettingsScreen(
                                                 bottomContentPadding = bottomContentPadding,
                                                 themeMode = uiState.themeMode,
+                                                sessionLabel = sessionLabel,
                                                 onThemeModeChange = appViewModel::onThemeModeChanged,
+                                                onLogout = appViewModel::logout,
                                                 onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                             )
                                         }
@@ -364,7 +409,8 @@ fun App() {
                                             submittedServiceRequests = stayUiState.submittedServiceRequests,
                                             venueCategories = publicVenueCategories,
                                             featuredVenues = publicVenues,
-                                            invitations = invitationPreviews,
+                                            invitations = visibleInvitations,
+                                            isGuestMode = isGuestMode,
                                             onBackToStayHome = stayViewModel::onBackToHome,
                                             onLateCheckoutDraftChange = stayViewModel::onDraftChange,
                                             onLateCheckoutSubmit = { draft -> handleStayResult(stayViewModel.submitLateCheckout(draft)) },
@@ -373,12 +419,12 @@ fun App() {
                                             onAccessContextSelected = stayViewModel::onAccessContextSelected,
                                             onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
                                             onEnterCode = ::handleJoinCode,
-                                                onOpenCategory = { openPublicBrowse(it.title) },
-                                                onOpenVenue = ::openVenue,
-                                                onOpenVenueMap = ::openVenueMap,
-                                                onOpenInvitation = ::openInvitation,
-                                                onSeeAllInvitations = ::openInvitations,
-                                                bottomContentPadding = bottomContentPadding,
+                                            onOpenCategory = { openPublicBrowse(it.title) },
+                                            onOpenVenue = ::openVenue,
+                                            onOpenVenueMap = ::openVenueMap,
+                                            onOpenInvitation = ::openInvitation,
+                                            onSeeAllInvitations = ::openInvitations,
+                                            bottomContentPadding = bottomContentPadding,
                                             )
 
                                         KazeDestination.STAY -> StayHomeScreen(
@@ -419,7 +465,7 @@ fun App() {
 
                                         KazeDestination.INVITATIONS -> InvitationsScreen(
                                             modifier = Modifier.weight(1f),
-                                            invitations = invitationPreviews,
+                                            invitations = visibleInvitations,
                                             onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                             selectedInvitation = selectedInvitation,
                                             onSelectedInvitationChange = { selectedInvitation = it },
@@ -451,7 +497,9 @@ fun App() {
                                         KazeDestination.SETTINGS -> HomeSettingsScreen(
                                             bottomContentPadding = bottomContentPadding,
                                             themeMode = uiState.themeMode,
+                                            sessionLabel = sessionLabel,
                                             onThemeModeChange = appViewModel::onThemeModeChanged,
+                                            onLogout = appViewModel::logout,
                                             onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                         )
                                     }
@@ -461,7 +509,7 @@ fun App() {
                     }
                 }
 
-                if (uiState.isReady && !uiState.isOnboardingVisible) {
+                if (uiState.isReady && !uiState.isOnboardingVisible && uiState.sessionMode != null) {
                     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                         val useRail = maxWidth >= 900.dp
                         if (!useRail) {
@@ -469,6 +517,7 @@ fun App() {
                         currentDestination = uiState.currentDestination,
                         onDestinationSelected = appViewModel::onDestinationSelected,
                         pendingInvitationCount = pendingInvitationCount,
+                        destinations = availableDestinations,
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                         }

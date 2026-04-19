@@ -48,6 +48,7 @@ import dev.orestegabo.kaze.ui.chrome.KazeNavigationRail
 import dev.orestegabo.kaze.ui.events.EventScheduleScreen
 import dev.orestegabo.kaze.ui.explore.ExploreScreen
 import dev.orestegabo.kaze.ui.home.HomeScreen
+import dev.orestegabo.kaze.ui.home.components.HomeSettingsScreen
 import dev.orestegabo.kaze.ui.home.components.InvitationsScreen
 import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
@@ -229,17 +230,36 @@ fun App() {
                                         when (uiState.currentDestination) {
                                             KazeDestination.HOME -> HomeScreen(
                                                 modifier = Modifier.weight(1f),
+                                                hotelDisplayName = stayUiState.hotelDisplayName,
+                                                guestName = stayUiState.guestName,
+                                                accessProfileLabel = stayUiState.accessProfileLabel,
+                                                accessStatusLabel = stayUiState.accessStatusLabel,
+                                                accessCard = stayUiState.accessCard,
+                                                accessContexts = stayUiState.accessContexts,
+                                                selectedAccessContextId = stayUiState.selectedAccessContextId,
+                                                stayMoments = stayUiState.stayMoments,
+                                                suggestionActivities = stayUiState.suggestionActivities,
+                                                activeStayScreen = stayUiState.activeStayScreen,
+                                                lateCheckoutRequest = stayUiState.lateCheckoutRequest,
+                                                lateCheckoutDraft = stayUiState.lateCheckoutDraft,
+                                                serviceRequestDraft = stayUiState.serviceRequestDraft,
+                                                submittedServiceRequests = stayUiState.submittedServiceRequests,
                                                 venueCategories = publicVenueCategories,
                                                 featuredVenues = publicVenues,
                                                 invitations = invitationPreviews,
+                                                onBackToStayHome = stayViewModel::onBackToHome,
+                                                onLateCheckoutDraftChange = stayViewModel::onDraftChange,
+                                                onLateCheckoutSubmit = { draft -> handleStayResult(stayViewModel.submitLateCheckout(draft)) },
+                                                onServiceRequestDraftChange = stayViewModel::onServiceRequestDraftChange,
+                                                onServiceRequestSubmit = { draft -> handleStayResult(stayViewModel.submitServiceRequest(draft)) },
+                                                onAccessContextSelected = stayViewModel::onAccessContextSelected,
+                                                onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
                                                 onEnterCode = ::handleJoinCode,
                                                 onOpenCategory = { openPublicBrowse(it.title) },
                                                 onOpenVenue = ::openVenue,
                                                 onOpenVenueMap = ::openVenueMap,
                                                 onOpenInvitation = ::openInvitation,
                                                 onSeeAllInvitations = ::openInvitations,
-                                                themeMode = uiState.themeMode,
-                                                onThemeModeChange = appViewModel::onThemeModeChanged,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -309,6 +329,13 @@ fun App() {
                                                 onSwitchFloor = mapViewModel::onSwitchFloor,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
+
+                                            KazeDestination.SETTINGS -> HomeSettingsScreen(
+                                                bottomContentPadding = bottomContentPadding,
+                                                themeMode = uiState.themeMode,
+                                                onThemeModeChange = appViewModel::onThemeModeChanged,
+                                                onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
+                                            )
                                         }
                                     }
                                 }
@@ -321,17 +348,36 @@ fun App() {
                                     when (uiState.currentDestination) {
                                         KazeDestination.HOME -> HomeScreen(
                                             modifier = Modifier.weight(1f),
+                                            hotelDisplayName = stayUiState.hotelDisplayName,
+                                            guestName = stayUiState.guestName,
+                                            accessProfileLabel = stayUiState.accessProfileLabel,
+                                            accessStatusLabel = stayUiState.accessStatusLabel,
+                                            accessCard = stayUiState.accessCard,
+                                            accessContexts = stayUiState.accessContexts,
+                                            selectedAccessContextId = stayUiState.selectedAccessContextId,
+                                            stayMoments = stayUiState.stayMoments,
+                                            suggestionActivities = stayUiState.suggestionActivities,
+                                            activeStayScreen = stayUiState.activeStayScreen,
+                                            lateCheckoutRequest = stayUiState.lateCheckoutRequest,
+                                            lateCheckoutDraft = stayUiState.lateCheckoutDraft,
+                                            serviceRequestDraft = stayUiState.serviceRequestDraft,
+                                            submittedServiceRequests = stayUiState.submittedServiceRequests,
                                             venueCategories = publicVenueCategories,
                                             featuredVenues = publicVenues,
                                             invitations = invitationPreviews,
+                                            onBackToStayHome = stayViewModel::onBackToHome,
+                                            onLateCheckoutDraftChange = stayViewModel::onDraftChange,
+                                            onLateCheckoutSubmit = { draft -> handleStayResult(stayViewModel.submitLateCheckout(draft)) },
+                                            onServiceRequestDraftChange = stayViewModel::onServiceRequestDraftChange,
+                                            onServiceRequestSubmit = { draft -> handleStayResult(stayViewModel.submitServiceRequest(draft)) },
+                                            onAccessContextSelected = stayViewModel::onAccessContextSelected,
+                                            onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
                                             onEnterCode = ::handleJoinCode,
                                                 onOpenCategory = { openPublicBrowse(it.title) },
                                                 onOpenVenue = ::openVenue,
                                                 onOpenVenueMap = ::openVenueMap,
                                                 onOpenInvitation = ::openInvitation,
                                                 onSeeAllInvitations = ::openInvitations,
-                                                themeMode = uiState.themeMode,
-                                                onThemeModeChange = appViewModel::onThemeModeChanged,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -400,6 +446,13 @@ fun App() {
                                             onStartNavigation = {},
                                             onSwitchFloor = mapViewModel::onSwitchFloor,
                                             bottomContentPadding = bottomContentPadding,
+                                        )
+
+                                        KazeDestination.SETTINGS -> HomeSettingsScreen(
+                                            bottomContentPadding = bottomContentPadding,
+                                            themeMode = uiState.themeMode,
+                                            onThemeModeChange = appViewModel::onThemeModeChanged,
+                                            onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                         )
                                     }
                                 }

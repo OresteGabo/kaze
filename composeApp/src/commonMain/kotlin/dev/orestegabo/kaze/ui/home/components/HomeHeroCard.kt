@@ -51,12 +51,12 @@ internal fun HomeHeroCard(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
-                        "Find your venue",
+                        "Discover more with Kaze",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        "Conference rooms, wedding venues, and event spaces.",
+                        "Browse venues, event spaces, and invitation experiences when you want to plan what comes next.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                     )
@@ -96,12 +96,12 @@ internal fun HomeHeroCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        "Browse venues, enter an invitation code, or open a pending invite.",
+                        "Your stay essentials are above. Use this area when you want to explore public venues, enter a code, or open invitations.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
                     )
                     Text(
-                        "Browse venue details and prices without signing in.",
+                        "Venue details and prices stay available without hiding your active pass.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
                     )

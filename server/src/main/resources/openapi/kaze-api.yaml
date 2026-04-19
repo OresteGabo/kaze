@@ -19,6 +19,8 @@ tags:
     description: Venue map data.
   - name: Assistant
     description: Guest assistant answers.
+  - name: Auth
+    description: Sign up, sign in, social sign-in, and JWT session routes.
 paths:
   /:
     get:
@@ -31,6 +33,107 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiInfo"
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Create a password account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthSignup"
+      responses:
+        "200":
+          description: JWT session for the new user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email is already registered.
+  /auth/signin:
+    post:
+      tags: [Auth]
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthSignin"
+      responses:
+        "200":
+          description: JWT session for the user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid email or password.
+  /auth/google:
+    post:
+      tags: [Auth]
+      summary: Sign in or sign up with Google
+      description: Verifies a Google ID token against configured Google OAuth client IDs, then returns a Kaze JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialSignin"
+      responses:
+        "200":
+          description: JWT session for the linked user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /auth/apple:
+    post:
+      tags: [Auth]
+      summary: Sign in or sign up with Apple
+      description: Verifies an Apple identity token against configured Apple client IDs, then returns a Kaze JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialSignin"
+      responses:
+        "200":
+          description: JWT session for the linked user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Return the current JWT user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user claims.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out the current JWT session
+      description: JWT logout is client-side. Call this endpoint while authenticated, then remove the stored token from the device.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout instruction accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLogoutResponse"
   /hotels:
     get:
       tags: [Hotels]
@@ -260,6 +363,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/AssistantAnswer"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     HotelId:
       name: hotelId
@@ -285,6 +393,78 @@ components:
         status:
           type: string
         version:
+          type: string
+    AuthSignup:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        displayName:
+          type: string
+          nullable: true
+    AuthSignin:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    SocialSignin:
+      type: object
+      required: [idToken]
+      properties:
+        idToken:
+          type: string
+        displayName:
+          type: string
+          nullable: true
+    AuthResponse:
+      type: object
+      required: [accessToken, tokenType, expiresInSeconds, user]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresInSeconds:
+          type: integer
+          format: int64
+        user:
+          $ref: "#/components/schemas/AuthUser"
+    AuthUser:
+      type: object
+      required: [id, email, roles]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          items:
+            type: string
+    AuthLogoutResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          example: signed_out
+        message:
           type: string
     Hotel:
       type: object

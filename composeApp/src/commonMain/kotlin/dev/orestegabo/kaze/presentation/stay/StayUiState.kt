@@ -2,6 +2,7 @@ package dev.orestegabo.kaze.presentation.stay
 
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
+import dev.orestegabo.kaze.presentation.demo.AccessContextUi
 import dev.orestegabo.kaze.presentation.demo.ServiceRequestDraftUi
 import dev.orestegabo.kaze.presentation.demo.ServiceRequestRecord
 import dev.orestegabo.kaze.presentation.demo.ServiceOption
@@ -17,6 +18,8 @@ internal data class StayUiState(
     val accessProfileLabel: String = "Conference guest",
     val accessStatusLabel: String = "Active pass",
     val accessCard: DigitalAccessCard? = null,
+    val accessContexts: List<AccessContextUi> = emptyList(),
+    val selectedAccessContextId: String? = null,
     val stayMoments: List<StayMoment> = emptyList(),
     val requestOptions: List<ServiceOption> = emptyList(),
     val suggestionActivities: List<ExploreHighlight> = emptyList(),

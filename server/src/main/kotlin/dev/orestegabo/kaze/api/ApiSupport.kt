@@ -1,17 +1,36 @@
 package dev.orestegabo.kaze.api
 
+import io.ktor.http.CacheControl
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.CachingOptions
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.UserIdPrincipal
+import io.ktor.server.auth.bearer
+import io.ktor.server.plugins.autohead.AutoHeadResponse
+import io.ktor.server.plugins.cachingheaders.CachingHeaders
 import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.plugins.conditionalheaders.ConditionalHeaders
 import io.ktor.server.plugins.compression.Compression
 import io.ktor.server.plugins.compression.deflate
 import io.ktor.server.plugins.compression.gzip
 import io.ktor.server.plugins.compression.minimumSize
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
+import io.ktor.server.plugins.forwardedheaders.ForwardedHeaders
+import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.ratelimit.RateLimitName
+import io.ktor.server.plugins.origin
+import io.ktor.server.plugins.requestvalidation.RequestValidation
+import io.ktor.server.plugins.requestvalidation.RequestValidationException
+import io.ktor.server.plugins.requestvalidation.ValidationResult
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
@@ -21,12 +40,48 @@ import org.slf4j.event.Level
 import kotlin.time.Duration.Companion.minutes
 
 internal val ApiRateLimit = RateLimitName("api")
+internal const val ApiAuth = "api-bearer"
 
 internal fun Application.configureHttp() {
+    val securityConfig = loadApiSecurityConfig()
+
+    install(ForwardedHeaders)
+    install(XForwardedHeaders)
+    install(DefaultHeaders) {
+        header(HttpHeaders.Server, "Kaze")
+        header("X-Content-Type-Options", "nosniff")
+        header("X-Frame-Options", "DENY")
+        header("Referrer-Policy", "no-referrer")
+    }
+    install(CORS) {
+        securityConfig.corsAllowedHosts.forEach { host ->
+            allowHost(host, schemes = listOf("http", "https"))
+        }
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Head)
+        allowMethod(HttpMethod.Options)
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Accept)
+        allowHeader(HttpHeaders.AcceptLanguage)
+        maxAgeInSeconds = CORS_PREFLIGHT_CACHE_SECONDS
+    }
+    install(AutoHeadResponse)
     install(CallLogging) {
         level = Level.INFO
         filter { call -> call.request.path() != "/health" }
     }
+    install(CachingHeaders) {
+        options { _, content ->
+            when (content.contentType?.withoutParameters()) {
+                ContentType.Text.Html -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = DOCS_CACHE_SECONDS))
+                ContentType.Application.Json -> CachingOptions(CacheControl.NoStore(CacheControl.Visibility.Private))
+                else -> null
+            }
+        }
+    }
+    install(ConditionalHeaders)
     install(Compression) {
         gzip {
             priority = 1.0
@@ -46,14 +101,49 @@ internal fun Application.configureHttp() {
             },
         )
     }
+    install(Authentication) {
+        bearer(ApiAuth) {
+            realm = "Kaze API"
+            authenticate { credentials ->
+                securityConfig.apiToken
+                    ?.takeIf { it == credentials.token }
+                    ?.let { UserIdPrincipal("api-client") }
+            }
+        }
+    }
+    install(RequestValidation) {
+        validate<LateCheckoutSubmissionRequest> { request ->
+            when {
+                request.checkoutTimeIso.isBlank() -> ValidationResult.Invalid("checkoutTimeIso is required")
+                request.feeAmountMinor < 0 -> ValidationResult.Invalid("feeAmountMinor must be zero or greater")
+                request.currencyCode.isBlank() -> ValidationResult.Invalid("currencyCode is required")
+                request.paymentPreference.isBlank() -> ValidationResult.Invalid("paymentPreference is required")
+                request.followUpPreference.isBlank() -> ValidationResult.Invalid("followUpPreference is required")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<ServiceRequestSubmissionRequest> { request ->
+            when {
+                request.type.isBlank() -> ValidationResult.Invalid("type is required")
+                request.note != null && request.note.length > SERVICE_REQUEST_NOTE_MAX_LENGTH ->
+                    ValidationResult.Invalid("note must be $SERVICE_REQUEST_NOTE_MAX_LENGTH characters or fewer")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<AssistantQueryRequest> { request ->
+            when {
+                request.question.isBlank() -> ValidationResult.Invalid("question is required")
+                request.question.length > ASSISTANT_QUESTION_MAX_LENGTH ->
+                    ValidationResult.Invalid("question must be $ASSISTANT_QUESTION_MAX_LENGTH characters or fewer")
+                else -> ValidationResult.Valid
+            }
+        }
+    }
     install(RateLimit) {
         register(ApiRateLimit) {
             rateLimiter(limit = API_RATE_LIMIT_REQUESTS, refillPeriod = API_RATE_LIMIT_WINDOW)
             requestKey { call ->
-                call.request.headers["X-Forwarded-For"]
-                    ?.substringBefore(",")
-                    ?.trim()
-                    ?.takeIf { it.isNotEmpty() }
+                call.request.origin.remoteHost.takeIf { it.isNotBlank() }
                     ?: call.request.headers["X-Real-IP"]?.trim()?.takeIf { it.isNotEmpty() }
                     ?: "direct-client"
             }
@@ -62,6 +152,9 @@ internal fun Application.configureHttp() {
     install(StatusPages) {
         exception<ApiNotFoundException> { call, cause ->
             call.respond(HttpStatusCode.NotFound, ApiProblem("not_found", cause.message ?: "Resource not found"))
+        }
+        exception<RequestValidationException> { call, cause ->
+            call.respond(HttpStatusCode.BadRequest, ApiProblem("validation_error", cause.reasons.joinToString("; ")))
         }
         exception<IllegalArgumentException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, ApiProblem("bad_request", cause.message ?: "Invalid request"))
@@ -74,9 +167,41 @@ internal fun Application.configureHttp() {
 
 internal class ApiNotFoundException(message: String) : RuntimeException(message)
 
+internal fun Application.isApiAuthenticationEnabled(): Boolean = loadApiSecurityConfig().apiToken != null
+
+private fun Application.loadApiSecurityConfig(): ApiSecurityConfig =
+    ApiSecurityConfig(
+        apiToken = environment.config.propertyOrNull("kaze.security.apiToken")
+            ?.getString()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() },
+        corsAllowedHosts = environment.config.propertyOrNull("kaze.security.cors.allowedHosts")
+            ?.getString()
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.ifEmpty { DEFAULT_CORS_ALLOWED_HOSTS }
+            ?: DEFAULT_CORS_ALLOWED_HOSTS,
+    )
+
+private data class ApiSecurityConfig(
+    val apiToken: String?,
+    val corsAllowedHosts: List<String>,
+)
+
 private const val API_RATE_LIMIT_REQUESTS = 120
 private const val API_COMPRESSION_MIN_BYTES = 256L
+private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
+private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500
+private const val CORS_PREFLIGHT_CACHE_SECONDS = 3_600L
+private const val DOCS_CACHE_SECONDS = 300
 private val API_RATE_LIMIT_WINDOW = 1.minutes
+private val DEFAULT_CORS_ALLOWED_HOSTS = listOf(
+    "localhost:3000",
+    "localhost:5173",
+    "127.0.0.1:3000",
+    "127.0.0.1:5173",
+)
 
 @Serializable
 internal data class ApiProblem(

@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze.presentation
 
 import dev.orestegabo.kaze.platform.SecureStore
+import dev.orestegabo.kaze.presentation.app.KazeSessionMode
 import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.demo.repository.DemoExperienceRepository
@@ -65,6 +66,7 @@ class FeatureViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.isOnboardingVisible)
+        assertEquals(null, viewModel.uiState.sessionMode)
         assertEquals("true", secureStore.values["app.has_seen_onboarding"])
 
         viewModel.showFeedback("Request sent")
@@ -99,6 +101,43 @@ class FeatureViewModelTest {
 
         assertEquals(KazeThemeMode.DARK, viewModel.uiState.themeMode)
         assertEquals(KazeThemeMode.DARK.name, secureStore.values["app.theme_mode"])
+    }
+
+    @Test
+    fun app_view_model_starts_guest_session_and_logout_returns_to_entry() = runTest(testDispatcher) {
+        val secureStore = RecordingSecureStore()
+        val viewModel = KazeAppViewModel(secureStore)
+        advanceUntilIdle()
+
+        viewModel.continueAsGuest()
+        advanceUntilIdle()
+
+        assertEquals(KazeSessionMode.GUEST, viewModel.uiState.sessionMode)
+        assertEquals(KazeSessionMode.GUEST.name, secureStore.values["app.session_mode"])
+        assertEquals(null, secureStore.values["auth.access_token"])
+
+        viewModel.logout()
+        advanceUntilIdle()
+
+        assertEquals(null, viewModel.uiState.sessionMode)
+        assertEquals(null, secureStore.values["app.session_mode"])
+        assertEquals(null, secureStore.values["app.session_email"])
+    }
+
+    @Test
+    fun app_view_model_starts_authenticated_session_for_login() = runTest(testDispatcher) {
+        val secureStore = RecordingSecureStore()
+        val viewModel = KazeAppViewModel(secureStore)
+        advanceUntilIdle()
+
+        viewModel.signIn(" Aline@Example.com ", "Password123!")
+        advanceUntilIdle()
+
+        assertEquals(KazeSessionMode.AUTHENTICATED, viewModel.uiState.sessionMode)
+        assertEquals("aline@example.com", viewModel.uiState.sessionEmail)
+        assertEquals(KazeSessionMode.AUTHENTICATED.name, secureStore.values["app.session_mode"])
+        assertEquals("aline@example.com", secureStore.values["app.session_email"])
+        assertEquals("demo-local-session", secureStore.values["auth.access_token"])
     }
 
     @Test

@@ -260,6 +260,15 @@ internal class StayViewModel(
                     description = service.description,
                 )
             }
-        return options.ifEmpty { requestOptions }
+        val customOption = requestOptions.first { it.isCustom }
+        return options
+            .ifEmpty { requestOptions }
+            .let { scopedOptions ->
+                if (scopedOptions.any { option -> option.isCustom }) {
+                    scopedOptions
+                } else {
+                    scopedOptions + customOption
+                }
+            }
     }
 }

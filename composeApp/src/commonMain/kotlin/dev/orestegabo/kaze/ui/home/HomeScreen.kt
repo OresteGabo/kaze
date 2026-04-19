@@ -20,30 +20,59 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.kaze.domain.DigitalAccessCard
+import dev.orestegabo.kaze.presentation.demo.AccessContextUi
+import dev.orestegabo.kaze.presentation.demo.ExploreHighlight
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
+import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
+import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
 import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
+import dev.orestegabo.kaze.presentation.demo.ServiceRequestDraftUi
+import dev.orestegabo.kaze.presentation.demo.ServiceRequestRecord
+import dev.orestegabo.kaze.presentation.demo.StayMoment
+import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
+import dev.orestegabo.kaze.presentation.demo.StayScreen
 import dev.orestegabo.kaze.presentation.demo.VenueCategoryPreview
-import dev.orestegabo.kaze.theme.KazeThemeMode
 import dev.orestegabo.kaze.ui.home.components.*
+import dev.orestegabo.kaze.ui.stay.LateCheckoutScreen
+import dev.orestegabo.kaze.ui.stay.ServiceRequestScreen
 
 @Composable
 internal fun HomeScreen(
     modifier: Modifier = Modifier,
+    hotelDisplayName: String,
+    guestName: String,
+    accessProfileLabel: String,
+    accessStatusLabel: String,
+    accessCard: DigitalAccessCard?,
+    accessContexts: List<AccessContextUi>,
+    selectedAccessContextId: String?,
+    stayMoments: List<StayMoment>,
+    suggestionActivities: List<ExploreHighlight>,
+    activeStayScreen: StayScreen,
+    lateCheckoutRequest: LateCheckoutRequest?,
+    lateCheckoutDraft: LateCheckoutDraft,
+    serviceRequestDraft: ServiceRequestDraftUi,
+    submittedServiceRequests: List<ServiceRequestRecord>,
     venueCategories: List<VenueCategoryPreview>,
     featuredVenues: List<PublicVenuePreview>,
     invitations: List<InvitationPreview>,
+    onBackToStayHome: () -> Unit,
+    onLateCheckoutDraftChange: (LateCheckoutDraft) -> Unit,
+    onLateCheckoutSubmit: (LateCheckoutDraft) -> Unit,
+    onServiceRequestDraftChange: (ServiceRequestDraftUi) -> Unit,
+    onServiceRequestSubmit: (ServiceRequestDraftUi) -> Unit,
+    onAccessContextSelected: (String) -> Unit,
+    onPrimaryAction: (StayPrimaryAction) -> Unit,
     onEnterCode: (String) -> Unit,
     onOpenCategory: (VenueCategoryPreview) -> Unit,
     onOpenVenue: (PublicVenuePreview) -> Unit,
     onOpenVenueMap: (PublicVenuePreview) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
     onSeeAllInvitations: () -> Unit,
-    themeMode: KazeThemeMode,
-    onThemeModeChange: (KazeThemeMode) -> Unit,
     bottomContentPadding: Dp = 20.dp,
 ) {
     var joinCode by rememberSaveable { mutableStateOf("") }
-    var showSettings by rememberSaveable { mutableStateOf(false) }
     var selectedServiceQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -53,12 +82,27 @@ internal fun HomeScreen(
         val venueColumns = if (maxWidth >= 1180.dp) 3 else if (isExpanded) 2 else 1
         val scrollState = rememberScrollState()
 
-        if (showSettings) {
-            HomeSettingsScreen(
+        if (activeStayScreen == StayScreen.LATE_CHECKOUT) {
+            LateCheckoutScreen(
+                modifier = modifier,
+                draft = lateCheckoutDraft,
+                existingRequest = lateCheckoutRequest,
+                onBack = onBackToStayHome,
+                onDraftChange = onLateCheckoutDraftChange,
+                onSubmit = { onLateCheckoutSubmit(lateCheckoutDraft) },
                 bottomContentPadding = bottomContentPadding,
-                themeMode = themeMode,
-                onThemeModeChange = onThemeModeChange,
-                onBack = { showSettings = false },
+            )
+            return@BoxWithConstraints
+        }
+
+        if (activeStayScreen == StayScreen.SERVICE_REQUEST) {
+            ServiceRequestScreen(
+                modifier = modifier,
+                draft = serviceRequestDraft,
+                onBack = onBackToStayHome,
+                onDraftChange = onServiceRequestDraftChange,
+                onSubmit = { onServiceRequestSubmit(serviceRequestDraft) },
+                bottomContentPadding = bottomContentPadding,
             )
             return@BoxWithConstraints
         }
@@ -80,8 +124,21 @@ internal fun HomeScreen(
                 .then(if (contentMaxWidth != androidx.compose.ui.unit.Dp.Unspecified) Modifier.fillMaxWidth() else Modifier),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            HomeTopBar(
-                onOpenSettings = { showSettings = true },
+            HomeTopBar()
+
+            HomeStayDashboard(
+                hotelDisplayName = hotelDisplayName,
+                guestName = guestName,
+                accessProfileLabel = accessProfileLabel,
+                accessStatusLabel = accessStatusLabel,
+                accessCard = accessCard,
+                accessContexts = accessContexts,
+                selectedAccessContextId = selectedAccessContextId,
+                stayMoments = stayMoments,
+                suggestionActivities = suggestionActivities,
+                activeRequestCount = submittedServiceRequests.size + if (lateCheckoutRequest != null) 1 else 0,
+                onAccessContextSelected = onAccessContextSelected,
+                onPrimaryAction = onPrimaryAction,
             )
 
             if (isExpanded) {

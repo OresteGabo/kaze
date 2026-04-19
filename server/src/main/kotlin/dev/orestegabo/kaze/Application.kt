@@ -4,6 +4,7 @@ import dev.orestegabo.kaze.api.configureHttp
 import dev.orestegabo.kaze.api.registerApiRoutes
 import dev.orestegabo.kaze.application.ServerDependencies
 import dev.orestegabo.kaze.di.serverModule
+import dev.orestegabo.kaze.infrastructure.initializeDatabaseSchema
 import dev.orestegabo.kaze.infrastructure.loadDatabaseConfig
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -20,6 +21,7 @@ fun main() {
 
 fun Application.module() {
     val databaseConfig = loadDatabaseConfig()
+    initializeDatabaseSchema(databaseConfig)
     install(Koin) {
         slf4jLogger()
         modules(serverModule)

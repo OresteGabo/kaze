@@ -57,6 +57,7 @@ internal fun HomeScreen(
     venueCategories: List<VenueCategoryPreview>,
     featuredVenues: List<PublicVenuePreview>,
     invitations: List<InvitationPreview>,
+    isGuestMode: Boolean,
     onBackToStayHome: () -> Unit,
     onLateCheckoutDraftChange: (LateCheckoutDraft) -> Unit,
     onLateCheckoutSubmit: (LateCheckoutDraft) -> Unit,
@@ -126,20 +127,22 @@ internal fun HomeScreen(
         ) {
             HomeTopBar()
 
-            HomeStayDashboard(
-                hotelDisplayName = hotelDisplayName,
-                guestName = guestName,
-                accessProfileLabel = accessProfileLabel,
-                accessStatusLabel = accessStatusLabel,
-                accessCard = accessCard,
-                accessContexts = accessContexts,
-                selectedAccessContextId = selectedAccessContextId,
-                stayMoments = stayMoments,
-                suggestionActivities = suggestionActivities,
-                activeRequestCount = submittedServiceRequests.size + if (lateCheckoutRequest != null) 1 else 0,
-                onAccessContextSelected = onAccessContextSelected,
-                onPrimaryAction = onPrimaryAction,
-            )
+            if (!isGuestMode) {
+                HomeStayDashboard(
+                    hotelDisplayName = hotelDisplayName,
+                    guestName = guestName,
+                    accessProfileLabel = accessProfileLabel,
+                    accessStatusLabel = accessStatusLabel,
+                    accessCard = accessCard,
+                    accessContexts = accessContexts,
+                    selectedAccessContextId = selectedAccessContextId,
+                    stayMoments = stayMoments,
+                    suggestionActivities = suggestionActivities,
+                    activeRequestCount = submittedServiceRequests.size + if (lateCheckoutRequest != null) 1 else 0,
+                    onAccessContextSelected = onAccessContextSelected,
+                    onPrimaryAction = onPrimaryAction,
+                )
+            }
 
             if (isExpanded) {
                 Row(
@@ -171,11 +174,13 @@ internal fun HomeScreen(
                 onOpenService = { serviceQuery -> selectedServiceQuery = serviceQuery },
             )
 
-            InvitationSection(
-                invitations = invitations,
-                onOpenInvitation = onOpenInvitation,
-                onSeeAll = onSeeAllInvitations,
-            )
+            if (!isGuestMode && invitations.isNotEmpty()) {
+                InvitationSection(
+                    invitations = invitations,
+                    onOpenInvitation = onOpenInvitation,
+                    onSeeAll = onSeeAllInvitations,
+                )
+            }
 
             SectionLabel("Browse venue types")
 

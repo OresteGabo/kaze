@@ -13,6 +13,7 @@ import dev.orestegabo.kaze.domain.guest.ServiceRequestDraft
 import dev.orestegabo.kaze.domain.guest.ServiceRequestType
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
+import dev.orestegabo.kaze.presentation.demo.AccessContextUi
 import dev.orestegabo.kaze.presentation.demo.RequestContactOption
 import dev.orestegabo.kaze.presentation.demo.RequestWindowOption
 import dev.orestegabo.kaze.presentation.demo.ServiceOption
@@ -21,11 +22,9 @@ import dev.orestegabo.kaze.presentation.demo.ServiceRequestRecord
 import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
 import dev.orestegabo.kaze.presentation.demo.StayScreen
 import dev.orestegabo.kaze.presentation.demo.StayTab
+import dev.orestegabo.kaze.presentation.demo.demoAccessContexts
 import dev.orestegabo.kaze.presentation.demo.requestOptions
 import dev.orestegabo.kaze.presentation.demo.sampleHotel
-import dev.orestegabo.kaze.presentation.demo.stayAccessCard
-import dev.orestegabo.kaze.presentation.demo.stayMoments
-import dev.orestegabo.kaze.presentation.demo.suggestedActivities
 import dev.orestegabo.kaze.presentation.util.runImmediateSuspend
 import dev.orestegabo.kaze.usecase.ObserveHotelContextUseCase
 import dev.orestegabo.kaze.usecase.SubmitLateCheckoutUseCase
@@ -37,22 +36,41 @@ internal class StayViewModel(
     private val stayRepository: StayRepository,
     private val submitLateCheckoutUseCase: SubmitLateCheckoutUseCase,
 ) : ViewModel() {
+    private val initialAccessContext = demoAccessContexts.first()
+
     var uiState by mutableStateOf(
         StayUiState(
-            hotelDisplayName = runImmediateSuspend { observeHotelContext(hotelId).config.displayName },
-            accessCard = stayAccessCard,
-            stayMoments = stayMoments,
-            requestOptions = requestOptions,
-            suggestionActivities = suggestedActivities,
+            hotelDisplayName = initialAccessContext.title,
+            accessProfileLabel = initialAccessContext.accessProfileLabel,
+            accessStatusLabel = initialAccessContext.statusLabel,
+            accessCard = initialAccessContext.accessCard,
+            accessContexts = demoAccessContexts,
+            selectedAccessContextId = initialAccessContext.id,
+            stayMoments = initialAccessContext.moments,
+            requestOptions = initialAccessContext.toServiceOptions(),
+            suggestionActivities = initialAccessContext.suggestions,
             guestName = "Aline",
-            accessProfileLabel = "Conference guest",
-            accessStatusLabel = "Active pass",
         ),
     )
         private set
 
     fun onTabChange(tab: StayTab) {
         uiState = uiState.copy(selectedTab = tab)
+    }
+
+    fun onAccessContextSelected(contextId: String) {
+        val context = uiState.accessContexts.firstOrNull { it.id == contextId } ?: return
+        uiState = uiState.copy(
+            hotelDisplayName = context.title,
+            accessProfileLabel = context.accessProfileLabel,
+            accessStatusLabel = context.statusLabel,
+            accessCard = context.accessCard,
+            selectedAccessContextId = context.id,
+            stayMoments = context.moments,
+            requestOptions = context.toServiceOptions(),
+            suggestionActivities = context.suggestions,
+            activeStayScreen = StayScreen.HOME,
+        )
     }
 
     fun onBackToHome() {
@@ -232,4 +250,16 @@ internal class StayViewModel(
             "Wake-up call" -> ServiceRequestType.CONCIERGE
             else -> ServiceRequestType.HOUSEKEEPING
         }
+
+    private fun AccessContextUi.toServiceOptions(): List<ServiceOption> {
+        val options = services
+            .filter { service -> service.requestable }
+            .map { service ->
+                ServiceOption(
+                    title = service.title,
+                    description = service.description,
+                )
+            }
+        return options.ifEmpty { requestOptions }
+    }
 }

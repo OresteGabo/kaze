@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze
 
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -79,5 +80,19 @@ class ApiRoutesTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("Hotel kitchen is open right now"))
+    }
+
+    @Test
+    fun api_routes_are_rate_limited_per_client() = testApplication {
+        application { module() }
+
+        val responses = (1..121).map {
+            client.get("/api/v1") {
+                header("X-Forwarded-For", "203.0.113.77")
+            }
+        }
+
+        assertEquals(HttpStatusCode.OK, responses.first().status)
+        assertEquals(HttpStatusCode.TooManyRequests, responses.last().status)
     }
 }

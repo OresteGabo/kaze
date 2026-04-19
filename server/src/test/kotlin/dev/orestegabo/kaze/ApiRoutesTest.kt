@@ -27,6 +27,16 @@ class ApiRoutesTest {
     }
 
     @Test
+    fun swagger_docs_are_available_from_backend() = testApplication {
+        application { module() }
+
+        val response = client.get("/swagger")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("Swagger UI"))
+    }
+
+    @Test
     fun hotel_endpoint_returns_seeded_hotel() = testApplication {
         application { module() }
 

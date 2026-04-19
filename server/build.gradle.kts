@@ -27,6 +27,7 @@ dependencies {
     implementation(libs.ktor.serverCompression)
     implementation(libs.ktor.serverContentNegotiation)
     implementation(libs.ktor.serverRateLimit)
+    implementation(libs.ktor.serverSwagger)
     implementation(libs.ktor.serverStatusPages)
     implementation(libs.ktor.serializationKotlinxJson)
     testImplementation(libs.ktor.serverTestHost)

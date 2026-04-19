@@ -131,14 +131,8 @@ internal fun KazeBottomBar(
     currentDestination: KazeDestination,
     onDestinationSelected: (KazeDestination) -> Unit,
     pendingInvitationCount: Int = 0,
+    destinations: List<KazeDestination> = kazePrimaryDestinations,
 ) {
-    val destinations = listOf(
-        KazeDestination.EVENTS,
-        KazeDestination.INVITATIONS,
-        KazeDestination.HOME,
-        KazeDestination.EXPLORE,
-        KazeDestination.SETTINGS,
-    )
     KazeNavigationContainer(
         modifier = modifier
             .fillMaxWidth()
@@ -295,6 +289,7 @@ internal fun KazeNavigationRail(
     currentDestination: KazeDestination,
     onDestinationSelected: (KazeDestination) -> Unit,
     pendingInvitationCount: Int = 0,
+    destinations: List<KazeDestination> = kazePrimaryDestinations,
 ) {
     KazeNavigationContainer(
         modifier = modifier
@@ -309,7 +304,7 @@ internal fun KazeNavigationRail(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            kazePrimaryDestinations.forEach { destination ->
+            destinations.forEach { destination ->
                 KazeSideNavItem(
                     destination = destination,
                     selected = currentDestination == destination,

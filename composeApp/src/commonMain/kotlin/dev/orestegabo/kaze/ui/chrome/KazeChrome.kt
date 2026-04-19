@@ -133,11 +133,11 @@ internal fun KazeBottomBar(
     pendingInvitationCount: Int = 0,
 ) {
     val destinations = listOf(
-        KazeDestination.STAY,
         KazeDestination.EVENTS,
-        KazeDestination.HOME,
         KazeDestination.INVITATIONS,
+        KazeDestination.HOME,
         KazeDestination.EXPLORE,
+        KazeDestination.SETTINGS,
     )
     KazeNavigationContainer(
         modifier = modifier
@@ -323,11 +323,11 @@ internal fun KazeNavigationRail(
 }
 
 private val kazePrimaryDestinations = listOf(
-    KazeDestination.STAY,
     KazeDestination.EVENTS,
-    KazeDestination.HOME,
     KazeDestination.INVITATIONS,
+    KazeDestination.HOME,
     KazeDestination.EXPLORE,
+    KazeDestination.SETTINGS,
 )
 
 @Composable

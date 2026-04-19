@@ -9,6 +9,8 @@
 BEGIN;
 
 TRUNCATE TABLE
+    user_auth_providers,
+    app_users,
     service_requests,
     late_checkout_requests,
     map_nodes,
@@ -26,6 +28,71 @@ TRUNCATE TABLE
     hotels,
     service_places
 RESTART IDENTITY CASCADE;
+
+INSERT INTO app_users (
+    id,
+    email,
+    display_name,
+    password_hash,
+    roles
+) VALUES (
+    'user_aline',
+    'aline@example.com',
+    'Aline Uwase',
+    '$2a$12$idtV1xjR/gPX0yHZRg9x..v.0GF3F/gQl/2LDfggOfPhI/LTqNPIm',
+    ARRAY['CUSTOMER']::TEXT[]
+),
+(
+    'user_michael',
+    'michael@example.com',
+    'Michael Nshuti',
+    '$2a$12$idtV1xjR/gPX0yHZRg9x..v.0GF3F/gQl/2LDfggOfPhI/LTqNPIm',
+    ARRAY['CUSTOMER']::TEXT[]
+),
+(
+    'user_staff_claudine',
+    'claudine.staff@example.com',
+    'Claudine Mukamana',
+    '$2a$12$idtV1xjR/gPX0yHZRg9x..v.0GF3F/gQl/2LDfggOfPhI/LTqNPIm',
+    ARRAY['STAFF']::TEXT[]
+),
+(
+    'user_admin_orest',
+    'admin@example.com',
+    'Kaze Admin',
+    '$2a$12$idtV1xjR/gPX0yHZRg9x..v.0GF3F/gQl/2LDfggOfPhI/LTqNPIm',
+    ARRAY['ADMIN', 'STAFF']::TEXT[]
+);
+
+INSERT INTO user_auth_providers (
+    user_id,
+    provider,
+    provider_subject,
+    email
+) VALUES (
+    'user_aline',
+    'PASSWORD',
+    'aline@example.com',
+    'aline@example.com'
+),
+(
+    'user_michael',
+    'PASSWORD',
+    'michael@example.com',
+    'michael@example.com'
+),
+(
+    'user_staff_claudine',
+    'PASSWORD',
+    'claudine.staff@example.com',
+    'claudine.staff@example.com'
+),
+(
+    'user_admin_orest',
+    'PASSWORD',
+    'admin@example.com',
+    'admin@example.com'
+);
 
 INSERT INTO service_places (
     id,

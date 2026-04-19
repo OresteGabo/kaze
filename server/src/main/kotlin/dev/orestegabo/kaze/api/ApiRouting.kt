@@ -1,7 +1,9 @@
 package dev.orestegabo.kaze.api
 
+import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.application.ServerDependencies
 import io.ktor.server.application.Application
+import io.ktor.server.auth.AuthenticationStrategy
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.plugins.swagger.swaggerUI
@@ -15,6 +17,7 @@ import io.ktor.server.routing.routing
 
 internal fun Application.registerApiRoutes(
     dependencies: ServerDependencies,
+    authService: AuthService,
 ) {
     routing {
         get("/") {
@@ -28,22 +31,23 @@ internal fun Application.registerApiRoutes(
         swaggerUI(path = "swagger", swaggerFile = "openapi/kaze-api.yaml")
 
         rateLimit(ApiRateLimit) {
-            if (isApiAuthenticationEnabled()) {
-                authenticate(ApiAuth) {
-                    route("/api/v1") {
-                        registerApiV1Routes(dependencies)
+            route("/api/v1") {
+                registerAuthRoutes(authService)
+                registerPublicApiV1Routes(dependencies)
+
+                if (isApiAuthenticationEnabled() || isJwtAuthenticationRequired()) {
+                    authenticate(ApiJwtAuth, ApiAuth, strategy = AuthenticationStrategy.FirstSuccessful) {
+                        registerPrivateApiV1Routes(dependencies)
                     }
-                }
-            } else {
-                route("/api/v1") {
-                    registerApiV1Routes(dependencies)
+                } else {
+                    registerPrivateApiV1Routes(dependencies)
                 }
             }
         }
     }
 }
 
-private fun Route.registerApiV1Routes(
+private fun Route.registerPublicApiV1Routes(
     dependencies: ServerDependencies,
 ) {
     get {
@@ -80,7 +84,13 @@ private fun Route.registerApiV1Routes(
             val hotelId = call.requiredParam("hotelId")
             call.respond(dependencies.assistantService.listAmenityStatuses(hotelId).map { it.toDto() })
         }
+    }
+}
 
+private fun Route.registerPrivateApiV1Routes(
+    dependencies: ServerDependencies,
+) {
+    route("/hotels/{hotelId}") {
         get("/map") {
             val hotelId = call.requiredParam("hotelId")
             val mapId = call.queryOrDefault("mapId", "temporary-svg-venue")

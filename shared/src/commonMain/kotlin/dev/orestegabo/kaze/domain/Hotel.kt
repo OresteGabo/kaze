@@ -3,15 +3,23 @@ package dev.orestegabo.kaze.domain
 import dev.orestegabo.kaze.domain.map.importing.MapImportProfile
 
 data class Hotel(
-    val id: String,
+    override val id: String,
     val slug: String,
-    val name: String,
+    override val name: String,
     val market: HotelMarket,
     val timezoneId: String,
     val config: HotelConfig,
     val campus: HotelCampus,
     val activeExperiences: Set<ExperienceMode> = emptySet(),
-)
+) : ServicePlace {
+    override val kind: ServicePlaceKind = ServicePlaceKind.HOTEL
+    override val location: ServicePlaceLocation = ServicePlaceLocation(
+        city = campus.city,
+        countryCode = campus.countryCode,
+        addressLabel = config.displayName,
+    )
+    override val serviceCatalog: List<PlaceService> = config.serviceCatalog
+}
 
 data class HotelConfig(
     val hotelId: String,
@@ -20,6 +28,7 @@ data class HotelConfig(
     val supportedLocales: List<String> = listOf("en"),
     val defaultCurrencyCode: String = "USD",
     val mapImportProfile: MapImportProfile? = null,
+    val serviceCatalog: List<PlaceService> = emptyList(),
 )
 
 data class HotelBranding(

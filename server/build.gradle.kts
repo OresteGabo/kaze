@@ -17,6 +17,8 @@ application {
 dependencies {
     implementation(projects.shared)
     implementation(libs.hikari)
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.loggerSlf4j)
     implementation(libs.logback)
     implementation(libs.postgresql)
     implementation(libs.ktor.serverCore)

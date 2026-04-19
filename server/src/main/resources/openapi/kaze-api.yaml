@@ -1,0 +1,629 @@
+openapi: 3.0.3
+info:
+  title: Kaze API
+  version: 1.0.0
+  description: Backend API for Kaze guest experiences, stays, venue maps, services, and assistant answers.
+servers:
+  - url: /api/v1
+    description: Current API version
+tags:
+  - name: System
+    description: Basic API and health status.
+  - name: Hotels
+    description: Hotel and venue discovery.
+  - name: Experiences
+    description: Event days, schedules, and highlights.
+  - name: Guests
+    description: Guest profile, itinerary, late checkout, and service requests.
+  - name: Maps
+    description: Venue map data.
+  - name: Assistant
+    description: Guest assistant answers.
+paths:
+  /:
+    get:
+      tags: [System]
+      summary: API status
+      responses:
+        "200":
+          description: API is ready.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiInfo"
+  /hotels:
+    get:
+      tags: [Hotels]
+      summary: List hotels
+      responses:
+        "200":
+          description: Hotels available in Kaze.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hotel"
+  /hotels/{hotelId}:
+    get:
+      tags: [Hotels]
+      summary: Get hotel
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+      responses:
+        "200":
+          description: Hotel details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hotel"
+  /hotels/{hotelId}/events/days:
+    get:
+      tags: [Experiences]
+      summary: List event days
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+      responses:
+        "200":
+          description: Event days for the hotel.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventDay"
+  /hotels/{hotelId}/events/schedule:
+    get:
+      tags: [Experiences]
+      summary: List scheduled experiences
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - name: dayId
+          in: query
+          required: true
+          schema:
+            type: string
+          example: day-1
+      responses:
+        "200":
+          description: Scheduled experiences for the selected day.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduledExperience"
+  /hotels/{hotelId}/explore/highlights:
+    get:
+      tags: [Experiences]
+      summary: List experience highlights
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+      responses:
+        "200":
+          description: Highlighted amenities or experiences.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmenityHighlight"
+  /hotels/{hotelId}/amenities/status:
+    get:
+      tags: [Experiences]
+      summary: List amenity statuses
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+      responses:
+        "200":
+          description: Live amenity status labels.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmenityStatus"
+  /hotels/{hotelId}/map:
+    get:
+      tags: [Maps]
+      summary: Get venue map
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - name: mapId
+          in: query
+          required: false
+          schema:
+            type: string
+            default: temporary-svg-venue
+      responses:
+        "200":
+          description: Map floors and nodes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HotelMap"
+  /hotels/{hotelId}/guests/{guestId}:
+    get:
+      tags: [Guests]
+      summary: Get guest profile
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - $ref: "#/components/parameters/GuestId"
+      responses:
+        "200":
+          description: Guest profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestProfile"
+  /hotels/{hotelId}/guests/{guestId}/itinerary:
+    get:
+      tags: [Guests]
+      summary: Get guest itinerary
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - $ref: "#/components/parameters/GuestId"
+      responses:
+        "200":
+          description: Guest itinerary grouped into tabs and sections.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Itinerary"
+  /hotels/{hotelId}/guests/{guestId}/late-checkout:
+    get:
+      tags: [Guests]
+      summary: List late checkout requests
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - $ref: "#/components/parameters/GuestId"
+      responses:
+        "200":
+          description: Late checkout request history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LateCheckoutDecision"
+    post:
+      tags: [Guests]
+      summary: Submit late checkout request
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - $ref: "#/components/parameters/GuestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LateCheckoutSubmission"
+      responses:
+        "200":
+          description: Late checkout decision receipt.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LateCheckoutDecision"
+  /hotels/{hotelId}/guests/{guestId}/service-requests:
+    get:
+      tags: [Guests]
+      summary: List service requests
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - $ref: "#/components/parameters/GuestId"
+      responses:
+        "200":
+          description: Service request history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceRequestReceipt"
+    post:
+      tags: [Guests]
+      summary: Submit service request
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+        - $ref: "#/components/parameters/GuestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceRequestSubmission"
+      responses:
+        "200":
+          description: Service request receipt.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequestReceipt"
+  /hotels/{hotelId}/assistant/query:
+    post:
+      tags: [Assistant]
+      summary: Ask the hotel assistant
+      parameters:
+        - $ref: "#/components/parameters/HotelId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantQuery"
+      responses:
+        "200":
+          description: Assistant answer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAnswer"
+components:
+  parameters:
+    HotelId:
+      name: hotelId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: rw-kgl-marriott
+    GuestId:
+      name: guestId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: guest_aline
+  schemas:
+    ApiInfo:
+      type: object
+      required: [name, status, version]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        version:
+          type: string
+    Hotel:
+      type: object
+      required: [id, slug, name, market, timezoneId, displayName, city, countryCode, supportedLocales, activeExperiences]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        market:
+          type: string
+        timezoneId:
+          type: string
+        displayName:
+          type: string
+        city:
+          type: string
+        countryCode:
+          type: string
+        supportedLocales:
+          type: array
+          items:
+            type: string
+        activeExperiences:
+          type: array
+          items:
+            type: string
+    GuestProfile:
+      type: object
+      required: [hotelId, guestId, fullName]
+      properties:
+        hotelId:
+          type: string
+        guestId:
+          type: string
+        stayId:
+          type: string
+          nullable: true
+        roomId:
+          type: string
+          nullable: true
+        fullName:
+          type: string
+    Itinerary:
+      type: object
+      required: [id, hotelId, guestId, stayWindow, tabs]
+      properties:
+        id:
+          type: string
+        hotelId:
+          type: string
+        guestId:
+          type: string
+        stayWindow:
+          $ref: "#/components/schemas/TimeWindow"
+        tabs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryTab"
+    ItineraryTab:
+      type: object
+      required: [mode, title, sections]
+      properties:
+        mode:
+          type: string
+        title:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItinerarySection"
+    ItinerarySection:
+      type: object
+      required: [id, title, items]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryItem"
+    ItineraryItem:
+      type: object
+      required: [id, title, category, status, startIsoUtc, endIsoUtc]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        startIsoUtc:
+          type: string
+          format: date-time
+        endIsoUtc:
+          type: string
+          format: date-time
+        venue:
+          $ref: "#/components/schemas/VenueRef"
+        notes:
+          type: string
+          nullable: true
+    VenueRef:
+      type: object
+      nullable: true
+      required: [nodeId, floorId, label]
+      properties:
+        nodeId:
+          type: string
+        floorId:
+          type: string
+        label:
+          type: string
+    TimeWindow:
+      type: object
+      required: [startIsoUtc, endIsoUtc]
+      properties:
+        startIsoUtc:
+          type: string
+          format: date-time
+        endIsoUtc:
+          type: string
+          format: date-time
+    EventDay:
+      type: object
+      required: [id, label, dateIso]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        dateIso:
+          type: string
+          format: date
+    ScheduledExperience:
+      type: object
+      required: [id, dayId, title, description, startIso, endIso, venueLabel]
+      properties:
+        id:
+          type: string
+        dayId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        startIso:
+          type: string
+          format: date-time
+        endIso:
+          type: string
+          format: date-time
+        venueLabel:
+          type: string
+        hostLabel:
+          type: string
+          nullable: true
+    AmenityHighlight:
+      type: object
+      required: [id, title, description, locationLabel, availabilityLabel, categoryLabel, accessLabel, actionLabel]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        locationLabel:
+          type: string
+        availabilityLabel:
+          type: string
+        categoryLabel:
+          type: string
+        accessLabel:
+          type: string
+        actionLabel:
+          type: string
+    AmenityStatus:
+      type: object
+      required: [id, title, locationLabel, statusLabel, hoursLabel, openNow]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        locationLabel:
+          type: string
+        statusLabel:
+          type: string
+        hoursLabel:
+          type: string
+        openNow:
+          type: boolean
+    HotelMap:
+      type: object
+      required: [hotelId, mapId, name, floors]
+      properties:
+        hotelId:
+          type: string
+        mapId:
+          type: string
+        name:
+          type: string
+        floors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Floor"
+    Floor:
+      type: object
+      required: [id, label, levelIndex, width, height, nodes]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        levelIndex:
+          type: integer
+          format: int32
+        width:
+          type: number
+          format: float
+        height:
+          type: number
+          format: float
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MapNode"
+    MapNode:
+      type: object
+      required: [id, label, kind, x, y]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        kind:
+          type: string
+        x:
+          type: number
+          format: float
+        y:
+          type: number
+          format: float
+    LateCheckoutSubmission:
+      type: object
+      required: [checkoutTimeIso, feeAmountMinor, currencyCode, paymentPreference, followUpPreference]
+      properties:
+        stayId:
+          type: string
+          nullable: true
+        roomId:
+          type: string
+          nullable: true
+        checkoutTimeIso:
+          type: string
+          format: date-time
+        feeAmountMinor:
+          type: integer
+          format: int64
+        currencyCode:
+          type: string
+          example: RWF
+        paymentPreference:
+          type: string
+        followUpPreference:
+          type: string
+        notes:
+          type: string
+          nullable: true
+    LateCheckoutDecision:
+      type: object
+      required: [requestId, status]
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+        approvedCheckoutTimeIso:
+          type: string
+          format: date-time
+          nullable: true
+        feeAmountMinor:
+          type: integer
+          format: int64
+          nullable: true
+        currencyCode:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+    ServiceRequestSubmission:
+      type: object
+      required: [type]
+      properties:
+        stayId:
+          type: string
+          nullable: true
+        roomId:
+          type: string
+          nullable: true
+        type:
+          type: string
+        note:
+          type: string
+          nullable: true
+    ServiceRequestReceipt:
+      type: object
+      required: [requestId, type, status]
+      properties:
+        requestId:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        note:
+          type: string
+          nullable: true
+    AssistantQuery:
+      type: object
+      required: [question]
+      properties:
+        question:
+          type: string
+    AssistantAnswer:
+      type: object
+      required: [answer, source, confidence]
+      properties:
+        answer:
+          type: string
+        source:
+          type: string
+        confidence:
+          type: string

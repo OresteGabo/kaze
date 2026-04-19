@@ -1,14 +1,18 @@
 package dev.orestegabo.kaze
 
 import io.ktor.client.request.get
+import io.ktor.client.request.head
 import io.ktor.client.request.header
+import io.ktor.client.request.options
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.testApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,6 +38,28 @@ class ApiRoutesTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("Swagger UI"))
+    }
+
+    @Test
+    fun get_routes_support_head_requests() = testApplication {
+        application { module() }
+
+        val response = client.head("/health")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    @Test
+    fun cors_preflight_allows_configured_web_hosts() = testApplication {
+        application { module() }
+
+        val response = client.options("/api/v1") {
+            header(HttpHeaders.Origin, "http://localhost:5173")
+            header(HttpHeaders.AccessControlRequestMethod, HttpMethod.Get.value)
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("http://localhost:5173", response.headers[HttpHeaders.AccessControlAllowOrigin])
     }
 
     @Test
@@ -78,6 +104,45 @@ class ApiRoutesTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("\"status\": \"PENDING\""))
+    }
+
+    @Test
+    fun late_checkout_validation_rejects_invalid_submission() = testApplication {
+        application { module() }
+
+        val response = client.post("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/late-checkout") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "checkoutTimeIso": "",
+                  "feeAmountMinor": -1,
+                  "currencyCode": "RWF",
+                  "paymentPreference": "CHARGE_TO_ROOM",
+                  "followUpPreference": "CONFIRM_IN_APP"
+                }
+                """.trimIndent(),
+            )
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("validation_error"))
+    }
+
+    @Test
+    fun api_routes_require_bearer_token_when_configured() = testApplication {
+        environment {
+            config = MapApplicationConfig("kaze.security.apiToken" to "test-token")
+        }
+        application { module() }
+
+        val unauthorizedResponse = client.get("/api/v1")
+        val authorizedResponse = client.get("/api/v1") {
+            header(HttpHeaders.Authorization, "Bearer test-token")
+        }
+
+        assertEquals(HttpStatusCode.Unauthorized, unauthorizedResponse.status)
+        assertEquals(HttpStatusCode.OK, authorizedResponse.status)
     }
 
     @Test

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MarkEmailUnread
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.orestegabo.kaze.domain.AccessCardStyle
 import dev.orestegabo.kaze.domain.DigitalAccessCard
@@ -17,7 +18,14 @@ import dev.orestegabo.kaze.domain.HotelBuilding
 import dev.orestegabo.kaze.domain.HotelCampus
 import dev.orestegabo.kaze.domain.HotelConfig
 import dev.orestegabo.kaze.domain.HotelMarket
+import dev.orestegabo.kaze.domain.PlaceService
+import dev.orestegabo.kaze.domain.PlaceServiceCategory
+import dev.orestegabo.kaze.domain.PlaceServicePricing
+import dev.orestegabo.kaze.domain.ServicePlace
+import dev.orestegabo.kaze.domain.ServicePlaceKind
+import dev.orestegabo.kaze.domain.ServicePlaceLocation
 import dev.orestegabo.kaze.domain.TypographySpec
+import dev.orestegabo.kaze.domain.VenuePlace
 import dev.orestegabo.kaze.domain.map.importing.MapImportProfile
 import dev.orestegabo.kaze.domain.map.importing.MapSourceFormat
 
@@ -31,6 +39,7 @@ internal enum class KazeDestination(
     INVITATIONS("Invites", Icons.Filled.MarkEmailUnread),
     EXPLORE("Explore", Icons.Filled.Explore),
     MAP("Map", Icons.Filled.Map),
+    SETTINGS("Settings", Icons.Filled.Settings),
 }
 
 internal data class VenueCategoryPreview(
@@ -92,6 +101,19 @@ internal data class ServiceOption(
     val title: String,
     val description: String,
     val isCustom: Boolean = false,
+)
+
+internal data class AccessContextUi(
+    val id: String,
+    val place: ServicePlace,
+    val title: String,
+    val subtitle: String,
+    val statusLabel: String,
+    val accessProfileLabel: String,
+    val accessCard: DigitalAccessCard?,
+    val services: List<PlaceService>,
+    val moments: List<StayMoment>,
+    val suggestions: List<ExploreHighlight>,
 )
 
 internal data class ServiceRequestDraftUi(
@@ -298,6 +320,104 @@ internal val requestOptions = listOf(
     ServiceOption("Concierge help", "Ask for transport, reservations, or local assistance."),
     ServiceOption("Late checkout", "Stay a little longer before checkout."),
     ServiceOption("Custom request", "Ask for something else.", isCustom = true),
+)
+
+internal val hotelServiceCatalog = listOf(
+    PlaceService(
+        id = "hotel_route",
+        title = "Open route",
+        description = "Navigate to your room, meeting area, spa, restaurant, or next hotel destination.",
+        category = PlaceServiceCategory.ROUTE,
+        pricing = PlaceServicePricing.Included,
+    ),
+    PlaceService(
+        id = "hotel_folio",
+        title = "My charges",
+        description = "Review active room charges and stay folio details.",
+        category = PlaceServiceCategory.FOLIO,
+        pricing = PlaceServicePricing.Included,
+    ),
+    PlaceService(
+        id = "late_checkout",
+        title = "Late checkout",
+        description = "Request extra time before leaving the room.",
+        category = PlaceServiceCategory.CHECKOUT,
+        pricing = PlaceServicePricing.Paid("From RWF 35,000"),
+    ),
+) + requestOptions.take(5).mapIndexed { index, option ->
+    PlaceService(
+        id = "hotel_request_${index + 1}",
+        title = option.title,
+        description = option.description,
+        category = when (option.title) {
+            "Bottled water" -> PlaceServiceCategory.DRINK
+            "In-room dining" -> PlaceServiceCategory.FOOD
+            else -> PlaceServiceCategory.ROOM_CARE
+        },
+        pricing = PlaceServicePricing.Included,
+    )
+}
+
+internal val conferenceServiceCatalog = listOf(
+    PlaceService(
+        id = "conference_entry",
+        title = "Conference entry",
+        description = "Show your pass at the summit entrance and session checkpoints.",
+        category = PlaceServiceCategory.ACCESS,
+        pricing = PlaceServicePricing.Included,
+    ),
+    PlaceService(
+        id = "conference_route",
+        title = "Route to session",
+        description = "Navigate to the next ballroom or breakout room.",
+        category = PlaceServiceCategory.ROUTE,
+        pricing = PlaceServicePricing.Included,
+    ),
+    PlaceService(
+        id = "conference_water",
+        title = "Water station",
+        description = "Find included water stations linked to the event.",
+        category = PlaceServiceCategory.DRINK,
+        pricing = PlaceServicePricing.Free,
+    ),
+    PlaceService(
+        id = "conference_lunch",
+        title = "Lunch voucher",
+        description = "Use the meal benefit included with your attendee pass.",
+        category = PlaceServiceCategory.FOOD,
+        pricing = PlaceServicePricing.Included,
+    ),
+)
+
+internal val weddingVenueServiceCatalog = listOf(
+    PlaceService(
+        id = "wedding_access",
+        title = "Guest access",
+        description = "Show your invitation pass at the ceremony or reception entrance.",
+        category = PlaceServiceCategory.ACCESS,
+        pricing = PlaceServicePricing.Included,
+    ),
+    PlaceService(
+        id = "wedding_route",
+        title = "Route to venue",
+        description = "Navigate to the ceremony, garden, or reception hall.",
+        category = PlaceServiceCategory.ROUTE,
+        pricing = PlaceServicePricing.Included,
+    ),
+    PlaceService(
+        id = "wedding_dinner",
+        title = "Dinner service",
+        description = "Meal access and dietary notes for invited guests.",
+        category = PlaceServiceCategory.FOOD,
+        pricing = PlaceServicePricing.Included,
+    ),
+    PlaceService(
+        id = "wedding_parking",
+        title = "Parking support",
+        description = "Ask staff for parking or pickup-zone guidance.",
+        category = PlaceServiceCategory.SUPPORT,
+        pricing = PlaceServicePricing.Free,
+    ),
 )
 
 internal val lateCheckoutOptions = listOf(
@@ -563,6 +683,7 @@ internal val sampleHotel = Hotel(
                 MapSourceFormat.GBXML,
             ),
         ),
+        serviceCatalog = hotelServiceCatalog,
     ),
     campus = HotelCampus(
         city = "Kigali",
@@ -580,5 +701,87 @@ internal val sampleHotel = Hotel(
         ExperienceMode.EVENT,
         ExperienceMode.EXPLORE,
         ExperienceMode.SERVICE_REQUESTS,
+    ),
+)
+
+internal val summitConferenceVenue = VenuePlace(
+    id = "venue-east-africa-finance-summit",
+    name = "East Africa Finance Summit",
+    kind = ServicePlaceKind.CONFERENCE_VENUE,
+    location = ServicePlaceLocation(
+        city = "Kigali",
+        countryCode = "RW",
+        addressLabel = "Great Rift Ballroom, Kigali Marriott",
+        mapId = "temporary-svg-venue",
+    ),
+    serviceCatalog = conferenceServiceCatalog,
+)
+
+internal val umucyoWeddingVenue = VenuePlace(
+    id = "venue-umucyo-garden",
+    name = "Umucyo Garden Venue",
+    kind = ServicePlaceKind.WEDDING_VENUE,
+    location = ServicePlaceLocation(
+        city = "Kigali",
+        countryCode = "RW",
+        addressLabel = "Nyarutarama Garden",
+        mapId = "green-hill-garden",
+    ),
+    serviceCatalog = weddingVenueServiceCatalog,
+)
+
+internal val demoAccessContexts = listOf(
+    AccessContextUi(
+        id = "context-marriott-stay",
+        place = sampleHotel,
+        title = sampleHotel.config.displayName,
+        subtitle = "Hotel stay and guest services",
+        statusLabel = "Active stay",
+        accessProfileLabel = "Hotel guest",
+        accessCard = stayAccessCard,
+        services = sampleHotel.serviceCatalog,
+        moments = stayMoments,
+        suggestions = suggestedActivities,
+    ),
+    AccessContextUi(
+        id = "context-finance-summit",
+        place = summitConferenceVenue,
+        title = summitConferenceVenue.name,
+        subtitle = "Conference pass and attendee benefits",
+        statusLabel = "Today • 09:00-17:30",
+        accessProfileLabel = "Conference attendee",
+        accessCard = stayAccessCard.copy(
+            id = "pass_summit_7720",
+            subtitle = "Attendee access",
+            contextLabel = "Conference attendee",
+            primaryAccessRef = "Ballroom / Breakouts / Lunch",
+            linkedAccess = listOf("Summit Entry", "Breakout Rooms", "Lunch Voucher", "Water Stations"),
+        ),
+        services = summitConferenceVenue.serviceCatalog,
+        moments = stayMoments.take(1),
+        suggestions = suggestedActivities.take(2),
+    ),
+    AccessContextUi(
+        id = "context-umucyo-wedding",
+        place = umucyoWeddingVenue,
+        title = umucyoWeddingVenue.name,
+        subtitle = "Wedding invitation and venue access",
+        statusLabel = "Today • 18:30",
+        accessProfileLabel = "Invited guest",
+        accessCard = stayAccessCard.copy(
+            id = "pass_wedding_1938",
+            title = "Wedding Pass",
+            subtitle = "Ceremony and reception access",
+            contextLabel = "Wedding guest",
+            primaryAccessRef = "Garden / Reception / Dinner",
+            linkedAccess = listOf("Ceremony Access", "Reception Access", "Dinner Service", "Parking Support"),
+            style = AccessCardStyle.EventSignature(
+                eventLabel = "Umucyo Wedding",
+                accentHex = "#F6C177",
+            ),
+        ),
+        services = umucyoWeddingVenue.serviceCatalog,
+        moments = stayMoments.drop(1).take(1),
+        suggestions = suggestedActivities.drop(2).take(2),
     ),
 )

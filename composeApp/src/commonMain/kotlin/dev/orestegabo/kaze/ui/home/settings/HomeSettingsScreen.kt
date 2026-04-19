@@ -4,12 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,13 +26,15 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.getPlatform
 import dev.orestegabo.kaze.theme.KazeThemeMode
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
-import dev.orestegabo.kaze.ui.components.MetaPill
+import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 
 @Composable
 internal fun HomeSettingsScreen(
     bottomContentPadding: Dp,
     themeMode: KazeThemeMode,
+    sessionLabel: String,
     onThemeModeChange: (KazeThemeMode) -> Unit,
+    onLogout: () -> Unit,
     onBack: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -110,6 +113,19 @@ internal fun HomeSettingsScreen(
                     )
                 }
             }
+        }
+
+        SettingsCard(
+            title = "Session",
+            subtitle = sessionLabel,
+            icon = Icons.AutoMirrored.Filled.Logout,
+        ) {
+            KazeSecondaryButton(
+                label = "Log out",
+                onClick = onLogout,
+                leadingIcon = Icons.AutoMirrored.Filled.Logout,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         SettingsGroup.entries.forEach { group ->

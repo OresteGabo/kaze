@@ -4,6 +4,10 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.plugins.compression.Compression
+import io.ktor.server.plugins.compression.deflate
+import io.ktor.server.plugins.compression.gzip
+import io.ktor.server.plugins.compression.minimumSize
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.ratelimit.RateLimitName
@@ -16,6 +20,16 @@ import kotlin.time.Duration.Companion.minutes
 internal val ApiRateLimit = RateLimitName("api")
 
 internal fun Application.configureHttp() {
+    install(Compression) {
+        gzip {
+            priority = 1.0
+            minimumSize(API_COMPRESSION_MIN_BYTES)
+        }
+        deflate {
+            priority = 0.8
+            minimumSize(API_COMPRESSION_MIN_BYTES)
+        }
+    }
     install(ContentNegotiation) {
         json(
             Json {
@@ -54,6 +68,7 @@ internal fun Application.configureHttp() {
 internal class ApiNotFoundException(message: String) : RuntimeException(message)
 
 private const val API_RATE_LIMIT_REQUESTS = 120
+private const val API_COMPRESSION_MIN_BYTES = 256L
 private val API_RATE_LIMIT_WINDOW = 1.minutes
 
 @Serializable

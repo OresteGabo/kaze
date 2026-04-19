@@ -1,5 +1,7 @@
 package dev.orestegabo.kaze
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.request.get
 import io.ktor.client.request.head
 import io.ktor.client.request.header
@@ -17,6 +19,8 @@ import io.ktor.server.testing.testApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import java.time.Instant
+import java.util.Date
 
 class ApiRoutesTest {
 
@@ -136,13 +140,99 @@ class ApiRoutesTest {
         }
         application { module() }
 
-        val unauthorizedResponse = client.get("/api/v1")
-        val authorizedResponse = client.get("/api/v1") {
+        val unauthorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary")
+        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary") {
             header(HttpHeaders.Authorization, "Bearer test-token")
         }
 
         assertEquals(HttpStatusCode.Unauthorized, unauthorizedResponse.status)
         assertEquals(HttpStatusCode.OK, authorizedResponse.status)
+    }
+
+    @Test
+    fun api_routes_accept_jwt_when_required() = testApplication {
+        environment {
+            config = MapApplicationConfig(
+                "kaze.security.jwt.requireForApi" to "true",
+                "kaze.security.jwt.secret" to TEST_JWT_SECRET,
+            )
+        }
+        application { module() }
+
+        val unauthorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary")
+        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary") {
+            header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
+        }
+
+        assertEquals(HttpStatusCode.Unauthorized, unauthorizedResponse.status)
+        assertEquals(HttpStatusCode.OK, authorizedResponse.status)
+    }
+
+    @Test
+    fun guest_mode_can_see_basic_public_info_when_jwt_is_required() = testApplication {
+        environment {
+            config = MapApplicationConfig(
+                "kaze.security.jwt.requireForApi" to "true",
+                "kaze.security.jwt.secret" to TEST_JWT_SECRET,
+            )
+        }
+        application { module() }
+
+        val apiResponse = client.get("/api/v1")
+        val hotelsResponse = client.get("/api/v1/hotels")
+        val hotelResponse = client.get("/api/v1/hotels/rw-kgl-marriott")
+        val eventDaysResponse = client.get("/api/v1/hotels/rw-kgl-marriott/events/days")
+        val itineraryResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary")
+
+        assertEquals(HttpStatusCode.OK, apiResponse.status)
+        assertEquals(HttpStatusCode.OK, hotelsResponse.status)
+        assertEquals(HttpStatusCode.OK, hotelResponse.status)
+        assertEquals(HttpStatusCode.OK, eventDaysResponse.status)
+        assertEquals(HttpStatusCode.Unauthorized, itineraryResponse.status)
+    }
+
+    @Test
+    fun auth_me_returns_jwt_claims() = testApplication {
+        environment {
+            config = MapApplicationConfig("kaze.security.jwt.secret" to TEST_JWT_SECRET)
+        }
+        application { module() }
+
+        val response = client.get("/api/v1/auth/me") {
+            header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("\"email\": \"aline@example.com\""))
+        assertTrue(response.bodyAsText().contains("CUSTOMER"))
+    }
+
+    @Test
+    fun auth_logout_accepts_jwt_and_returns_logout_instruction() = testApplication {
+        environment {
+            config = MapApplicationConfig("kaze.security.jwt.secret" to TEST_JWT_SECRET)
+        }
+        application { module() }
+
+        val response = client.post("/api/v1/auth/logout") {
+            header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("signed_out"))
+    }
+
+    @Test
+    fun google_signin_requires_client_id_configuration() = testApplication {
+        application { module() }
+
+        val response = client.post("/api/v1/auth/google") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"idToken":"not-a-real-token"}""")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("google_auth_not_configured"))
     }
 
     @Test
@@ -183,5 +273,22 @@ class ApiRoutesTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals("gzip", response.headers[HttpHeaders.ContentEncoding])
+    }
+
+    private fun testJwt(): String {
+        val now = Instant.now()
+        return JWT.create()
+            .withIssuer("kaze-api")
+            .withAudience("kaze-mobile")
+            .withSubject("user_aline")
+            .withClaim("email", "aline@example.com")
+            .withClaim("roles", listOf("CUSTOMER"))
+            .withIssuedAt(Date.from(now))
+            .withExpiresAt(Date.from(now.plusSeconds(3600)))
+            .sign(Algorithm.HMAC256(TEST_JWT_SECRET))
+    }
+
+    private companion object {
+        const val TEST_JWT_SECRET = "test-jwt-secret-that-is-long-enough-for-hmac"
     }
 }

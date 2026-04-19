@@ -45,6 +45,96 @@ Status guide:
 - [ ] localization strategy
 - [ ] tablet layout refinement
 
+## Feature Roadmap: Edge AI
+
+Kaze can use Edge AI to deliver premium hospitality intelligence without creating API costs, requiring constant internet, or sending sensitive guest data to third-party cloud services. These features should run on-device in the KMP app, with the Ktor backend receiving only the final user-approved output when upload or sync is needed.
+
+Technical Implementation:
+Use Gemma 4 E2B as the target on-device model family for efficient local inference. The implementation should prefer quantized model builds, small task-specific prompts, streaming where useful, strict output schemas, and fallback deterministic parsers for low-power or budget smartphones. Heavy processing should run only on user action, charging/Wi-Fi-friendly windows, or small batches to protect battery, RAM, and CPU.
+
+Privacy & Cost:
+These tasks are designed for zero API cost and offline-first execution. Voice notes, photos, handwritten cards, guest names, and event details should stay on the device during AI processing. Kaze should sync only structured, reviewed, and user-approved results.
+
+### 🎙️ Smart RSVP Voice-to-Data
+
+Status: `[ ]` Planned
+
+Description:
+Convert local voice recordings from organizers, hosts, or staff into structured RSVP data. For example, a spoken note like “Claudine and Eric are coming, two seats, vegetarian meal, phone number...” becomes validated JSON for the invitation list.
+
+Why it matters:
+Many event organizers collect guest details through voice notes, WhatsApp calls, or informal conversations. Turning speech into clean local data reduces manual typing, prevents mistakes, and works even when the organizer has poor connectivity.
+
+### 🧭 Offline Event Concierge
+
+Status: `[ ]` Planned
+
+Description:
+Provide an on-device assistant that answers schedule, venue, access, and FAQ questions from cached event data. Guests can ask where a session is, when dinner starts, or whether a room is included in their pass without needing the internet.
+
+Why it matters:
+Hotels, weddings, and conferences often have weak indoor connectivity. Offline answers keep guests oriented, reduce staff interruptions, and make Kaze useful even in low-network environments.
+
+### 🛡️ Local Privacy Shield
+
+Status: `[ ]` Planned
+
+Description:
+Detect faces in photos locally and blur guests who have not opted in before any upload, sharing, or gallery sync. This should run as a pre-upload safety step for event photos, organizer media, and venue documentation.
+
+Why it matters:
+Private events need trust. Local face detection and blur protects guests before data leaves the phone, reducing privacy risk for weddings, conferences, VIP events, and family celebrations.
+
+### 🖼️ Intelligent Photo Culling
+
+Status: `[ ]` Planned
+
+Description:
+Suggest deleting blurry, accidental, or duplicate photos directly on-device before upload. Kaze can group near-duplicates, mark low-quality shots, and let the user approve what to keep.
+
+Why it matters:
+Event media can become expensive fast. Local photo culling saves device space, reduces backend storage, lowers upload data usage, and helps users on expensive mobile data avoid unnecessary costs.
+
+### ✍️ Multimodal Thank-You Assistant
+
+Status: `[ ]` Planned
+
+Description:
+Use local OCR and multimodal understanding to scan handwritten cards, gift notes, and guest messages into a digital checklist. The app can help organizers track who gave what, who needs a thank-you message, and which notes still need review.
+
+Why it matters:
+After weddings, birthdays, and private events, hosts often manage handwritten notes manually. Turning cards into a private checklist saves time while keeping personal messages on-device.
+
+### 🪪 Offline Pass Explainer
+
+Status: `[ ]` Suggested
+
+Description:
+Explain what a guest pass allows using locally cached entitlement data. Guests can ask “Can I enter the ballroom?” or “Is breakfast included?” and receive an answer based on their pass, event, venue, and service rules.
+
+Why it matters:
+Access rules can be confusing when one person has multiple events, rooms, or service packages. A local pass explainer reduces confusion without exposing private entitlements to a cloud AI service.
+
+### 🌍 Low-Data Translation Helper
+
+Status: `[ ]` Suggested
+
+Description:
+Translate key event instructions, venue directions, service labels, and guest messages locally between supported languages. Keep translation short, cached, and focused on practical hospitality phrases.
+
+Why it matters:
+Kaze can support international guests and Rwandan multilingual use cases without paying per-translation API fees or requiring a strong connection.
+
+### 🧾 Local Expense And Receipt Summaries
+
+Status: `[ ]` Suggested
+
+Description:
+Summarize local receipts, deposits, add-on services, and event costs from photos or manually entered notes into a simple checklist before backend sync.
+
+Why it matters:
+Organizers and guests often track payments across mobile money, cash, cards, and bank slips. Local summaries help users stay organized while keeping financial images private unless they choose to upload them.
+
 ## Service Requests
 
 - [x] request catalog UI

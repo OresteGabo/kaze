@@ -1,5 +1,11 @@
 package dev.orestegabo.kaze.api
 
+import dev.orestegabo.kaze.auth.AuthProblemException
+import dev.orestegabo.kaze.auth.AuthService
+import dev.orestegabo.kaze.auth.AuthSigninRequest
+import dev.orestegabo.kaze.auth.AuthSignupRequest
+import dev.orestegabo.kaze.auth.SocialSigninRequest
+import dev.orestegabo.kaze.auth.loadJwtConfig
 import io.ktor.http.CacheControl
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -10,6 +16,8 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.bearer
 import io.ktor.server.plugins.autohead.AutoHeadResponse
@@ -41,9 +49,11 @@ import kotlin.time.Duration.Companion.minutes
 
 internal val ApiRateLimit = RateLimitName("api")
 internal const val ApiAuth = "api-bearer"
+internal const val ApiJwtAuth = "api-jwt"
 
-internal fun Application.configureHttp() {
+internal fun Application.configureHttp(authService: AuthService) {
     val securityConfig = loadApiSecurityConfig()
+    val jwtConfig = loadJwtConfig()
 
     install(ForwardedHeaders)
     install(XForwardedHeaders)
@@ -110,8 +120,38 @@ internal fun Application.configureHttp() {
                     ?.let { UserIdPrincipal("api-client") }
             }
         }
+        jwt(ApiJwtAuth) {
+            realm = jwtConfig.realm
+            verifier(authService.verifier())
+            validate { credential ->
+                credential.payload.subject
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { JWTPrincipal(credential.payload) }
+            }
+        }
     }
     install(RequestValidation) {
+        validate<AuthSignupRequest> { request ->
+            when {
+                request.email.isBlank() -> ValidationResult.Invalid("email is required")
+                request.password.length < AUTH_PASSWORD_MIN_LENGTH ->
+                    ValidationResult.Invalid("password must be at least $AUTH_PASSWORD_MIN_LENGTH characters")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<AuthSigninRequest> { request ->
+            when {
+                request.email.isBlank() -> ValidationResult.Invalid("email is required")
+                request.password.isBlank() -> ValidationResult.Invalid("password is required")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<SocialSigninRequest> { request ->
+            when {
+                request.idToken.isBlank() -> ValidationResult.Invalid("idToken is required")
+                else -> ValidationResult.Valid
+            }
+        }
         validate<LateCheckoutSubmissionRequest> { request ->
             when {
                 request.checkoutTimeIso.isBlank() -> ValidationResult.Invalid("checkoutTimeIso is required")
@@ -153,6 +193,9 @@ internal fun Application.configureHttp() {
         exception<ApiNotFoundException> { call, cause ->
             call.respond(HttpStatusCode.NotFound, ApiProblem("not_found", cause.message ?: "Resource not found"))
         }
+        exception<AuthProblemException> { call, cause ->
+            call.respond(cause.status, ApiProblem(cause.code, cause.message))
+        }
         exception<RequestValidationException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, ApiProblem("validation_error", cause.reasons.joinToString("; ")))
         }
@@ -168,6 +211,8 @@ internal fun Application.configureHttp() {
 internal class ApiNotFoundException(message: String) : RuntimeException(message)
 
 internal fun Application.isApiAuthenticationEnabled(): Boolean = loadApiSecurityConfig().apiToken != null
+
+internal fun Application.isJwtAuthenticationRequired(): Boolean = loadJwtConfig().requireJwtForApi
 
 private fun Application.loadApiSecurityConfig(): ApiSecurityConfig =
     ApiSecurityConfig(
@@ -191,6 +236,7 @@ private data class ApiSecurityConfig(
 
 private const val API_RATE_LIMIT_REQUESTS = 120
 private const val API_COMPRESSION_MIN_BYTES = 256L
+private const val AUTH_PASSWORD_MIN_LENGTH = 8
 private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
 private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500
 private const val CORS_PREFLIGHT_CACHE_SECONDS = 3_600L

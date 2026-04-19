@@ -20,3 +20,8 @@ node_modules/
 /out/
 /docs/latex/out/
 /docs/latex/.latex-build/
+
+# Runtime logs
+*.log
+logs/
+**/logs/

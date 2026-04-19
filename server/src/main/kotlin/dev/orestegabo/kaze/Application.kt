@@ -2,6 +2,8 @@ package dev.orestegabo.kaze
 
 import dev.orestegabo.kaze.api.configureHttp
 import dev.orestegabo.kaze.api.registerApiRoutes
+import dev.orestegabo.kaze.auth.AuthService
+import dev.orestegabo.kaze.auth.loadJwtConfig
 import dev.orestegabo.kaze.application.ServerDependencies
 import dev.orestegabo.kaze.di.serverModule
 import dev.orestegabo.kaze.infrastructure.initializeDatabaseSchema
@@ -21,13 +23,15 @@ fun main() {
 
 fun Application.module() {
     val databaseConfig = loadDatabaseConfig()
+    val jwtConfig = loadJwtConfig()
     initializeDatabaseSchema(databaseConfig)
     install(Koin) {
         slf4jLogger()
-        modules(serverModule)
+        modules(serverModule(databaseConfig, jwtConfig))
     }
     val dependencies = get<ServerDependencies>()
-    configureHttp()
-    registerApiRoutes(dependencies)
+    val authService = get<AuthService>()
+    configureHttp(authService)
+    registerApiRoutes(dependencies, authService)
     environment.log.info("Kaze database configured for {}", databaseConfig.jdbcUrl)
 }

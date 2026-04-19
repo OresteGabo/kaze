@@ -12,6 +12,7 @@ internal data class DatabaseConfig(
     val user: String,
     val password: String,
     val maximumPoolSize: Int,
+    val schemaMode: DatabaseSchemaMode,
 ) {
     val jdbcUrl: String
         get() = "jdbc:postgresql://$host:$port/$name"
@@ -26,6 +27,11 @@ internal fun Application.loadDatabaseConfig(): DatabaseConfig =
         user = environment.config.propertyOrNull("kaze.database.user")?.getString() ?: "postgres",
         password = environment.config.propertyOrNull("kaze.database.password")?.getString() ?: "Muhirehonore@1*",
         maximumPoolSize = environment.config.propertyOrNull("kaze.database.maximumPoolSize")?.getString()?.toInt() ?: 10,
+        schemaMode = DatabaseSchemaMode.fromConfig(
+            System.getenv("KAZE_DB_SCHEMA_MODE")
+                ?: System.getProperty("kaze.database.schema.mode")
+                ?: environment.config.propertyOrNull("kaze.database.schema.mode")?.getString(),
+        ),
     )
 
 internal fun DatabaseConfig.createDataSource(): HikariDataSource =
@@ -40,3 +46,24 @@ internal fun DatabaseConfig.createDataSource(): HikariDataSource =
             validate()
         },
     )
+
+internal enum class DatabaseSchemaMode {
+    NONE,
+    CREATE,
+    DROP,
+    CREATE_DROP,
+    ;
+
+    companion object {
+        fun fromConfig(value: String?): DatabaseSchemaMode =
+            when (value?.trim()?.lowercase()) {
+                null, "", "none", "off", "false" -> NONE
+                "create", "update" -> CREATE
+                "drop" -> DROP
+                "create-drop", "create_drop" -> CREATE_DROP
+                else -> error(
+                    "Unsupported database schema mode '$value'. Use none, create, drop, or create-drop.",
+                )
+            }
+    }
+}

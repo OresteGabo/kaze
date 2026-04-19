@@ -6,6 +6,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
@@ -94,5 +95,18 @@ class ApiRoutesTest {
 
         assertEquals(HttpStatusCode.OK, responses.first().status)
         assertEquals(HttpStatusCode.TooManyRequests, responses.last().status)
+    }
+
+    @Test
+    fun api_responses_are_gzip_compressed_when_supported() = testApplication {
+        application { module() }
+
+        val response = client.get("/api/v1/hotels/rw-kgl-marriott") {
+            header(HttpHeaders.AcceptEncoding, "gzip")
+            header("X-Forwarded-For", "203.0.113.88")
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("gzip", response.headers[HttpHeaders.ContentEncoding])
     }
 }

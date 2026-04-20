@@ -9,6 +9,9 @@
 BEGIN;
 
 TRUNCATE TABLE
+    auth_one_time_login_tokens,
+    auth_refresh_tokens,
+    oauth_login_attempts,
     user_auth_providers,
     app_users,
     service_requests,

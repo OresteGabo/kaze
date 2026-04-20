@@ -4,5 +4,25 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Kaze connects to your local development backend while testing on this iPhone.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>dev.orestegabo.kaze.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kaze</string>
+			</array>
+		</dict>
+	</array>
+	<key>KAZE_API_BASE_URL</key>
+	<string>$(KAZE_API_BASE_URL)</string>
 </dict>
 </plist>

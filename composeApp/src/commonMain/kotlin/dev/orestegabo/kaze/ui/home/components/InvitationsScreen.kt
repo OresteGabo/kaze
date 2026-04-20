@@ -53,6 +53,12 @@ import dev.orestegabo.kaze.ui.home.invitations.InvitationTheme
 import dev.orestegabo.kaze.ui.home.invitations.InvitationThemeCategory
 import dev.orestegabo.kaze.ui.home.invitations.resolveInvitationTheme
 import dev.orestegabo.kaze.ui.home.invitations.themesForEventType
+import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
+import kaze.composeapp.generated.resources.Res
+import kaze.composeapp.generated.resources.empty_invitations_action
+import kaze.composeapp.generated.resources.empty_invitations_subtitle
+import kaze.composeapp.generated.resources.empty_invitations_title
+import org.jetbrains.compose.resources.stringResource
 import kotlin.random.Random
 
 @Composable
@@ -144,7 +150,15 @@ internal fun InvitationsScreen(
         }
 
         if (visibleInvitations.isEmpty()) {
-            EmptyInvitationsCard()
+            KazeEmptyStateScreen(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp),
+                title = stringResource(Res.string.empty_invitations_title),
+                subtitle = stringResource(Res.string.empty_invitations_subtitle),
+                actionLabel = stringResource(Res.string.empty_invitations_action),
+                onAction = { isCreatingInvitation = true },
+            )
         } else {
             SectionLabel("Active")
             activeInvitations.forEach { invitation ->

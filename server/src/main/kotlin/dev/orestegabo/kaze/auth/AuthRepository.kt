@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze.auth
 
 import java.sql.ResultSet
+import java.time.Instant
 import javax.sql.DataSource
 
 internal interface AuthRepository {
@@ -14,6 +15,23 @@ internal interface AuthRepository {
     ): StoredAuthUser
 
     fun upsertExternalUser(identity: ExternalIdentity): StoredAuthUser
+    fun createOAuthAttempt(attempt: OAuthLoginAttempt, expiresAt: Instant)
+    fun consumeOAuthAttempt(provider: AuthProvider, state: String): OAuthLoginAttempt?
+    fun createOneTimeLoginToken(userId: String, tokenHash: String, expiresAt: Instant)
+    fun claimOneTimeLoginToken(tokenHash: String): StoredAuthUser?
+    fun createRefreshToken(
+        userId: String,
+        tokenHash: String,
+        familyId: String,
+        deviceId: String?,
+        deviceLabel: String?,
+        expiresAt: Instant,
+    ): StoredRefreshToken
+
+    fun findActiveRefreshToken(tokenHash: String): StoredRefreshToken?
+    fun revokeRefreshToken(tokenId: String, replacedByTokenId: String? = null)
+    fun revokeRefreshTokenFamily(familyId: String)
+    fun findById(userId: String): StoredAuthUser?
 }
 
 internal data class StoredAuthUser(
@@ -75,7 +93,14 @@ internal class JdbcAuthRepository(
                     roles = roles,
                     connection = connection,
                 )
-                insertProvider(user.user.id, AuthProvider.PASSWORD, user.user.email, user.user.email, connection)
+                insertProvider(
+                    userId = user.user.id,
+                    provider = AuthProvider.PASSWORD,
+                    providerSubject = user.user.email,
+                    email = user.user.email,
+                    emailVerified = true,
+                    connection = connection,
+                )
                 connection.commit()
                 user
             } catch (cause: Throwable) {
@@ -102,6 +127,9 @@ internal class JdbcAuthRepository(
                         provider = identity.provider,
                         providerSubject = identity.providerSubject,
                         email = identity.email,
+                        emailVerified = identity.emailVerified,
+                        displayName = identity.displayName,
+                        avatarUrl = identity.avatarUrl,
                         connection = connection,
                     )
                     connection.commit()
@@ -136,17 +164,237 @@ internal class JdbcAuthRepository(
             }
         }
 
+    override fun createOAuthAttempt(attempt: OAuthLoginAttempt, expiresAt: Instant) {
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                INSERT INTO oauth_login_attempts (
+                    id, provider, state_hash, code_verifier_hash, code_verifier, nonce_hash, nonce, app_redirect_uri, expires_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, attempt.id)
+                statement.setString(2, attempt.provider.name)
+                statement.setString(3, secureHash(attempt.state))
+                statement.setString(4, secureHash(attempt.codeVerifier))
+                statement.setString(5, attempt.codeVerifier)
+                statement.setString(6, secureHash(attempt.nonce))
+                statement.setString(7, attempt.nonce)
+                statement.setString(8, attempt.appRedirectUri)
+                statement.setObject(9, expiresAt)
+                statement.executeUpdate()
+            }
+        }
+    }
+
+    override fun consumeOAuthAttempt(provider: AuthProvider, state: String): OAuthLoginAttempt? =
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            try {
+                val attempt = connection.prepareStatement(
+                    """
+                    SELECT id, provider, state_hash, code_verifier, nonce, app_redirect_uri
+                    FROM oauth_login_attempts
+                    WHERE provider = ?
+                      AND state_hash = ?
+                      AND consumed_at IS NULL
+                      AND expires_at > now()
+                    FOR UPDATE
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, provider.name)
+                    statement.setString(2, secureHash(state))
+                    statement.executeQuery().use { result ->
+                        if (result.next()) {
+                            OAuthLoginAttempt(
+                                id = result.getString("id"),
+                                provider = AuthProvider.valueOf(result.getString("provider")),
+                                state = state,
+                                codeVerifier = result.getString("code_verifier"),
+                                nonce = result.getString("nonce"),
+                                appRedirectUri = result.getString("app_redirect_uri"),
+                            )
+                        } else {
+                            null
+                        }
+                    }
+                }
+                if (attempt != null) {
+                    connection.prepareStatement(
+                        "UPDATE oauth_login_attempts SET consumed_at = now() WHERE id = ?",
+                    ).use { statement ->
+                        statement.setString(1, attempt.id)
+                        statement.executeUpdate()
+                    }
+                }
+                connection.commit()
+                attempt
+            } catch (cause: Throwable) {
+                connection.rollback()
+                throw cause
+            }
+        }
+
+    override fun createOneTimeLoginToken(userId: String, tokenHash: String, expiresAt: Instant) {
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                INSERT INTO auth_one_time_login_tokens (user_id, token_hash, expires_at)
+                VALUES (?, ?, ?)
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.setString(2, tokenHash)
+                statement.setObject(3, expiresAt)
+                statement.executeUpdate()
+            }
+        }
+    }
+
+    override fun claimOneTimeLoginToken(tokenHash: String): StoredAuthUser? =
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            try {
+                val userId = connection.prepareStatement(
+                    """
+                    SELECT user_id
+                    FROM auth_one_time_login_tokens
+                    WHERE token_hash = ?
+                      AND consumed_at IS NULL
+                      AND expires_at > now()
+                    FOR UPDATE
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, tokenHash)
+                    statement.executeQuery().use { result ->
+                        if (result.next()) result.getString("user_id") else null
+                    }
+                }
+                if (userId != null) {
+                    connection.prepareStatement(
+                        "UPDATE auth_one_time_login_tokens SET consumed_at = now() WHERE token_hash = ?",
+                    ).use { statement ->
+                        statement.setString(1, tokenHash)
+                        statement.executeUpdate()
+                    }
+                }
+                connection.commit()
+                userId?.let(::findById)
+            } catch (cause: Throwable) {
+                connection.rollback()
+                throw cause
+            }
+        }
+
+    override fun createRefreshToken(
+        userId: String,
+        tokenHash: String,
+        familyId: String,
+        deviceId: String?,
+        deviceLabel: String?,
+        expiresAt: Instant,
+    ): StoredRefreshToken =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                INSERT INTO auth_refresh_tokens (user_id, token_hash, family_id, device_id, device_label, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                RETURNING id, user_id, token_hash, family_id
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.setString(2, tokenHash)
+                statement.setString(3, familyId)
+                statement.setString(4, deviceId?.trim()?.takeIf { it.isNotEmpty() })
+                statement.setString(5, deviceLabel?.trim()?.takeIf { it.isNotEmpty() })
+                statement.setObject(6, expiresAt)
+                statement.executeQuery().use { result ->
+                    check(result.next()) { "Refresh token insert did not return a row" }
+                    result.toStoredRefreshToken()
+                }
+            }
+        }
+
+    override fun findActiveRefreshToken(tokenHash: String): StoredRefreshToken? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT id, user_id, token_hash, family_id
+                FROM auth_refresh_tokens
+                WHERE token_hash = ?
+                  AND revoked_at IS NULL
+                  AND expires_at > now()
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, tokenHash)
+                statement.executeQuery().use { result ->
+                    if (result.next()) result.toStoredRefreshToken() else null
+                }
+            }
+        }
+
+    override fun revokeRefreshToken(tokenId: String, replacedByTokenId: String?) {
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                UPDATE auth_refresh_tokens
+                SET revoked_at = COALESCE(revoked_at, now()),
+                    replaced_by_token_id = COALESCE(?, replaced_by_token_id)
+                WHERE id = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, replacedByTokenId)
+                statement.setString(2, tokenId)
+                statement.executeUpdate()
+            }
+        }
+    }
+
+    override fun revokeRefreshTokenFamily(familyId: String) {
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                UPDATE auth_refresh_tokens
+                SET revoked_at = COALESCE(revoked_at, now())
+                WHERE family_id = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, familyId)
+                statement.executeUpdate()
+            }
+        }
+    }
+
+    override fun findById(userId: String): StoredAuthUser? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT id, email, display_name, password_hash, roles
+                FROM app_users
+                WHERE id = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.executeQuery().use { result ->
+                    result.singleUserOrNull()
+                }
+            }
+        }
+
     private fun insertProvider(
         userId: String,
         provider: AuthProvider,
         providerSubject: String,
         email: String,
+        emailVerified: Boolean = false,
+        displayName: String? = null,
+        avatarUrl: String? = null,
         connection: java.sql.Connection,
     ) {
         connection.prepareStatement(
             """
-            INSERT INTO user_auth_providers (user_id, provider, provider_subject, email)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO user_auth_providers (user_id, provider, provider_subject, email, email_verified, display_name, avatar_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (provider, provider_subject) DO NOTHING
             """.trimIndent(),
         ).use { statement ->
@@ -154,6 +402,9 @@ internal class JdbcAuthRepository(
             statement.setString(2, provider.name)
             statement.setString(3, providerSubject)
             statement.setString(4, email.trim().lowercase())
+            statement.setBoolean(5, emailVerified)
+            statement.setString(6, displayName?.trim()?.takeIf { it.isNotEmpty() })
+            statement.setString(7, avatarUrl?.trim()?.takeIf { it.isNotEmpty() })
             statement.executeUpdate()
         }
     }
@@ -176,4 +427,12 @@ private fun ResultSet.toStoredAuthUser(): StoredAuthUser =
                 ?: setOf(AuthRole.CUSTOMER),
         ),
         passwordHash = getString("password_hash"),
+    )
+
+private fun ResultSet.toStoredRefreshToken(): StoredRefreshToken =
+    StoredRefreshToken(
+        id = getString("id"),
+        userId = getString("user_id"),
+        tokenHash = getString("token_hash"),
+        familyId = getString("family_id"),
     )

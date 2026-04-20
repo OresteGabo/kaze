@@ -9,7 +9,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import android.content.Intent
 import dev.orestegabo.kaze.platform.PlatformServicesProvider
+import dev.orestegabo.kaze.presentation.auth.KazeAuthAndroidPlatform
+import dev.orestegabo.kaze.presentation.auth.handleKazeAuthDeepLink
 
 class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher =
@@ -21,11 +24,23 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         PlatformServicesProvider.initialize(applicationContext)
+        KazeAuthAndroidPlatform.initialize(applicationContext)
+        handleAuthDeepLink(intent)
         requestNotificationPermissionIfNeeded()
 
         setContent {
             App()
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleAuthDeepLink(intent)
+    }
+
+    private fun handleAuthDeepLink(intent: Intent?) {
+        intent?.dataString?.let(::handleKazeAuthDeepLink)
     }
 
     private fun requestNotificationPermissionIfNeeded() {

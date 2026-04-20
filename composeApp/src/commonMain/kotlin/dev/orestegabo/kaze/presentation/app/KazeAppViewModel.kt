@@ -134,6 +134,21 @@ internal class KazeAppViewModel(
         }
     }
 
+    fun showSuccessCelebration(title: String, subtitle: String) {
+        feedbackDismissJob?.cancel()
+        uiState = uiState.copy(
+            feedbackMessage = "",
+            successCelebration = KazeSuccessCelebration(
+                title = title,
+                subtitle = subtitle,
+            ),
+        )
+    }
+
+    fun dismissSuccessCelebration() {
+        uiState = uiState.copy(successCelebration = null)
+    }
+
     fun onThemeModeChanged(themeMode: KazeThemeMode) {
         uiState = uiState.copy(themeMode = themeMode)
         scope.launch {
@@ -182,7 +197,7 @@ internal class KazeAppViewModel(
             runCatching { authGateway.startSocialLogin(socialProvider) }
                 .onSuccess { response ->
                     if (response.authorizationUrl.isBlank()) {
-                        showFeedback("${socialProvider.displayName} sign-in did not return a login page. Check backend OAuth configuration.")
+                        showFeedback("${socialProvider.displayName} sign-in is not available right now. Please try another option.")
                     } else if (!externalUrlLauncher.open(response.authorizationUrl)) {
                         showFeedback("Could not open ${socialProvider.displayName}. Check your device browser settings.")
                     }

@@ -6,6 +6,11 @@
     <string name="empty_invitations_title">No invitations yet</string>
     <string name="empty_invitations_subtitle">When a hotel, venue, or host invites you, your passes and event details will appear here.</string>
     <string name="empty_invitations_action">Create invitation</string>
+    <string name="empty_events_title">No events yet</string>
+    <string name="empty_events_subtitle">When you accept an invitation or join a conference, the agenda, rooms, and venue guidance will appear here.</string>
+    <string name="empty_events_action">View invites</string>
+    <string name="empty_event_day_title">Nothing scheduled for this day</string>
+    <string name="empty_event_day_subtitle">Choose another day or check back when the organizer publishes the agenda.</string>
     <string name="offline_state_title">No connection</string>
     <string name="offline_state_subtitle">Some Kaze features still work offline. We need internet only for live updates, login, payments, and fresh event data.</string>
     <string name="offline_state_retry">Retry</string>

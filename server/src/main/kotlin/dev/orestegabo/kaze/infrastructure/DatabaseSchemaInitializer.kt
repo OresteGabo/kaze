@@ -49,6 +49,9 @@ private fun Application.runSchemaStatements(
 }
 
 private val DROP_SCHEMA_SQL = listOf(
+    "DROP TABLE IF EXISTS auth_one_time_login_tokens CASCADE",
+    "DROP TABLE IF EXISTS auth_refresh_tokens CASCADE",
+    "DROP TABLE IF EXISTS oauth_login_attempts CASCADE",
     "DROP TABLE IF EXISTS user_auth_providers CASCADE",
     "DROP TABLE IF EXISTS app_users CASCADE",
     "DROP TABLE IF EXISTS service_requests CASCADE",
@@ -79,6 +82,7 @@ private val CREATE_SCHEMA_SQL = listOf(
         password_hash TEXT,
         roles TEXT[] NOT NULL DEFAULT ARRAY['CUSTOMER']::TEXT[],
         disabled BOOLEAN NOT NULL DEFAULT false,
+        last_login_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
@@ -90,8 +94,52 @@ private val CREATE_SCHEMA_SQL = listOf(
         provider VARCHAR(40) NOT NULL,
         provider_subject VARCHAR(320) NOT NULL,
         email VARCHAR(320) NOT NULL,
+        email_verified BOOLEAN NOT NULL DEFAULT false,
+        display_name VARCHAR(240),
+        avatar_url TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         UNIQUE (provider, provider_subject)
+    )
+    """.trimIndent(),
+    """
+    CREATE TABLE IF NOT EXISTS oauth_login_attempts (
+        id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        provider VARCHAR(40) NOT NULL,
+        state_hash TEXT NOT NULL UNIQUE,
+        code_verifier_hash TEXT NOT NULL,
+        code_verifier TEXT NOT NULL,
+        nonce_hash TEXT,
+        nonce TEXT,
+        app_redirect_uri TEXT NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        consumed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+    """.trimIndent(),
+    """
+    CREATE TABLE IF NOT EXISTS auth_one_time_login_tokens (
+        id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        expires_at TIMESTAMPTZ NOT NULL,
+        consumed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+    """.trimIndent(),
+    """
+    CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
+        id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        family_id VARCHAR(120) NOT NULL,
+        device_id VARCHAR(240),
+        device_label VARCHAR(240),
+        expires_at TIMESTAMPTZ NOT NULL,
+        revoked_at TIMESTAMPTZ,
+        replaced_by_token_id VARCHAR(120),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_used_at TIMESTAMPTZ
     )
     """.trimIndent(),
     """
@@ -289,6 +337,9 @@ private val CREATE_SCHEMA_SQL = listOf(
     "CREATE INDEX IF NOT EXISTS guests_hotel_id_idx ON guests(hotel_id)",
     "CREATE INDEX IF NOT EXISTS app_users_email_idx ON app_users(lower(email))",
     "CREATE INDEX IF NOT EXISTS user_auth_providers_user_id_idx ON user_auth_providers(user_id)",
+    "CREATE INDEX IF NOT EXISTS auth_refresh_tokens_user_id_idx ON auth_refresh_tokens(user_id)",
+    "CREATE INDEX IF NOT EXISTS auth_refresh_tokens_family_id_idx ON auth_refresh_tokens(family_id)",
+    "CREATE INDEX IF NOT EXISTS oauth_login_attempts_expires_at_idx ON oauth_login_attempts(expires_at)",
     "CREATE INDEX IF NOT EXISTS stays_guest_id_idx ON stays(guest_id)",
     "CREATE INDEX IF NOT EXISTS event_days_hotel_id_idx ON event_days(hotel_id)",
     "CREATE INDEX IF NOT EXISTS scheduled_experiences_day_id_idx ON scheduled_experiences(day_id)",

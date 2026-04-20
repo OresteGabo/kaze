@@ -6,6 +6,7 @@ import dev.orestegabo.kaze.theme.KazeThemeMode
 
 internal data class KazeAppUiState(
     val isReady: Boolean = false,
+    val isStartupTakingTooLong: Boolean = false,
     val isOnboardingVisible: Boolean = false,
     val onboardingPage: Int = 0,
     val sessionMode: KazeSessionMode? = null,

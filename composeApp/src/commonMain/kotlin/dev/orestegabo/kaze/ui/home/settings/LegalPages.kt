@@ -52,7 +52,7 @@ internal enum class LegalPage(
                 heading = "Your rights",
                 body = listOf(
                     "Depending on applicable law, users may be able to request access, correction, deletion, restriction, objection, portability, or consent withdrawal.",
-                    "For privacy requests, contact GABO at orestegabo@icloud.com.",
+                    "For privacy requests, contact GABO at dev@kazerwanda.com.",
                 ),
             ),
         ),
@@ -89,7 +89,7 @@ internal enum class LegalPage(
             ),
             LegalSection(
                 heading = "Contact",
-                body = listOf("For terms questions, contact orestegabo@icloud.com or visit https://kazerwanda.com."),
+                body = listOf("For terms questions, contact dev@kazerwanda.com or visit https://kazerwanda.com."),
             ),
         ),
     ),
@@ -161,7 +161,7 @@ internal enum class LegalPage(
         sections = listOf(
             LegalSection(
                 heading = "Email",
-                body = listOf("orestegabo@icloud.com"),
+                body = listOf("dev@kazerwanda.com"),
             ),
             LegalSection(
                 heading = "Website",

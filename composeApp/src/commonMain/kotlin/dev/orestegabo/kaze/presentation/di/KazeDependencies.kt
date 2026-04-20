@@ -8,6 +8,13 @@ import dev.orestegabo.kaze.data.repository.MapRepository
 import dev.orestegabo.kaze.data.repository.StayRepository
 import dev.orestegabo.kaze.platform.PlatformServices
 import dev.orestegabo.kaze.platform.PlatformServicesProvider
+import dev.orestegabo.kaze.presentation.auth.AuthGateway
+import dev.orestegabo.kaze.presentation.auth.ExternalUrlLauncher
+import dev.orestegabo.kaze.presentation.auth.KazeAuthGateway
+import dev.orestegabo.kaze.presentation.auth.createAuthHttpClient
+import dev.orestegabo.kaze.presentation.auth.createExternalUrlLauncher
+import dev.orestegabo.kaze.presentation.auth.defaultAuthApiBaseUrl
+import dev.orestegabo.kaze.presentation.auth.defaultDeviceLabel
 import dev.orestegabo.kaze.presentation.demo.repository.DemoExperienceRepository
 import dev.orestegabo.kaze.presentation.demo.repository.DemoHotelRepository
 import dev.orestegabo.kaze.presentation.demo.repository.DemoMapRepository
@@ -26,6 +33,8 @@ internal data class KazeDependencies(
     val observeHotelContext: ObserveHotelContextUseCase,
     val submitLateCheckout: SubmitLateCheckoutUseCase,
     val platformServices: PlatformServices,
+    val authGateway: AuthGateway,
+    val externalUrlLauncher: ExternalUrlLauncher,
 ) {
     companion object {
         fun demo(): KazeDependencies {
@@ -33,6 +42,7 @@ internal data class KazeDependencies(
             val stayRepository = DemoStayRepository()
             val experienceRepository = DemoExperienceRepository()
             val mapRepository = DemoMapRepository()
+            val platformServices = PlatformServicesProvider.create()
             return KazeDependencies(
                 hotelId = sampleHotel.id,
                 mapId = "temporary-svg-venue",
@@ -42,7 +52,14 @@ internal data class KazeDependencies(
                 mapRepository = mapRepository,
                 observeHotelContext = ObserveHotelContextUseCase(hotelRepository),
                 submitLateCheckout = SubmitLateCheckoutUseCase(stayRepository),
-                platformServices = PlatformServicesProvider.create(),
+                platformServices = platformServices,
+                authGateway = KazeAuthGateway(
+                    client = createAuthHttpClient(),
+                    baseUrl = defaultAuthApiBaseUrl(),
+                    deviceId = "kaze-device",
+                    deviceLabel = defaultDeviceLabel(),
+                ),
+                externalUrlLauncher = createExternalUrlLauncher(),
             )
         }
     }

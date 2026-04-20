@@ -1,6 +1,8 @@
 package dev.orestegabo.kaze.api
 
 import dev.orestegabo.kaze.auth.AuthProblemException
+import dev.orestegabo.kaze.auth.AuthRefreshRequest
+import dev.orestegabo.kaze.auth.AuthSessionClaimRequest
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.auth.AuthSigninRequest
 import dev.orestegabo.kaze.auth.AuthSignupRequest
@@ -149,6 +151,18 @@ internal fun Application.configureHttp(authService: AuthService) {
         validate<SocialSigninRequest> { request ->
             when {
                 request.idToken.isBlank() -> ValidationResult.Invalid("idToken is required")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<AuthSessionClaimRequest> { request ->
+            when {
+                request.loginToken.isBlank() -> ValidationResult.Invalid("loginToken is required")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<AuthRefreshRequest> { request ->
+            when {
+                request.refreshToken.isBlank() -> ValidationResult.Invalid("refreshToken is required")
                 else -> ValidationResult.Valid
             }
         }

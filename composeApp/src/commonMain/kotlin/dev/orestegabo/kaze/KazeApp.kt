@@ -360,6 +360,7 @@ fun App() {
                                                 sessions = eventsUiState.sessions,
                                                 onDaySelected = eventsViewModel::onDaySelected,
                                                 onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                                onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -481,6 +482,7 @@ fun App() {
                                             sessions = eventsUiState.sessions,
                                             onDaySelected = eventsViewModel::onDaySelected,
                                             onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                            onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
                                             bottomContentPadding = bottomContentPadding,
                                         )
 

@@ -60,7 +60,14 @@ import dev.orestegabo.kaze.ui.stay.StayHomeScreen
 fun App() {
     val dependencies = rememberKazeDependencies()
     val navigator = remember { KazeNavigator() }
-    val appViewModel = viewModel { KazeAppViewModel(dependencies.platformServices.secureStore, navigator) }
+    val appViewModel = viewModel {
+        KazeAppViewModel(
+            secureStore = dependencies.platformServices.secureStore,
+            navigator = navigator,
+            authGateway = dependencies.authGateway,
+            externalUrlLauncher = dependencies.externalUrlLauncher,
+        )
+    }
     val uiState = appViewModel.uiState
     KazeTheme(hotelConfig = sampleHotel.config, themeMode = uiState.themeMode) {
         val stayViewModel = viewModel {

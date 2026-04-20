@@ -135,10 +135,10 @@ internal expect fun createExternalUrlLauncher(): ExternalUrlLauncher
 internal fun Throwable.toAuthMessage(): String =
     when (this) {
         is HttpRequestTimeoutException -> {
-            "Kaze could not reach the backend quickly. Check that the API is running and this device is on the same network as your Mac."
+            "Kaze is taking longer than usual to connect. Please check your internet and try again."
         }
         is ClientRequestException -> when (response.status.value) {
-            400 -> "This sign-in option is not configured yet on the backend."
+            400 -> "This sign-in option is not available yet. Please try another option."
             401 -> "The sign-in session expired or was rejected. Please try again."
             409 -> "This email is already registered. Try logging in instead."
             else -> "Could not complete sign-in. Please check your details and try again."
@@ -146,11 +146,11 @@ internal fun Throwable.toAuthMessage(): String =
         is ServerResponseException -> "Kaze is having trouble signing you in. Please try again."
         else -> when {
             message?.contains("Connection refused", ignoreCase = true) == true -> {
-                "Kaze cannot reach the backend. Make sure your phone and Mac are on the same network and the API is running."
+                "Kaze could not connect right now. Please check your internet and try again."
             }
             message?.contains("Failed to connect", ignoreCase = true) == true -> {
-                "Kaze cannot reach the backend. Make sure your phone and Mac are on the same network and the API is running."
+                "Kaze could not connect right now. Please check your internet and try again."
             }
-            else -> message?.takeIf { it.isNotBlank() } ?: "Could not complete sign-in. Please try again."
+            else -> "Could not complete sign-in. Please try again."
         }
     }

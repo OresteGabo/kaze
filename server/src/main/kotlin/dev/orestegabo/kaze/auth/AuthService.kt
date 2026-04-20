@@ -3,20 +3,18 @@ package dev.orestegabo.kaze.auth
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.interfaces.DecodedJWT
-import com.auth0.jwk.JwkProviderBuilder
 import io.ktor.http.HttpStatusCode
 import org.mindrot.jbcrypt.BCrypt
-import java.net.URI
-import java.security.interfaces.RSAPublicKey
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 internal class AuthService(
     private val repositoryProvider: () -> AuthRepository,
     private val jwtConfig: JwtConfig,
+    private val tokenVerifier: ExternalTokenVerifier = ExternalTokenVerifier(),
+    private val oauthStateFactory: OAuthStateFactory = OAuthStateFactory(),
+    private val socialProviders: SocialOAuthProviders? = null,
 ) {
     private val signingAlgorithm = Algorithm.HMAC256(jwtConfig.secret)
     private val repository: AuthRepository
@@ -54,15 +52,8 @@ internal class AuthService(
                 message = "Google sign-in needs KAZE_GOOGLE_CLIENT_IDS or kaze.security.oauth.googleClientIds.",
             )
         }
-
-        val token = verifyExternalToken(
-            idToken = request.idToken,
-            issuer = GOOGLE_ISSUER,
-            alternateIssuer = GOOGLE_ALT_ISSUER,
-            audiences = jwtConfig.googleClientIds,
-            jwksUrl = GOOGLE_JWKS_URL,
-        )
-        val identity = token.toExternalIdentity(AuthProvider.GOOGLE, request.displayName)
+        val identity = tokenVerifier.verifyGoogle(request.idToken, jwtConfig.googleClientIds.first(), nonce = null)
+            .withRequestedDisplayName(request.displayName)
         return repository.upsertExternalUser(identity).user.toAuthResponse()
     }
 
@@ -74,41 +65,101 @@ internal class AuthService(
                 message = "Apple sign-in needs KAZE_APPLE_CLIENT_IDS or kaze.security.oauth.appleClientIds.",
             )
         }
-
-        val token = verifyExternalToken(
-            idToken = request.idToken,
-            issuer = APPLE_ISSUER,
-            alternateIssuer = null,
-            audiences = jwtConfig.appleClientIds,
-            jwksUrl = APPLE_JWKS_URL,
-        )
-        val identity = token.toExternalIdentity(AuthProvider.APPLE, request.displayName)
+        val identity = tokenVerifier.verifyApple(request.idToken, jwtConfig.appleClientIds.first(), nonce = null)
+            .withRequestedDisplayName(request.displayName)
         return repository.upsertExternalUser(identity).user.toAuthResponse()
     }
 
-    private fun verifyExternalToken(
-        idToken: String,
-        issuer: String,
-        alternateIssuer: String?,
-        audiences: Set<String>,
-        jwksUrl: String,
-    ): DecodedJWT {
-        val decoded = JWT.decode(idToken)
-        val provider = JwkProviderBuilder(URI(jwksUrl).toURL())
-            .cached(10, 24, TimeUnit.HOURS)
-            .rateLimited(10, 1, TimeUnit.MINUTES)
-            .build()
-        val jwk = provider.get(decoded.keyId)
-        val verifier = JWT.require(Algorithm.RSA256(jwk.publicKey as RSAPublicKey, null))
-            .withIssuer(*listOfNotNull(issuer, alternateIssuer).toTypedArray())
-            .withAudience(*audiences.toTypedArray())
-            .build()
-
-        return try {
-            verifier.verify(idToken)
-        } catch (cause: Throwable) {
-            throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_identity_token", "The identity token is invalid.")
+    fun createAuthorizationRequest(
+        providerName: String,
+        appRedirectUri: String?,
+    ): AuthStartResponseDto {
+        val provider = providerName.toAuthProvider()
+        val socialProvider = requireSocialProviders().require(provider)
+        if (!socialProvider.isConfigured()) {
+            throw AuthProblemException(
+                status = HttpStatusCode.BadRequest,
+                code = "${provider.name.lowercase()}_auth_not_configured",
+                message = "${provider.name.lowercase()} social login is not configured.",
+            )
         }
+        val attempt = oauthStateFactory.createAttempt(
+            provider = provider,
+            appRedirectUri = appRedirectUri?.trim()?.takeIf { it.isNotEmpty() }
+                ?: jwtConfig.socialAuth.appDeepLinkRedirect,
+        )
+        repository.createOAuthAttempt(
+            attempt = attempt,
+            expiresAt = Instant.now().plusSeconds(OAUTH_ATTEMPT_TTL_SECONDS),
+        )
+        return AuthStartResponseDto(
+            authorizationUrl = socialProvider.authorizationUrl(attempt),
+            state = attempt.state,
+        )
+    }
+
+    suspend fun completeOAuthCallback(
+        provider: AuthProvider,
+        code: String?,
+        state: String?,
+    ): String {
+        if (code.isNullOrBlank() || state.isNullOrBlank()) {
+            throw AuthProblemException(HttpStatusCode.BadRequest, "invalid_oauth_callback", "OAuth callback is missing code or state.")
+        }
+        val attempt = repository.consumeOAuthAttempt(provider, state)
+            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_oauth_state", "OAuth state is invalid or expired.")
+        val socialProvider = requireSocialProviders().require(provider)
+        val identity = socialProvider.exchangeAndVerify(code, attempt)
+        val user = repository.upsertExternalUser(identity).user
+        val oneTimeToken = randomUrlSafeToken()
+        repository.createOneTimeLoginToken(
+            userId = user.id,
+            tokenHash = secureHash(oneTimeToken),
+            expiresAt = Instant.now().plusSeconds(jwtConfig.oneTimeLoginTokenTtlSeconds),
+        )
+        return appendQueryParams(
+            baseUrl = attempt.appRedirectUri,
+            params = mapOf(
+                "login_token" to oneTimeToken,
+                "state" to attempt.state,
+            ),
+        )
+    }
+
+    fun claimOneTimeLoginToken(request: AuthSessionClaimRequest): AuthResponseDto {
+        val storedUser = repository.claimOneTimeLoginToken(secureHash(request.loginToken))
+            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_login_token", "Login token is invalid or expired.")
+        return storedUser.user.toAuthResponse(
+            deviceId = request.deviceId,
+            deviceLabel = request.deviceLabel,
+        )
+    }
+
+    fun refresh(request: AuthRefreshRequest): AuthResponseDto {
+        val incomingHash = secureHash(request.refreshToken)
+        val existing = repository.findActiveRefreshToken(incomingHash)
+            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_refresh_token", "Refresh token is invalid or expired.")
+        val user = repository.findById(existing.userId)
+            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_refresh_token", "Refresh token user no longer exists.")
+        val rawRefreshToken = randomUrlSafeToken(48)
+        val replacement = repository.createRefreshToken(
+            userId = user.user.id,
+            tokenHash = secureHash(rawRefreshToken),
+            familyId = existing.familyId,
+            deviceId = request.deviceId,
+            deviceLabel = request.deviceLabel,
+            expiresAt = Instant.now().plusSeconds(jwtConfig.refreshTokenTtlSeconds),
+        )
+        repository.revokeRefreshToken(existing.id, replacement.id)
+        return user.user.toAccessResponse(refreshToken = rawRefreshToken)
+    }
+
+    fun logout(refreshToken: String?) {
+        refreshToken?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(::secureHash)
+            ?.let(repository::findActiveRefreshToken)
+            ?.let { repository.revokeRefreshToken(it.id) }
     }
 
     fun verifier(): JWTVerifier =
@@ -132,27 +183,36 @@ internal class AuthService(
             .sign(signingAlgorithm)
     }
 
-    private fun AuthUser.toAuthResponse(): AuthResponseDto =
+    private fun AuthUser.toAuthResponse(
+        deviceId: String? = null,
+        deviceLabel: String? = null,
+    ): AuthResponseDto {
+        val rawRefreshToken = randomUrlSafeToken(48)
+        repository.createRefreshToken(
+            userId = id,
+            tokenHash = secureHash(rawRefreshToken),
+            familyId = UUID.randomUUID().toString(),
+            deviceId = deviceId,
+            deviceLabel = deviceLabel,
+            expiresAt = Instant.now().plusSeconds(jwtConfig.refreshTokenTtlSeconds),
+        )
+        return toAccessResponse(rawRefreshToken)
+    }
+
+    private fun AuthUser.toAccessResponse(refreshToken: String): AuthResponseDto =
         AuthResponseDto(
             accessToken = issueAccessToken(this),
+            refreshToken = refreshToken,
             expiresInSeconds = jwtConfig.accessTokenTtlSeconds,
             user = toDto(),
         )
 
-    private fun DecodedJWT.toExternalIdentity(provider: AuthProvider, fallbackDisplayName: String?): ExternalIdentity {
-        val email = getClaim("email").asString()?.let(::normalizeEmail)
-            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "identity_email_missing", "The identity token does not include an email.")
-        return ExternalIdentity(
-            provider = provider,
-            providerSubject = subject,
-            email = email,
-            emailVerified = getClaim("email_verified").asBoolean()
-                ?: getClaim("email_verified").asString()?.toBooleanStrictOrNull()
-                ?: false,
-            displayName = fallbackDisplayName?.trim()?.takeIf { it.isNotEmpty() }
-                ?: getClaim("name").asString()?.trim()?.takeIf { it.isNotEmpty() },
+    private fun requireSocialProviders(): SocialOAuthProviders =
+        socialProviders ?: throw AuthProblemException(
+            status = HttpStatusCode.BadRequest,
+            code = "social_auth_not_configured",
+            message = "Social auth providers are not configured.",
         )
-    }
 
     private fun invalidCredentials(): AuthProblemException =
         AuthProblemException(HttpStatusCode.Unauthorized, "invalid_credentials", "Email or password is incorrect.")
@@ -174,11 +234,27 @@ internal class AuthProblemException(
     override val message: String,
 ) : RuntimeException(message)
 
+private fun String.toAuthProvider(): AuthProvider =
+    when (lowercase()) {
+        "google" -> AuthProvider.GOOGLE
+        "apple" -> AuthProvider.APPLE
+        "facebook", "meta" -> AuthProvider.FACEBOOK
+        else -> throw AuthProblemException(HttpStatusCode.BadRequest, "unsupported_auth_provider", "Unsupported auth provider: $this")
+    }
+
+private fun ExternalIdentity.withRequestedDisplayName(displayName: String?): ExternalIdentity {
+    val requestedDisplayName = displayName?.trim()?.takeIf { it.isNotEmpty() }
+    return if (requestedDisplayName == null) this else copy(displayName = requestedDisplayName)
+}
+
+private fun appendQueryParams(baseUrl: String, params: Map<String, String>): String {
+    val separator = if ("?" in baseUrl) "&" else "?"
+    return baseUrl + separator + params.entries.joinToString("&") { (key, value) ->
+        "${java.net.URLEncoder.encode(key, Charsets.UTF_8)}=${java.net.URLEncoder.encode(value, Charsets.UTF_8)}"
+    }
+}
+
 private const val MIN_PASSWORD_LENGTH = 8
 private const val BCRYPT_COST = 12
-private const val GOOGLE_ISSUER = "https://accounts.google.com"
-private const val GOOGLE_ALT_ISSUER = "accounts.google.com"
-private const val GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs"
-private const val APPLE_ISSUER = "https://appleid.apple.com"
-private const val APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
+private const val OAUTH_ATTEMPT_TTL_SECONDS = 600L
 private val EMAIL_REGEX = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")

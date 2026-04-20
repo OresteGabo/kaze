@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@color/kaze_launch_background" />
+    <item android:gravity="center">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/kaze_launch_logo" />
+    </item>
+    <item
+        android:bottom="42dp"
+        android:gravity="bottom|center_horizontal">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/gabo_launch_branding" />
+    </item>
+
+</layer-list>

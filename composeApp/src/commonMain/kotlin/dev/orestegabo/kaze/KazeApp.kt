@@ -56,6 +56,9 @@ import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
 import dev.orestegabo.kaze.ui.startup.KazeStartupScreen
 import dev.orestegabo.kaze.ui.startup.KazeTemporaryDownScreen
+import dev.orestegabo.kaze.ui.states.KazePermissionPrimerScreen
+import dev.orestegabo.kaze.ui.states.KazePermissionPrimerType
+import dev.orestegabo.kaze.ui.states.KazeSuccessCelebrationScreen
 import dev.orestegabo.kaze.ui.stay.StayHomeScreen
 
 @Composable
@@ -109,11 +112,12 @@ fun App() {
         val exploreUiState = exploreViewModel.uiState
         val mapUiState = mapViewModel.uiState
         val isGuestMode = uiState.sessionMode == KazeSessionMode.GUEST
-        val visibleInvitations = if (isGuestMode) emptyList() else invitationPreviews
+        val visibleInvitations = invitationPreviews
         val pendingInvitationCount = visibleInvitations.count { it.state == InvitationState.ACTIVE }
         val availableDestinations = when (uiState.sessionMode) {
             KazeSessionMode.GUEST -> listOf(
                 KazeDestination.EVENTS,
+                KazeDestination.INVITATIONS,
                 KazeDestination.HOME,
                 KazeDestination.EXPLORE,
                 KazeDestination.SETTINGS,
@@ -132,11 +136,15 @@ fun App() {
             null -> "Not signed in"
         }
         var selectedInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
+        var activePermissionPrimer by remember { mutableStateOf<KazePermissionPrimerType?>(null) }
 
         fun handleStayResult(result: StayActionResult?) {
             when (result) {
                 null -> Unit
-                is StayActionResult.Feedback -> appViewModel.showFeedback(result.message)
+                is StayActionResult.Feedback -> appViewModel.showSuccessCelebration(
+                    title = "Request sent",
+                    subtitle = result.message,
+                )
                 is StayActionResult.NavigateToEvents -> appViewModel.openEvents()
                 is StayActionResult.NavigateToMap -> appViewModel.openMapRoute(
                     route = result.route,
@@ -200,12 +208,8 @@ fun App() {
         }
 
         fun openInvitations() {
-            if (isGuestMode) {
-                appViewModel.showFeedback("Invitations are private. Log in or create an account to view them.")
-            } else {
-                selectedInvitation = null
-                appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
-            }
+            selectedInvitation = null
+            appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
         }
 
         fun openEventFromInvitation(invitation: InvitationPreview) {
@@ -385,7 +389,7 @@ fun App() {
                                                 activeRoute = mapUiState.activeRoute,
                                                 activeFloorId = mapUiState.selectedFloorId,
                                                 onFloorSelected = mapViewModel::onFloorSelected,
-                                                onStartNavigation = {},
+                                                onStartNavigation = { activePermissionPrimer = KazePermissionPrimerType.LOCATION },
                                                 onSwitchFloor = mapViewModel::onSwitchFloor,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
@@ -506,7 +510,7 @@ fun App() {
                                             activeRoute = mapUiState.activeRoute,
                                             activeFloorId = mapUiState.selectedFloorId,
                                             onFloorSelected = mapViewModel::onFloorSelected,
-                                            onStartNavigation = {},
+                                            onStartNavigation = { activePermissionPrimer = KazePermissionPrimerType.LOCATION },
                                             onSwitchFloor = mapViewModel::onSwitchFloor,
                                             bottomContentPadding = bottomContentPadding,
                                         )
@@ -539,6 +543,28 @@ fun App() {
                     )
                         }
                     }
+                }
+                uiState.successCelebration?.let { celebration ->
+                    KazeSuccessCelebrationScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        title = celebration.title,
+                        subtitle = celebration.subtitle,
+                        onBackHome = appViewModel::dismissSuccessCelebration,
+                    )
+                }
+                activePermissionPrimer?.let { primerType ->
+                    KazePermissionPrimerScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        type = primerType,
+                        onGrantAccess = {
+                            activePermissionPrimer = null
+                            appViewModel.showFeedback("Location access will be requested when live navigation is connected.")
+                        },
+                        onMaybeLater = {
+                            activePermissionPrimer = null
+                            appViewModel.showFeedback("No problem. You can still browse maps manually.")
+                        },
+                    )
                 }
             }
         }

@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_Kaze_App)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         PlatformServicesProvider.initialize(applicationContext)

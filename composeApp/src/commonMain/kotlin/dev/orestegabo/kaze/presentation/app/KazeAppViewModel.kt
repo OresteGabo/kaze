@@ -33,6 +33,8 @@ internal class KazeAppViewModel(
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var feedbackDismissJob: Job? = null
+    private var startupJob: Job? = null
+    private var startupTimeoutJob: Job? = null
 
     var uiState by mutableStateOf(
         KazeAppUiState(
@@ -43,23 +45,46 @@ internal class KazeAppViewModel(
         private set
 
     init {
+        loadStartupState()
         scope.launch {
+            AuthDeepLinks.callbacks.collect { callback ->
+                claimSocialSession(callback.loginToken)
+            }
+        }
+    }
+
+    fun retryStartup() {
+        loadStartupState()
+    }
+
+    private fun loadStartupState() {
+        startupJob?.cancel()
+        startupTimeoutJob?.cancel()
+        uiState = uiState.copy(
+            isReady = false,
+            isStartupTakingTooLong = false,
+            feedbackMessage = "",
+        )
+        startupTimeoutJob = scope.launch {
+            delay(STARTUP_TIMEOUT_MS)
+            if (!uiState.isReady) {
+                uiState = uiState.copy(isStartupTakingTooLong = true)
+            }
+        }
+        startupJob = scope.launch {
             val hasSeenOnboarding = secureStore.get(HAS_SEEN_ONBOARDING_KEY) == TRUE_VALUE
             val persistedThemeMode = secureStore.get(THEME_MODE_KEY).toThemeModeOrDefault()
             val persistedSessionMode = secureStore.get(SESSION_MODE_KEY).toSessionModeOrNull()
             uiState = uiState.copy(
                 isReady = true,
+                isStartupTakingTooLong = false,
                 isOnboardingVisible = !hasSeenOnboarding,
                 onboardingPage = 0,
                 sessionMode = persistedSessionMode,
                 sessionEmail = secureStore.get(SESSION_EMAIL_KEY).orEmpty(),
                 themeMode = persistedThemeMode,
             )
-        }
-        scope.launch {
-            AuthDeepLinks.callbacks.collect { callback ->
-                claimSocialSession(callback.loginToken)
-            }
+            startupTimeoutJob?.cancel()
         }
     }
 
@@ -229,6 +254,9 @@ internal class KazeAppViewModel(
     ) {
         navigator.goTo(KazeDestination.HOME)
         uiState = uiState.copy(
+            isReady = true,
+            isStartupTakingTooLong = false,
+            isOnboardingVisible = false,
             sessionMode = mode,
             sessionEmail = email,
             currentDestination = navigator.state.currentDestination,
@@ -304,6 +332,7 @@ internal class KazeAppViewModel(
         const val DEMO_AUTH_TOKEN = "demo-local-session"
         const val TRUE_VALUE = "true"
         const val FEEDBACK_DURATION_MS = 2400L
+        const val STARTUP_TIMEOUT_MS = 10000L
         const val MIN_PASSWORD_LENGTH = 8
     }
 }

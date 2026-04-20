@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,6 +41,14 @@ import dev.orestegabo.kaze.domain.experience.ScheduledExperience
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.components.SectionIntroCard
+import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
+import kaze.composeapp.generated.resources.Res
+import kaze.composeapp.generated.resources.empty_event_day_subtitle
+import kaze.composeapp.generated.resources.empty_event_day_title
+import kaze.composeapp.generated.resources.empty_events_action
+import kaze.composeapp.generated.resources.empty_events_subtitle
+import kaze.composeapp.generated.resources.empty_events_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun EventScheduleScreen(
@@ -49,6 +58,7 @@ internal fun EventScheduleScreen(
     sessions: List<ScheduledExperience>,
     onDaySelected: (EventDay) -> Unit,
     onSessionAction: (ScheduledExperience) -> Unit,
+    onEmptyAction: () -> Unit,
     bottomContentPadding: Dp = 20.dp,
 ) {
     LazyColumn(
@@ -64,24 +74,46 @@ internal fun EventScheduleScreen(
                 icon = Icons.Default.CalendarMonth,
             )
         }
-        item {
-            if (selectedDay != null) {
-                EventDaySwitcher(days = days, selectedDay = selectedDay, onDaySelected = onDaySelected)
-            }
-        }
-        item {
-            if (selectedDay != null) {
-                Text(
-                    selectedDay.label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = 2.dp),
+
+        if (days.isEmpty() || selectedDay == null) {
+            item {
+                KazeEmptyStateScreen(
+                    modifier = Modifier.fillMaxWidth().height(420.dp),
+                    title = stringResource(Res.string.empty_events_title),
+                    subtitle = stringResource(Res.string.empty_events_subtitle),
+                    actionLabel = stringResource(Res.string.empty_events_action),
+                    onAction = onEmptyAction,
                 )
             }
+            return@LazyColumn
+        }
+
+        item {
+            EventDaySwitcher(days = days, selectedDay = selectedDay, onDaySelected = onDaySelected)
+        }
+        item {
+            Text(
+                selectedDay.label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
         item { Text("Today's schedule", style = MaterialTheme.typography.headlineSmall) }
-        items(sessions) { session ->
-            SessionCard(session = session, onOpenMap = { onSessionAction(session) })
+        if (sessions.isEmpty()) {
+            item {
+                KazeEmptyStateScreen(
+                    modifier = Modifier.fillMaxWidth().height(360.dp),
+                    title = stringResource(Res.string.empty_event_day_title),
+                    subtitle = stringResource(Res.string.empty_event_day_subtitle),
+                    actionLabel = stringResource(Res.string.empty_events_action),
+                    onAction = onEmptyAction,
+                )
+            }
+        } else {
+            items(sessions) { session ->
+                SessionCard(session = session, onOpenMap = { onSessionAction(session) })
+            }
         }
     }
 }

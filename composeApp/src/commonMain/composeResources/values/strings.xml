@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="empty_state_title">Ready to start your journey?</string>
+    <string name="empty_state_subtitle">Your saved places, invitations, and services will appear here once you begin exploring Kaze.</string>
+    <string name="empty_state_action">Explore Kaze</string>
+    <string name="empty_invitations_title">No invitations yet</string>
+    <string name="empty_invitations_subtitle">When a hotel, venue, or host invites you, your passes and event details will appear here.</string>
+    <string name="empty_invitations_action">Create invitation</string>
+    <string name="offline_state_title">No connection</string>
+    <string name="offline_state_subtitle">Some Kaze features still work offline. We need internet only for live updates, login, payments, and fresh event data.</string>
+    <string name="offline_state_retry">Retry</string>
+    <string name="offline_state_retrying">Checking...</string>
+    <string name="success_state_title">Success</string>
+    <string name="success_state_subtitle">Everything is confirmed. You can return home or keep exploring your Kaze experience.</string>
+    <string name="success_state_home">Back to Home</string>
+    <string name="permission_primer_camera_title">Use your camera with confidence</string>
+    <string name="permission_primer_camera_subtitle">Kaze uses the camera only when you scan QR codes, tickets, or venue access passes. You stay in control.</string>
+    <string name="permission_primer_location_title">Find your way faster</string>
+    <string name="permission_primer_location_subtitle">Location helps Kaze show nearby venues, routes, and event guidance when you ask for them.</string>
+    <string name="permission_primer_grant">Grant Access</string>
+    <string name="permission_primer_later">Maybe Later</string>
+    <string name="ignored_screens_title">Other states worth designing</string>
+    <string name="ignored_screens_subtitle">Tiny screens carry trust. These deserve the same care as the homepage.</string>
+</resources>

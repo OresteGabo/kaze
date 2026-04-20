@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.ui.chrome.KazeAmbientBackground
+import dev.orestegabo.kaze.ui.states.KazeOfflineStateCard
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.gabo_launch_branding_raster
 import kaze.composeapp.generated.resources.kaze_launch_logo_polished_raster
@@ -166,15 +166,17 @@ internal fun KazeTemporaryDownScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Our service may be warming up or a startup check did not finish in time. Try again, or continue with the basic offline experience.",
+                    text = "Our service may be warming up or a startup check did not finish in time.",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
-                Button(onClick = onRetry) {
-                    Text("Try again")
-                }
+                KazeOfflineStateCard(
+                    onRetryResult = { isOnline ->
+                        if (isOnline) onRetry()
+                    },
+                )
                 OutlinedButton(onClick = onContinueOffline) {
                     Text("Continue offline")
                 }

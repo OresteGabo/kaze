@@ -54,6 +54,8 @@ import dev.orestegabo.kaze.ui.home.components.HomeSettingsScreen
 import dev.orestegabo.kaze.ui.home.components.InvitationsScreen
 import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
+import dev.orestegabo.kaze.ui.startup.KazeStartupScreen
+import dev.orestegabo.kaze.ui.startup.KazeTemporaryDownScreen
 import dev.orestegabo.kaze.ui.stay.StayHomeScreen
 
 @Composable
@@ -241,7 +243,15 @@ fun App() {
                         ),
                 ) {
                     if (!uiState.isReady) {
-                        Box(modifier = Modifier.fillMaxSize())
+                        if (uiState.isStartupTakingTooLong) {
+                            KazeTemporaryDownScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onRetry = appViewModel::retryStartup,
+                                onContinueOffline = appViewModel::continueAsGuest,
+                            )
+                        } else {
+                            KazeStartupScreen(modifier = Modifier.fillMaxSize())
+                        }
                     } else if (uiState.isOnboardingVisible) {
                         OnboardingScreen(
                             modifier = Modifier.fillMaxSize(),

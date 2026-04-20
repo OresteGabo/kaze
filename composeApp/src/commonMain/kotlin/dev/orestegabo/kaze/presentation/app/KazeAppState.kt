@@ -15,9 +15,15 @@ internal data class KazeAppUiState(
     val currentDestination: KazeDestination = KazeDestination.HOME,
     val activeMapTarget: MapNavigationTarget = MapNavigationTarget(),
     val feedbackMessage: String = "",
+    val successCelebration: KazeSuccessCelebration? = null,
 )
 
 internal enum class KazeSessionMode {
     AUTHENTICATED,
     GUEST,
 }
+
+internal data class KazeSuccessCelebration(
+    val title: String,
+    val subtitle: String,
+)

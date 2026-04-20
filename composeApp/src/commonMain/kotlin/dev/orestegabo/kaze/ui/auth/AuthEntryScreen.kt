@@ -45,10 +45,10 @@ import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.chrome.KazeAmbientBackground
 import kaze.composeapp.generated.resources.Res
-import kaze.composeapp.generated.resources.auth_apple
-import kaze.composeapp.generated.resources.auth_facebook
-import kaze.composeapp.generated.resources.auth_google
-import kaze.composeapp.generated.resources.k_logo
+import kaze.composeapp.generated.resources.auth_apple_raster
+import kaze.composeapp.generated.resources.auth_facebook_raster
+import kaze.composeapp.generated.resources.auth_google_raster
+import kaze.composeapp.generated.resources.k_logo_raster
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -178,9 +178,9 @@ internal fun AuthEntryScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 listOf(
-                    Res.drawable.auth_google to "Google",
-                    Res.drawable.auth_apple to "Apple",
-                    Res.drawable.auth_facebook to "Facebook",
+                    Res.drawable.auth_google_raster to "Google",
+                    Res.drawable.auth_apple_raster to "Apple",
+                    Res.drawable.auth_facebook_raster to "Facebook",
                 ).forEach { (icon, name) ->
                     SocialSignInButton(
                         logo = icon,
@@ -206,7 +206,7 @@ internal fun AuthEntryScreen(
 private fun AuthEntryHeader(isCreatingAccount: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Image(
-            painter = painterResource(Res.drawable.k_logo),
+            painter = painterResource(Res.drawable.k_logo_raster),
             contentDescription = "Kaze",
             modifier = Modifier.size(62.dp),
         )
@@ -235,14 +235,14 @@ private fun FeedbackMessage(message: String) {
     if (message.isBlank()) return
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.72f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.22f)),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.62f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)),
     ) {
         Text(
             message,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onErrorContainer,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
         )
     }
 }

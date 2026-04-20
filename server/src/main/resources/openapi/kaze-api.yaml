@@ -20,7 +20,7 @@ tags:
   - name: Assistant
     description: Guest assistant answers.
   - name: Auth
-    description: Sign up, sign in, social sign-in, and JWT session routes.
+    description: Sign up, sign in, social sign-in, refresh-token sessions, and OAuth callback routes.
 paths:
   /:
     get:
@@ -107,6 +107,116 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
+  /auth/{provider}/start:
+    get:
+      tags: [Auth]
+      summary: Start a secure social OAuth login
+      description: Creates a short-lived OAuth attempt with PKCE, nonce, and state validation, then returns the provider authorization URL.
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, apple, facebook]
+        - name: appRedirectUri
+          in: query
+          required: false
+          description: Optional app deep link that receives the one-time login token after provider callback.
+          schema:
+            type: string
+            example: kaze://auth/callback
+      responses:
+        "200":
+          description: Authorization URL and state for the client.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthStartResponse"
+        "400":
+          description: Provider is unsupported or not configured.
+  /auth/google/callback:
+    get:
+      tags: [Auth]
+      summary: Google OAuth callback
+      description: Exchanges the authorization code on the backend, verifies the Google ID token, and redirects the app with a one-time login token.
+      parameters:
+        - $ref: "#/components/parameters/OAuthCode"
+        - $ref: "#/components/parameters/OAuthState"
+      responses:
+        "302":
+          description: Redirects to the configured app deep link with login_token and state query parameters.
+  /auth/apple/callback:
+    post:
+      tags: [Auth]
+      summary: Apple OAuth callback
+      description: Accepts Apple's form_post callback, exchanges the code on the backend, verifies the Apple ID token, and redirects the app with a one-time login token.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [code, state]
+              properties:
+                code:
+                  type: string
+                state:
+                  type: string
+      responses:
+        "302":
+          description: Redirects to the configured app deep link with login_token and state query parameters.
+  /auth/facebook/callback:
+    get:
+      tags: [Auth]
+      summary: Facebook OAuth callback
+      description: Exchanges the authorization code on the backend, validates the Facebook access token, fetches the profile, and redirects the app with a one-time login token.
+      parameters:
+        - $ref: "#/components/parameters/OAuthCode"
+        - $ref: "#/components/parameters/OAuthState"
+      responses:
+        "302":
+          description: Redirects to the configured app deep link with login_token and state query parameters.
+  /auth/session/claim:
+    post:
+      tags: [Auth]
+      summary: Claim a one-time social login token
+      description: Converts the short-lived login token from the OAuth callback into a Kaze access token and refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthSessionClaim"
+      responses:
+        "200":
+          description: JWT and refresh-token session for the linked user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Login token is invalid, expired, or already consumed.
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate a refresh token
+      description: Issues a new access token and a rotated refresh token without contacting the social provider again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRefresh"
+      responses:
+        "200":
+          description: New JWT and refresh token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Refresh token is invalid, expired, or revoked.
   /auth/me:
     get:
       tags: [Auth]
@@ -124,9 +234,15 @@ paths:
     post:
       tags: [Auth]
       summary: Log out the current JWT session
-      description: JWT logout is client-side. Call this endpoint while authenticated, then remove the stored token from the device.
+      description: Revokes the provided refresh token when present. The client should also delete the local access token and refresh token.
       security:
         - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRefresh"
       responses:
         "200":
           description: Logout instruction accepted.
@@ -383,6 +499,18 @@ components:
       schema:
         type: string
       example: guest_aline
+    OAuthCode:
+      name: code
+      in: query
+      required: true
+      schema:
+        type: string
+    OAuthState:
+      name: state
+      in: query
+      required: true
+      schema:
+        type: string
   schemas:
     ApiInfo:
       type: object
@@ -427,12 +555,48 @@ components:
         displayName:
           type: string
           nullable: true
+    AuthStartResponse:
+      type: object
+      required: [authorizationUrl, state]
+      properties:
+        authorizationUrl:
+          type: string
+          format: uri
+        state:
+          type: string
+    AuthSessionClaim:
+      type: object
+      required: [loginToken]
+      properties:
+        loginToken:
+          type: string
+        deviceId:
+          type: string
+          nullable: true
+        deviceLabel:
+          type: string
+          nullable: true
+    AuthRefresh:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+        deviceId:
+          type: string
+          nullable: true
+        deviceLabel:
+          type: string
+          nullable: true
     AuthResponse:
       type: object
       required: [accessToken, tokenType, expiresInSeconds, user]
       properties:
         accessToken:
           type: string
+        refreshToken:
+          type: string
+          nullable: true
         tokenType:
           type: string
           example: Bearer

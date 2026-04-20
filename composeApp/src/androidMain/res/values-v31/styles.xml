@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Kaze.Starting" parent="@style/Theme.Kaze.App">
+        <item name="android:windowSplashScreenBackground">@color/kaze_launch_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/kaze_launch_logo</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/gabo_launch_branding</item>
+    </style>
+</resources>

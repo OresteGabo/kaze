@@ -236,6 +236,39 @@ class ApiRoutesTest {
     }
 
     @Test
+    fun social_oauth_start_rejects_unconfigured_provider() = testApplication {
+        application { module() }
+
+        val response = client.get("/api/v1/auth/google/start")
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("google_auth_not_configured"))
+    }
+
+    @Test
+    fun social_oauth_start_rejects_unknown_provider() = testApplication {
+        application { module() }
+
+        val response = client.get("/api/v1/auth/github/start")
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("unsupported_auth_provider"))
+    }
+
+    @Test
+    fun refresh_requires_refresh_token() = testApplication {
+        application { module() }
+
+        val response = client.post("/api/v1/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"refreshToken":""}""")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("validation_error"))
+    }
+
+    @Test
     fun assistant_query_returns_structured_kitchen_answer() = testApplication {
         application { module() }
 

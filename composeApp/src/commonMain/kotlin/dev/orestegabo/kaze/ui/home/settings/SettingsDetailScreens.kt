@@ -175,7 +175,7 @@ private fun HelpSupportCard() {
             HelpFaqCategory(
                 title = "For businesses",
                 items = listOf(
-                    "How can a hotel or venue join Kaze?" to "Contact GABO at orestegabo@icloud.com or visit kazerwanda.com to discuss onboarding.",
+                    "How can a hotel or venue join Kaze?" to "Contact GABO at dev@kazerwanda.com or visit kazerwanda.com to discuss onboarding.",
                     "Can Kaze support other businesses?" to "Yes. Kaze can support conference rooms, wedding venues, apartments, stadiums, event spaces, and other mapped spaces.",
                     "Can a business request a custom Kaze app?" to "Yes, if agreed with GABO. Kaze is a private commercial product, so custom use needs a business agreement.",
                 ),
@@ -184,7 +184,7 @@ private fun HelpSupportCard() {
                 title = "Support",
                 items = listOf(
                     "What if event or venue information looks wrong?" to "Use Report a problem so the venue, organizer, or Kaze support can review it.",
-                    "How do I contact support?" to "Contact support at orestegabo@icloud.com.",
+                    "How do I contact support?" to "Contact support at dev@kazerwanda.com.",
                 ),
             )
         }

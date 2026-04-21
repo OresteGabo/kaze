@@ -1,15 +1,25 @@
 package dev.orestegabo.kaze.ui.home.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -40,7 +50,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
@@ -60,6 +74,8 @@ import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.empty_invitations_action
 import kaze.composeapp.generated.resources.empty_invitations_subtitle
 import kaze.composeapp.generated.resources.empty_invitations_title
+import kaze.composeapp.generated.resources.wedding_example_hero
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.random.Random
 
@@ -214,6 +230,20 @@ private fun InvitationDetailScreen(
     val invitationTheme = invitation.resolveInvitationTheme()
     val isWedding = invitationTheme.category == InvitationThemeCategory.WEDDING
 
+    if (isWedding) {
+        WeddingInvitationDetailScreen(
+            invitation = invitation,
+            isActive = isActive,
+            onBack = onBack,
+            onOpenEvent = onOpenEvent,
+            edgeAiEnabled = edgeAiEnabled,
+            onAiAction = onAiAction,
+            modifier = modifier,
+            bottomContentPadding = bottomContentPadding,
+        )
+        return
+    }
+
     Box(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -232,60 +262,142 @@ private fun InvitationDetailScreen(
                 onClick = onBack,
                 leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
             )
-
-            invitationTheme.Cover(
-                invitation = invitation,
-                isActive = isActive,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (isWedding) 0.86f else 0.94f)),
-                shape = RoundedCornerShape(30.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                shape = RoundedCornerShape(34.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(999.dp),
-                        color = if (isActive) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    ) {
-                        Text(
-                            invitation.statusLabel,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isActive) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (isWedding) 320.dp else 250.dp)
+                        .background(
+                            if (isWedding) {
+                                androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    listOf(
+                                        androidx.compose.ui.graphics.Color.Transparent,
+                                        androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f),
+                                    ),
+                                )
+                            } else {
+                                androidx.compose.ui.graphics.Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.94f),
+                                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.88f),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                                    ),
+                                )
+                            },
                         )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        .padding(22.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.align(Alignment.BottomStart),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = if (isWedding) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.66f),
+                            border = BorderStroke(1.dp, if (isWedding) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.18f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                        ) {
+                            Text(
+                                invitation.statusLabel,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (isWedding) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                         Text(
-                            invitationTheme.detailsTitle,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            invitation.title,
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Black,
+                            color = if (isWedding) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             invitation.subtitle,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (isWedding) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.86f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
                         )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (invitation.code.isNotBlank()) {
-                            InvitationDetailRow("Invitation code", invitation.code, Icons.Default.VpnKey)
-                        } else {
-                            InvitationDetailRow("Invitation code", "Will appear after organizer approval.", Icons.Default.VpnKey)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            MetaPill(
+                                label = if (invitation.code.isNotBlank()) invitation.code else "Pending",
+                                leadingIcon = Icons.Default.VpnKey,
+                                containerColor = if (isWedding) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.14f) else MaterialTheme.colorScheme.secondaryContainer,
+                                textColor = if (isWedding) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                            MetaPill(
+                                label = if (isActive) "Active" else "Saved",
+                                leadingIcon = Icons.Default.CheckCircle,
+                                containerColor = if (isWedding) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceVariant,
+                                textColor = if (isWedding) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
-                        InvitationDetailRow("Guest phone", invitation.phoneLabel, Icons.Default.Groups)
-                        InvitationDetailRow(
-                            "Access status",
-                            if (isActive) "Waiting for your confirmation" else "Saved for history",
-                            Icons.Default.CheckCircle,
+                    }
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(30.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                "Invitation access",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                if (isWedding) "Wedding invitation" else invitationTheme.detailsTitle,
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        if (invitation.code.isNotBlank()) {
+                            Surface(
+                                shape = RoundedCornerShape(18.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                Text(
+                                    invitation.code,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        InvitationAccessTile(
+                            title = "Guest",
+                            value = invitation.phoneLabel,
+                            modifier = Modifier.weight(1f),
+                        )
+                        InvitationAccessTile(
+                            title = "Status",
+                            value = if (isActive) "Ready to open" else "Saved for later",
+                            modifier = Modifier.weight(1f),
                         )
                     }
+                    InvitationNarrativeCard(isWedding = false)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -317,6 +429,408 @@ private fun InvitationDetailScreen(
                     icon = Icons.Default.AutoAwesome,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun WeddingInvitationDetailScreen(
+    invitation: InvitationPreview,
+    isActive: Boolean,
+    onBack: () -> Unit,
+    onOpenEvent: () -> Unit,
+    edgeAiEnabled: Boolean,
+    onAiAction: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 20.dp,
+) {
+    val scrollState = rememberScrollState()
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(Res.drawable.wedding_example_hero),
+            contentDescription = "Wedding invitation hero",
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop,
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.18f),
+                            Color(0xFF522C35).copy(alpha = 0.48f),
+                            Color(0xFF2A171B).copy(alpha = 0.92f),
+                            Color(0xFFF7ECE5),
+                        ),
+                    ),
+                ),
+        )
+        WeddingFloatingHearts(
+            modifier = Modifier.matchParentSize(),
+            heartCount = 18,
+            tint = Color(0xFFFFE6EC),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            KazeGhostButton(
+                label = "Back to invitations",
+                onClick = onBack,
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            )
+            Surface(
+                shape = RoundedCornerShape(36.dp),
+                color = Color.White.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(480.dp)
+                        .padding(horizontal = 24.dp, vertical = 28.dp),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = Color.White.copy(alpha = 0.14f),
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+                        ) {
+                            Text(
+                                invitation.statusLabel,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Text(
+                            "Together with their families",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White.copy(alpha = 0.82f),
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            invitation.title,
+                            style = MaterialTheme.typography.displayMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Black,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            "invite you to celebrate their wedding",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color(0xFFFFE8EE),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            MetaPill(
+                                label = "28 June 2026",
+                                leadingIcon = Icons.Default.CalendarMonth,
+                                containerColor = Color.White.copy(alpha = 0.14f),
+                                textColor = Color.White,
+                            )
+                            MetaPill(
+                                label = "Kigali",
+                                leadingIcon = Icons.Default.CheckCircle,
+                                containerColor = Color.White.copy(alpha = 0.14f),
+                                textColor = Color.White,
+                            )
+                        }
+                        Text(
+                            "Garden ceremony • Sunset reception",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White.copy(alpha = 0.88f),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(34.dp),
+                color = Color(0xFFFFFBF7).copy(alpha = 0.94f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.72f)),
+                shadowElevation = 12.dp,
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        "Your invitation",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color(0xFFB76B79),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        "A beautiful welcome into the wedding day.",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color(0xFF251719),
+                        fontWeight = FontWeight.Black,
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        maxItemsInEachRow = 2,
+                    ) {
+                        WeddingInvitationMetric(
+                            label = "Access",
+                            value = invitation.code.ifBlank { "Soon" },
+                        )
+                        WeddingInvitationMetric(
+                            label = "Guest",
+                            value = invitation.phoneLabel,
+                        )
+                    }
+                    WeddingInvitationQuoteCard()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        KazePrimaryButton(
+                            label = if (isActive) "Open wedding" else "View wedding",
+                            onClick = onOpenEvent,
+                            modifier = Modifier.weight(1f),
+                            leadingIcon = Icons.Default.CalendarMonth,
+                        )
+                        KazeSecondaryButton(
+                            label = "Share look",
+                            onClick = {},
+                            modifier = Modifier.weight(1f),
+                            leadingIcon = Icons.Default.Edit,
+                        )
+                    }
+                }
+            }
+
+            if (edgeAiEnabled) {
+                KazeAiAssistCard(
+                    title = "Explain this pass",
+                    subtitle = "Kaze can explain access, schedule, and venue rules from this invitation without sending the pass to a server.",
+                    actionLabel = "Explain offline",
+                    onAction = { onAiAction("Offline Pass Explainer") },
+                    icon = Icons.Default.AutoAwesome,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeddingInvitationMetric(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFFF8E6E5),
+        border = BorderStroke(1.dp, Color(0xFFEAC8CC)),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                color = Color(0xFFB76B79),
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                value,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color(0xFF251719),
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeddingInvitationQuoteCard() {
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = Color(0xFFFFF5F1),
+        border = BorderStroke(1.dp, Color(0xFFF1D8D5)),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                "With love",
+                style = MaterialTheme.typography.labelLarge,
+                color = Color(0xFFB76B79),
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                "Save the date, dress with joy, and arrive ready to celebrate.",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color(0xFF251719),
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "Ceremony in the garden. Reception at sunset.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF251719).copy(alpha = 0.68f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeddingFloatingHearts(
+    modifier: Modifier = Modifier,
+    heartCount: Int,
+    tint: Color,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        weddingInviteHeartSpecs.take(heartCount).forEachIndexed { index, spec ->
+            val transition = rememberInfiniteTransition(label = "invite-heart-$index")
+            val progress = transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = spec.durationMillis,
+                        delayMillis = spec.delayMillis,
+                        easing = LinearEasing,
+                    ),
+                    repeatMode = RepeatMode.Restart,
+                ),
+                label = "invite-heart-progress-$index",
+            )
+            val drift = spec.drift * progress.value
+            val xOffset = (maxWidth * spec.lane) + drift
+            val yOffset = maxHeight - ((maxHeight + spec.travelPadding) * progress.value)
+            val alpha = when {
+                progress.value < spec.fadeIn -> progress.value / spec.fadeIn
+                progress.value > spec.fadeOutStart -> (1f - progress.value) / (1f - spec.fadeOutStart)
+                else -> spec.maxAlpha
+            }.coerceIn(0.12f, spec.maxAlpha)
+
+            Text(
+                spec.symbol,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = xOffset, y = yOffset),
+                color = tint.copy(alpha = alpha),
+                style = when (spec.sizeTier) {
+                    0 -> MaterialTheme.typography.titleMedium
+                    1 -> MaterialTheme.typography.titleLarge
+                    else -> MaterialTheme.typography.headlineMedium
+                },
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+private data class WeddingInviteHeartSpec(
+    val lane: Float,
+    val drift: Dp,
+    val durationMillis: Int,
+    val delayMillis: Int,
+    val travelPadding: Dp,
+    val fadeIn: Float,
+    val fadeOutStart: Float,
+    val maxAlpha: Float,
+    val symbol: String,
+    val sizeTier: Int,
+)
+
+private val weddingInviteHeartSpecs = listOf(
+    WeddingInviteHeartSpec(0.1f, 14.dp, 6300, 0, 176.dp, 0.16f, 0.84f, 0.76f, "♥", 2),
+    WeddingInviteHeartSpec(0.22f, (-10).dp, 7200, 360, 160.dp, 0.14f, 0.88f, 0.64f, "♡", 1),
+    WeddingInviteHeartSpec(0.34f, 20.dp, 5600, 680, 184.dp, 0.18f, 0.80f, 0.78f, "♥", 2),
+    WeddingInviteHeartSpec(0.47f, (-18).dp, 7700, 1040, 170.dp, 0.15f, 0.89f, 0.70f, "♥", 1),
+    WeddingInviteHeartSpec(0.59f, 12.dp, 6100, 1380, 190.dp, 0.13f, 0.82f, 0.68f, "♡", 1),
+    WeddingInviteHeartSpec(0.72f, (-14).dp, 7000, 1760, 168.dp, 0.17f, 0.86f, 0.74f, "♥", 2),
+    WeddingInviteHeartSpec(0.88f, 10.dp, 5900, 2120, 182.dp, 0.16f, 0.83f, 0.66f, "♥", 1),
+    WeddingInviteHeartSpec(0.05f, (-6).dp, 8150, 2460, 158.dp, 0.14f, 0.90f, 0.56f, "♡", 0),
+    WeddingInviteHeartSpec(0.28f, 16.dp, 6500, 2860, 174.dp, 0.15f, 0.84f, 0.74f, "♥", 2),
+    WeddingInviteHeartSpec(0.41f, (-16).dp, 7350, 3200, 188.dp, 0.16f, 0.82f, 0.70f, "♥", 1),
+    WeddingInviteHeartSpec(0.54f, 22.dp, 5750, 3560, 194.dp, 0.13f, 0.80f, 0.78f, "♡", 1),
+    WeddingInviteHeartSpec(0.67f, (-12).dp, 7900, 3940, 164.dp, 0.15f, 0.88f, 0.62f, "♥", 2),
+    WeddingInviteHeartSpec(0.8f, 18.dp, 6250, 4320, 180.dp, 0.16f, 0.83f, 0.76f, "♥", 2),
+    WeddingInviteHeartSpec(0.93f, (-8).dp, 6800, 4660, 166.dp, 0.14f, 0.86f, 0.64f, "♡", 0),
+    WeddingInviteHeartSpec(0.16f, 8.dp, 7100, 5040, 186.dp, 0.17f, 0.84f, 0.72f, "♥", 1),
+    WeddingInviteHeartSpec(0.62f, (-20).dp, 7600, 5420, 176.dp, 0.15f, 0.87f, 0.68f, "♡", 1),
+    WeddingInviteHeartSpec(0.76f, 14.dp, 6020, 5780, 192.dp, 0.16f, 0.82f, 0.74f, "♥", 2),
+    WeddingInviteHeartSpec(0.97f, (-5).dp, 8400, 6200, 150.dp, 0.13f, 0.90f, 0.54f, "♡", 0),
+)
+
+@Composable
+private fun InvitationAccessTile(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            Text(value, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun InvitationNarrativeCard(isWedding: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.34f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                if (isWedding) "This invite opens a full wedding page with timeline, venue, guests, and Kaze Pass access."
+                else "This invite opens event details, schedule, venue context, and access information.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                if (isWedding) "Designed as one emotional, photo-led experience."
+                else "Designed as one clean event workspace.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+            )
         }
     }
 }

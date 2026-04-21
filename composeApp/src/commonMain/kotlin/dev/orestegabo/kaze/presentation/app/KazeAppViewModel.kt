@@ -75,6 +75,7 @@ internal class KazeAppViewModel(
             val hasSeenOnboarding = secureStore.get(HAS_SEEN_ONBOARDING_KEY) == TRUE_VALUE
             val persistedThemeMode = secureStore.get(THEME_MODE_KEY).toThemeModeOrDefault()
             val persistedSessionMode = secureStore.get(SESSION_MODE_KEY).toSessionModeOrNull()
+            val persistedEdgeAiEnabled = secureStore.get(EDGE_AI_ENABLED_KEY)?.toBooleanStrictOrNull() ?: true
             uiState = uiState.copy(
                 isReady = true,
                 isStartupTakingTooLong = false,
@@ -83,6 +84,7 @@ internal class KazeAppViewModel(
                 sessionMode = persistedSessionMode,
                 sessionEmail = secureStore.get(SESSION_EMAIL_KEY).orEmpty(),
                 themeMode = persistedThemeMode,
+                edgeAiEnabled = persistedEdgeAiEnabled,
             )
             startupTimeoutJob?.cancel()
         }
@@ -153,6 +155,13 @@ internal class KazeAppViewModel(
         uiState = uiState.copy(themeMode = themeMode)
         scope.launch {
             secureStore.put(THEME_MODE_KEY, themeMode.name)
+        }
+    }
+
+    fun onEdgeAiEnabledChanged(enabled: Boolean) {
+        uiState = uiState.copy(edgeAiEnabled = enabled)
+        scope.launch {
+            secureStore.put(EDGE_AI_ENABLED_KEY, enabled.toString())
         }
     }
 
@@ -340,6 +349,7 @@ internal class KazeAppViewModel(
     private companion object {
         const val HAS_SEEN_ONBOARDING_KEY = "app.has_seen_onboarding"
         const val THEME_MODE_KEY = "app.theme_mode"
+        const val EDGE_AI_ENABLED_KEY = "app.edge_ai_enabled"
         const val SESSION_MODE_KEY = "app.session_mode"
         const val SESSION_EMAIL_KEY = "app.session_email"
         const val AUTH_TOKEN_KEY = "auth.access_token"

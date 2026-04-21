@@ -51,13 +51,14 @@ internal fun HomeHeroCard(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
-                        "Discover more with Kaze",
+                        "Explore Kaze",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        "Browse venues, event spaces, and invitation experiences when you want to plan what comes next.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        "Venues • Events • Invites",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                     )
                 }
@@ -85,27 +86,6 @@ internal fun HomeHeroCard(
                 MetaPill("Venues", leadingIcon = Icons.Default.Search)
                 MetaPill("Invitation code", leadingIcon = Icons.Default.VpnKey)
                 MetaPill("Invitations", leadingIcon = Icons.Default.Groups)
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        "Your stay essentials are above. Use this area when you want to explore public venues, enter a code, or open invitations.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
-                    )
-                    Text(
-                        "Venue details and prices stay available without hiding your active pass.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
-                    )
-                }
             }
         }
     }

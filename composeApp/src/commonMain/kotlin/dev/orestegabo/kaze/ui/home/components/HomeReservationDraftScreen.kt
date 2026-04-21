@@ -774,7 +774,7 @@ private fun defaultReservationAddOns(categoryTitle: String): List<String> {
 private fun defaultPaymentMethods(): List<String> = listOf(
     "MTN MoMo",
     "Airtel Money",
-    "BK/Rswitch",
+    "BK / Rswitch",
     "Card",
     "Cash at venue",
 )
@@ -784,7 +784,8 @@ private fun paymentSubtitle(method: String): String {
     return when (method) {
         "Cash at venue" -> "Confirm in Kaze after payment is received."
         "Card" -> "Useful for guests or companies that prefer card payment."
-        else -> "Mobile payment confirmation can be attached later."
+        "BK / Rswitch" -> "Useful for local bank and card payment rails."
+        else -> "Useful for local mobile payments."
     }
 }
 

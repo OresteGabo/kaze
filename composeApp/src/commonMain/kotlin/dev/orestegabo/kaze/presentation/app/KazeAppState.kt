@@ -12,6 +12,7 @@ internal data class KazeAppUiState(
     val sessionMode: KazeSessionMode? = null,
     val sessionEmail: String = "",
     val themeMode: KazeThemeMode = KazeThemeMode.SYSTEM,
+    val edgeAiEnabled: Boolean = true,
     val currentDestination: KazeDestination = KazeDestination.HOME,
     val activeMapTarget: MapNavigationTarget = MapNavigationTarget(),
     val feedbackMessage: String = "",

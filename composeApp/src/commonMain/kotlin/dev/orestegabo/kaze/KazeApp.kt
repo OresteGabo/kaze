@@ -54,7 +54,6 @@ import dev.orestegabo.kaze.ui.home.components.HomeSettingsScreen
 import dev.orestegabo.kaze.ui.home.components.InvitationsScreen
 import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
-import dev.orestegabo.kaze.ui.startup.KazeStartupScreen
 import dev.orestegabo.kaze.ui.startup.KazeTemporaryDownScreen
 import dev.orestegabo.kaze.ui.states.KazePermissionPrimerScreen
 import dev.orestegabo.kaze.ui.states.KazePermissionPrimerType
@@ -253,8 +252,6 @@ fun App() {
                                 onRetry = appViewModel::retryStartup,
                                 onContinueOffline = appViewModel::continueAsGuest,
                             )
-                        } else {
-                            KazeStartupScreen(modifier = Modifier.fillMaxSize())
                         }
                     } else if (uiState.isOnboardingVisible) {
                         OnboardingScreen(
@@ -361,6 +358,10 @@ fun App() {
                                                 onDaySelected = eventsViewModel::onDaySelected,
                                                 onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
                                                 onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
+                                                edgeAiEnabled = uiState.edgeAiEnabled,
+                                                onAiAction = { feature ->
+                                                    appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
+                                                },
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -371,6 +372,10 @@ fun App() {
                                                 selectedInvitation = selectedInvitation,
                                                 onSelectedInvitationChange = { selectedInvitation = it },
                                                 onOpenEvent = ::openEventFromInvitation,
+                                                edgeAiEnabled = uiState.edgeAiEnabled,
+                                                onAiAction = { feature ->
+                                                    appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
+                                                },
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -398,8 +403,10 @@ fun App() {
                                             KazeDestination.SETTINGS -> HomeSettingsScreen(
                                                 bottomContentPadding = bottomContentPadding,
                                                 themeMode = uiState.themeMode,
+                                                edgeAiEnabled = uiState.edgeAiEnabled,
                                                 sessionLabel = sessionLabel,
                                                 onThemeModeChange = appViewModel::onThemeModeChanged,
+                                                onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
                                                 onLogout = appViewModel::logout,
                                                 onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                             )
@@ -483,6 +490,10 @@ fun App() {
                                             onDaySelected = eventsViewModel::onDaySelected,
                                             onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
                                             onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
+                                            edgeAiEnabled = uiState.edgeAiEnabled,
+                                            onAiAction = { feature ->
+                                                appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
+                                            },
                                             bottomContentPadding = bottomContentPadding,
                                         )
 
@@ -493,6 +504,10 @@ fun App() {
                                             selectedInvitation = selectedInvitation,
                                             onSelectedInvitationChange = { selectedInvitation = it },
                                             onOpenEvent = ::openEventFromInvitation,
+                                            edgeAiEnabled = uiState.edgeAiEnabled,
+                                            onAiAction = { feature ->
+                                                appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
+                                            },
                                             bottomContentPadding = bottomContentPadding,
                                         )
 
@@ -520,8 +535,10 @@ fun App() {
                                         KazeDestination.SETTINGS -> HomeSettingsScreen(
                                             bottomContentPadding = bottomContentPadding,
                                             themeMode = uiState.themeMode,
+                                            edgeAiEnabled = uiState.edgeAiEnabled,
                                             sessionLabel = sessionLabel,
                                             onThemeModeChange = appViewModel::onThemeModeChanged,
+                                            onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
                                             onLogout = appViewModel::logout,
                                             onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                         )

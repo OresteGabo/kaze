@@ -39,10 +39,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.experience.EventDay
 import dev.orestegabo.kaze.domain.experience.ScheduledExperience
+import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.ui.ai.KazeAiAssistCard
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.components.SectionIntroCard
+import dev.orestegabo.kaze.ui.home.invitations.InvitationThemeCategory
+import dev.orestegabo.kaze.ui.home.invitations.resolveInvitationTheme
 import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.empty_event_day_subtitle
@@ -61,10 +64,21 @@ internal fun EventScheduleScreen(
     onDaySelected: (EventDay) -> Unit,
     onSessionAction: (ScheduledExperience) -> Unit,
     onEmptyAction: () -> Unit,
+    eventInvitation: InvitationPreview? = null,
+    onVenueAction: () -> Unit = {},
     edgeAiEnabled: Boolean,
     onAiAction: (String) -> Unit,
     bottomContentPadding: Dp = 20.dp,
 ) {
+    if (eventInvitation?.resolveInvitationTheme()?.category == InvitationThemeCategory.WEDDING) {
+        WeddingEventShowcaseScreen(
+            invitation = eventInvitation,
+            onViewVenue = onVenueAction,
+            bottomContentPadding = bottomContentPadding,
+        )
+        return
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),

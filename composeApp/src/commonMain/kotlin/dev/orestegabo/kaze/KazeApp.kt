@@ -52,6 +52,8 @@ import dev.orestegabo.kaze.ui.explore.ExploreScreen
 import dev.orestegabo.kaze.ui.home.HomeScreen
 import dev.orestegabo.kaze.ui.home.components.HomeSettingsScreen
 import dev.orestegabo.kaze.ui.home.components.InvitationsScreen
+import dev.orestegabo.kaze.ui.home.invitations.InvitationThemeCategory
+import dev.orestegabo.kaze.ui.home.invitations.resolveInvitationTheme
 import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
 import dev.orestegabo.kaze.ui.startup.KazeTemporaryDownScreen
@@ -135,7 +137,13 @@ fun App() {
             null -> "Not signed in"
         }
         var selectedInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
+        var selectedEventInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
         var activePermissionPrimer by remember { mutableStateOf<KazePermissionPrimerType?>(null) }
+
+        fun selectPrimaryDestination(destination: KazeDestination) {
+            selectedEventInvitation = null
+            appViewModel.onDestinationSelected(destination)
+        }
 
         fun handleStayResult(result: StayActionResult?) {
             when (result) {
@@ -144,7 +152,10 @@ fun App() {
                     title = "Request sent",
                     subtitle = result.message,
                 )
-                is StayActionResult.NavigateToEvents -> appViewModel.openEvents()
+                is StayActionResult.NavigateToEvents -> {
+                    selectedEventInvitation = null
+                    appViewModel.openEvents()
+                }
                 is StayActionResult.NavigateToMap -> appViewModel.openMapRoute(
                     route = result.route,
                     floorId = result.floorId,
@@ -174,6 +185,7 @@ fun App() {
 
         fun openPublicBrowse(query: String) {
             val trimmedQuery = query.trim()
+            selectedEventInvitation = null
             appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
             if (trimmedQuery.isNotEmpty()) {
                 appViewModel.showFeedback("Showing venues related to \"$trimmedQuery\".")
@@ -187,6 +199,7 @@ fun App() {
             if (trimmedCode.isBlank()) {
                 appViewModel.showFeedback("Enter a short event or invitation code first.")
             } else {
+                selectedEventInvitation = null
                 appViewModel.onDestinationSelected(KazeDestination.EVENTS)
                 appViewModel.showFeedback("Code $trimmedCode matched. Review the linked event details.")
             }
@@ -202,16 +215,19 @@ fun App() {
         }
 
         fun openVenue(venue: PublicVenuePreview) {
+            selectedEventInvitation = null
             appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
             appViewModel.showFeedback("Opening ${venue.name} in public browsing.")
         }
 
         fun openInvitations() {
             selectedInvitation = null
+            selectedEventInvitation = null
             appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
         }
 
         fun openEventFromInvitation(invitation: InvitationPreview) {
+            selectedEventInvitation = invitation
             appViewModel.onDestinationSelected(KazeDestination.EVENTS)
             appViewModel.showFeedback("${invitation.title} event details are open.")
         }
@@ -234,6 +250,8 @@ fun App() {
             containerColor = MaterialTheme.colorScheme.background,
         ) { innerPadding ->
             val layoutDirection = LocalLayoutDirection.current
+            val immersiveWeddingEvent = uiState.currentDestination == KazeDestination.EVENTS &&
+                selectedEventInvitation?.resolveInvitationTheme()?.category == InvitationThemeCategory.WEDDING
             Box(modifier = Modifier.fillMaxSize()) {
                 KazeAmbientBackground(modifier = Modifier.matchParentSize())
                 Box(
@@ -241,7 +259,7 @@ fun App() {
                         .fillMaxSize()
                         .padding(
                             start = innerPadding.calculateStartPadding(layoutDirection),
-                            top = innerPadding.calculateTopPadding(),
+                            top = if (immersiveWeddingEvent) 0.dp else innerPadding.calculateTopPadding(),
                             end = innerPadding.calculateEndPadding(layoutDirection),
                         ),
                 ) {
@@ -279,7 +297,7 @@ fun App() {
                                 Row(modifier = Modifier.fillMaxSize()) {
                                     KazeNavigationRail(
                                         currentDestination = uiState.currentDestination,
-                                        onDestinationSelected = appViewModel::onDestinationSelected,
+                                        onDestinationSelected = ::selectPrimaryDestination,
                                         pendingInvitationCount = pendingInvitationCount,
                                         destinations = availableDestinations,
                                     )
@@ -358,6 +376,14 @@ fun App() {
                                                 onDaySelected = eventsViewModel::onDaySelected,
                                                 onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
                                                 onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
+                                                eventInvitation = selectedEventInvitation,
+                                                onVenueAction = {
+                                                    appViewModel.openMapRoute(
+                                                        route = "Route to Nyarutarama Garden",
+                                                        floorId = "l1",
+                                                        floorLabel = "Nyarutarama Garden",
+                                                    )
+                                                },
                                                 edgeAiEnabled = uiState.edgeAiEnabled,
                                                 onAiAction = { feature ->
                                                     appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
@@ -408,7 +434,7 @@ fun App() {
                                                 onThemeModeChange = appViewModel::onThemeModeChanged,
                                                 onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
                                                 onLogout = appViewModel::logout,
-                                                onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
+                                                onBack = { selectPrimaryDestination(KazeDestination.HOME) },
                                             )
                                         }
                                     }
@@ -490,6 +516,14 @@ fun App() {
                                             onDaySelected = eventsViewModel::onDaySelected,
                                             onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
                                             onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
+                                            eventInvitation = selectedEventInvitation,
+                                            onVenueAction = {
+                                                appViewModel.openMapRoute(
+                                                    route = "Route to Nyarutarama Garden",
+                                                    floorId = "l1",
+                                                    floorLabel = "Nyarutarama Garden",
+                                                )
+                                            },
                                             edgeAiEnabled = uiState.edgeAiEnabled,
                                             onAiAction = { feature ->
                                                 appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
@@ -540,7 +574,7 @@ fun App() {
                                             onThemeModeChange = appViewModel::onThemeModeChanged,
                                             onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
                                             onLogout = appViewModel::logout,
-                                            onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
+                                            onBack = { selectPrimaryDestination(KazeDestination.HOME) },
                                         )
                                     }
                                 }
@@ -555,7 +589,7 @@ fun App() {
                         if (!useRail) {
                     KazeBottomBar(
                         currentDestination = uiState.currentDestination,
-                        onDestinationSelected = appViewModel::onDestinationSelected,
+                        onDestinationSelected = ::selectPrimaryDestination,
                         pendingInvitationCount = pendingInvitationCount,
                         destinations = availableDestinations,
                         modifier = Modifier.align(Alignment.BottomCenter),

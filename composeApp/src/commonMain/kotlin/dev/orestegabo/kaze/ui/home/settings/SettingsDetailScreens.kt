@@ -252,49 +252,77 @@ private fun PaymentMethodsCard() {
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    "Available payment methods",
+                    "Accepted payments",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    "See which payment options can be used for reservations, services, deposits, and event extras.",
+                    "Rwanda-first payment options for reservations, services, deposits, and event extras.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                 )
             }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                MetaPill("MTN MoMo")
+                MetaPill("Airtel Money")
+                MetaPill("BK / Rswitch")
+                MetaPill("Cash")
+            }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                PaymentMethodRow(
-                    title = "Cash",
-                    status = "Needs confirmation",
-                    logo = Res.drawable.cash_rwanda_note_raster,
-                    logoSize = 36.dp,
+                Text(
+                    "Most used in Rwanda",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 PaymentMethodRow(
                     title = "MTN MoMo",
                     status = "Verified",
                     logo = Res.drawable.momo,
+                    logoSize = 34.dp,
+                    subtitle = "Mobile money",
                 )
                 PaymentMethodRow(
                     title = "Airtel Money",
                     status = "Available",
                     logo = Res.drawable.airtel_logo,
-                )
-                PaymentMethodRow(
-                    title = "SPENN",
-                    status = "Available",
-                    logo = Res.drawable.spenn_logo,
+                    subtitle = "Mobile money",
                 )
                 PaymentMethodRow(
                     title = "BK / Rswitch",
                     status = "Available",
                     logo = Res.drawable.bk_logo,
+                    subtitle = "Bank and card rails",
+                )
+                Text(
+                    "Also supported",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                PaymentMethodRow(
+                    title = "Cash",
+                    status = "Needs confirmation",
+                    logo = Res.drawable.cash_rwanda_note_raster,
+                    logoSize = 36.dp,
+                    subtitle = "Venue confirmation",
+                )
+                PaymentMethodRow(
+                    title = "SPENN",
+                    status = "Available",
+                    logo = Res.drawable.spenn_logo,
+                    subtitle = "Digital wallet",
                 )
                 PaymentMethodRow(
                     title = "Card",
                     status = "Check required",
+                    subtitle = "Depends on venue",
                 )
             }
             PaymentCashNotice()
@@ -307,6 +335,7 @@ private fun PaymentMethodsCard() {
 private fun PaymentMethodRow(
     title: String,
     status: String,
+    subtitle: String? = null,
     logo: DrawableResource? = null,
     logoSize: Dp = 28.dp,
     icon: ImageVector = Icons.Default.VerifiedUser,
@@ -354,6 +383,13 @@ private fun PaymentMethodRow(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                subtitle?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+                    )
+                }
             }
             MetaPill(status)
         }

@@ -11,8 +11,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,8 +34,10 @@ import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 internal fun HomeSettingsScreen(
     bottomContentPadding: Dp,
     themeMode: KazeThemeMode,
+    edgeAiEnabled: Boolean,
     sessionLabel: String,
     onThemeModeChange: (KazeThemeMode) -> Unit,
+    onEdgeAiEnabledChange: (Boolean) -> Unit,
     onLogout: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -110,6 +114,35 @@ internal fun HomeSettingsScreen(
                         label = mode.settingsLabel,
                         selected = themeMode == mode,
                         onClick = { onThemeModeChange(mode) },
+                    )
+                }
+            }
+        }
+
+        SettingsCard(
+            title = "On-device AI",
+            subtitle = if (edgeAiEnabled) {
+                "Enabled. Kaze AI runs locally on this device for supported offline tasks."
+            } else {
+                "Disabled. You can turn it back on when you want local AI assistance."
+            },
+            icon = Icons.Default.AutoAwesome,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        "No server AI processing for these features.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = edgeAiEnabled,
+                        onCheckedChange = onEdgeAiEnabledChange,
                     )
                 }
             }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.experience.EventDay
 import dev.orestegabo.kaze.domain.experience.ScheduledExperience
+import dev.orestegabo.kaze.ui.ai.KazeAiAssistCard
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.components.SectionIntroCard
@@ -59,6 +61,8 @@ internal fun EventScheduleScreen(
     onDaySelected: (EventDay) -> Unit,
     onSessionAction: (ScheduledExperience) -> Unit,
     onEmptyAction: () -> Unit,
+    edgeAiEnabled: Boolean,
+    onAiAction: (String) -> Unit,
     bottomContentPadding: Dp = 20.dp,
 ) {
     LazyColumn(
@@ -73,6 +77,18 @@ internal fun EventScheduleScreen(
                 subtitle = "A clean schedule view with day switching, venue references, and direct map transitions.",
                 icon = Icons.Default.CalendarMonth,
             )
+        }
+
+        if (edgeAiEnabled && selectedDay != null) {
+            item {
+                KazeAiAssistCard(
+                    title = "Ask about this event",
+                    subtitle = "Kaze can answer schedule, room, pass, and venue questions from cached event data when the on-device model is available.",
+                    actionLabel = "Ask offline concierge",
+                    onAction = { onAiAction("Offline Event Concierge") },
+                    icon = Icons.Default.AutoAwesome,
+                )
+            }
         }
 
         if (days.isEmpty() || selectedDay == null) {

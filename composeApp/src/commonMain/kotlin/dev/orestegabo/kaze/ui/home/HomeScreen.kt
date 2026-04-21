@@ -142,6 +142,10 @@ internal fun HomeScreen(
                     onAccessContextSelected = onAccessContextSelected,
                     onPrimaryAction = onPrimaryAction,
                 )
+            } else {
+                GuestPassPreviewCard(
+                    onOpenInvitations = onSeeAllInvitations,
+                )
             }
 
             if (isExpanded) {
@@ -174,7 +178,7 @@ internal fun HomeScreen(
                 onOpenService = { serviceQuery -> selectedServiceQuery = serviceQuery },
             )
 
-            if (!isGuestMode && invitations.isNotEmpty()) {
+            if (invitations.isNotEmpty()) {
                 InvitationSection(
                     invitations = invitations,
                     onOpenInvitation = onOpenInvitation,

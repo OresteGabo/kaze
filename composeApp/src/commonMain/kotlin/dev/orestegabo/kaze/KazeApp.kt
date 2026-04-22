@@ -54,6 +54,8 @@ import dev.orestegabo.kaze.ui.home.components.HomeSettingsScreen
 import dev.orestegabo.kaze.ui.home.components.InvitationsScreen
 import dev.orestegabo.kaze.ui.home.invitations.InvitationThemeCategory
 import dev.orestegabo.kaze.ui.home.invitations.resolveInvitationTheme
+import dev.orestegabo.kaze.ui.home.settings.LegalDetailScreen
+import dev.orestegabo.kaze.ui.home.settings.LegalPage
 import dev.orestegabo.kaze.ui.map.MapScreen
 import dev.orestegabo.kaze.ui.onboarding.OnboardingScreen
 import dev.orestegabo.kaze.ui.startup.KazeTemporaryDownScreen
@@ -138,6 +140,7 @@ fun App() {
         }
         var selectedInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
         var selectedEventInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
+        var selectedLegalPage by remember { mutableStateOf<LegalPage?>(null) }
         var activePermissionPrimer by remember { mutableStateOf<KazePermissionPrimerType?>(null) }
 
         fun selectPrimaryDestination(destination: KazeDestination) {
@@ -241,6 +244,10 @@ fun App() {
             appViewModel.showFeedback("Opening the map for ${venue.name}.")
         }
 
+        fun openLegalPage(page: LegalPage) {
+            selectedLegalPage = page
+        }
+
         LaunchedEffect(uiState.activeMapTarget) {
             mapViewModel.applyNavigationTarget(uiState.activeMapTarget)
         }
@@ -263,6 +270,14 @@ fun App() {
                             end = innerPadding.calculateEndPadding(layoutDirection),
                         ),
                 ) {
+                    selectedLegalPage?.let { page ->
+                        LegalDetailScreen(
+                            page = page,
+                            bottomContentPadding = 116.dp,
+                            onBack = { selectedLegalPage = null },
+                        )
+                        return@Box
+                    }
                     if (!uiState.isReady) {
                         if (uiState.isStartupTakingTooLong) {
                             KazeTemporaryDownScreen(
@@ -288,6 +303,7 @@ fun App() {
                             onCreateAccount = appViewModel::createAccount,
                             onSocialSignIn = appViewModel::signInWithSocialProvider,
                             onContinueAsGuest = appViewModel::continueAsGuest,
+                            onOpenLegalPage = ::openLegalPage,
                         )
                     } else {
                         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -480,7 +496,7 @@ fun App() {
                                             onOpenInvitation = ::openInvitation,
                                             onSeeAllInvitations = ::openInvitations,
                                             bottomContentPadding = bottomContentPadding,
-                                            )
+                                        )
 
                                         KazeDestination.STAY -> StayHomeScreen(
                                             modifier = Modifier.weight(1f),

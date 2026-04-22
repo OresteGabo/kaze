@@ -70,6 +70,8 @@ internal object AppUsersTable : IdTable<String>("app_users") {
     val roles = array<String>("roles")
     val disabled = bool("disabled").default(false)
     val lastLoginAt = timestampWithTimeZone("last_login_at").nullable()
+    val createdAt = timestampWithTimeZone("created_at")
+    val updatedAt = timestampWithTimeZone("updated_at")
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -83,6 +85,8 @@ internal object UserAuthProvidersTable : IdTable<String>("user_auth_providers") 
     val emailVerified = bool("email_verified").default(false)
     val displayName = varchar("display_name", 240).nullable()
     val avatarUrl = text("avatar_url").nullable()
+    val createdAt = timestampWithTimeZone("created_at")
+    val updatedAt = timestampWithTimeZone("updated_at")
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -97,6 +101,8 @@ internal object AuthRefreshTokensTable : IdTable<String>("auth_refresh_tokens") 
     val expiresAt = timestampWithTimeZone("expires_at")
     val revokedAt = timestampWithTimeZone("revoked_at").nullable()
     val replacedByTokenId = varchar("replaced_by_token_id", 120).nullable()
+    val createdAt = timestampWithTimeZone("created_at")
+    val lastUsedAt = timestampWithTimeZone("last_used_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

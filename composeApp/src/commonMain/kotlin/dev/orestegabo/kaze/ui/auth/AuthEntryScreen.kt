@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.chrome.KazeAmbientBackground
+import dev.orestegabo.kaze.ui.home.settings.LegalPage
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.auth_apple_raster
 import kaze.composeapp.generated.resources.auth_facebook_raster
@@ -60,6 +62,7 @@ internal fun AuthEntryScreen(
     onCreateAccount: (String, String) -> Unit,
     onSocialSignIn: (String) -> Unit,
     onContinueAsGuest: () -> Unit,
+    onOpenLegalPage: (LegalPage) -> Unit,
 ) {
     var mode by rememberSaveable { mutableStateOf(AuthEntryMode.LOGIN) }
     var email by rememberSaveable { mutableStateOf("") }
@@ -198,6 +201,45 @@ internal fun AuthEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = Icons.Default.Explore,
             )
+
+            AuthLegalLinks(
+                onOpenLegalPage = onOpenLegalPage,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AuthLegalLinks(
+    onOpenLegalPage: (LegalPage) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = "By continuing, you agree to Kaze policies.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            listOf(
+                LegalPage.TERMS,
+                LegalPage.PRIVACY,
+                LegalPage.SECURITY,
+            ).forEach { page ->
+                TextButton(onClick = { onOpenLegalPage(page) }) {
+                    Text(
+                        text = page.title,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
         }
     }
 }

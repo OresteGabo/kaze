@@ -193,48 +193,58 @@ FACEBOOK_REDIRECT_URI=https://api.kazerwanda.com/api/v1/auth/facebook/callback
 
 Use separate tables for users, provider identities, refresh tokens, and short-lived OAuth state.
 
+Production note:
+
+- Kaze now uses the PostgreSQL schema from [dev_schema.sql](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/server/src/main/resources/db/dev_schema.sql).
+- The seed data lives in [dev_seed.sql](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/server/src/main/resources/db/dev_seed.sql).
+- All primary and foreign IDs are `VARCHAR(120)` and are represented as Kotlin `String`.
+- The social provider table is `user_auth_providers`, not `auth_provider_accounts`.
+- The provider column is `provider`.
+- The stable social subject column is `provider_subject`.
+
 ```sql
 CREATE TABLE app_users (
-    id UUID PRIMARY KEY,
-    email TEXT,
-    display_name TEXT,
-    avatar_url TEXT,
+    id VARCHAR(120) PRIMARY KEY,
+    email VARCHAR(320) NOT NULL UNIQUE,
+    display_name VARCHAR(240),
+    password_hash TEXT,
+    roles TEXT[] NOT NULL DEFAULT ARRAY['CUSTOMER']::TEXT[],
+    disabled BOOLEAN NOT NULL DEFAULT false,
+    last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    last_login_at TIMESTAMPTZ
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX app_users_email_unique_idx
-ON app_users (lower(email))
-WHERE email IS NOT NULL;
+CREATE INDEX app_users_email_idx
+ON app_users (lower(email));
 
-CREATE TABLE auth_provider_accounts (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
-    provider_type TEXT NOT NULL CHECK (provider_type IN ('GOOGLE', 'APPLE', 'FACEBOOK')),
-    social_id TEXT NOT NULL,
-    email TEXT,
+CREATE TABLE user_auth_providers (
+    id VARCHAR(120) PRIMARY KEY,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    provider VARCHAR(40) NOT NULL,
+    provider_subject VARCHAR(320) NOT NULL,
+    email VARCHAR(320) NOT NULL,
     email_verified BOOLEAN NOT NULL DEFAULT false,
-    display_name TEXT,
+    display_name VARCHAR(240),
     avatar_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (provider_type, social_id)
+    UNIQUE (provider, provider_subject)
 );
 
-CREATE INDEX auth_provider_accounts_user_id_idx
-ON auth_provider_accounts(user_id);
+CREATE INDEX user_auth_providers_user_id_idx
+ON user_auth_providers(user_id);
 
 CREATE TABLE auth_refresh_tokens (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    id VARCHAR(120) PRIMARY KEY,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL UNIQUE,
-    family_id UUID NOT NULL,
-    device_id TEXT,
-    device_label TEXT,
+    family_id VARCHAR(120) NOT NULL,
+    device_id VARCHAR(240),
+    device_label VARCHAR(240),
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ,
-    replaced_by_token_id UUID,
+    replaced_by_token_id VARCHAR(120),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_used_at TIMESTAMPTZ
 );
@@ -243,11 +253,13 @@ CREATE INDEX auth_refresh_tokens_user_id_idx
 ON auth_refresh_tokens(user_id);
 
 CREATE TABLE oauth_login_attempts (
-    id UUID PRIMARY KEY,
-    provider_type TEXT NOT NULL CHECK (provider_type IN ('GOOGLE', 'APPLE', 'FACEBOOK')),
+    id VARCHAR(120) PRIMARY KEY,
+    provider VARCHAR(40) NOT NULL,
     state_hash TEXT NOT NULL UNIQUE,
     code_verifier_hash TEXT NOT NULL,
+    code_verifier TEXT NOT NULL,
     nonce_hash TEXT,
+    nonce TEXT,
     app_redirect_uri TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     expires_at TIMESTAMPTZ NOT NULL,
@@ -255,8 +267,8 @@ CREATE TABLE oauth_login_attempts (
 );
 
 CREATE TABLE auth_one_time_login_tokens (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    id VARCHAR(120) PRIMARY KEY,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     expires_at TIMESTAMPTZ NOT NULL,
@@ -268,7 +280,7 @@ CREATE TABLE auth_one_time_login_tokens (
 
 Use this account-linking order:
 
-1. If `(provider_type, social_id)` exists, sign in that user.
+1. If `(provider, provider_subject)` exists, sign in that user.
 2. Else if provider email is verified and matches an existing Kaze user email, link the provider to that user after passing safety checks.
 3. Else create a new user and link the provider.
 
@@ -277,7 +289,50 @@ Safety checks:
 - Never link on unverified email.
 - Handle Apple private relay emails as real emails but avoid assuming they match other providers.
 - Require explicit user confirmation before linking two active accounts with different emails.
-- Store provider social IDs as opaque strings; never infer meaning from them.
+- Store provider subjects as opaque strings; never infer meaning from them.
+
+### Kotlin Persistence Models
+
+Current backend persistence models map directly to the schema:
+
+```kotlin
+@Serializable
+data class AppUser(
+    val id: String,
+    val email: String,
+    val displayName: String?,
+    val passwordHash: String?,
+    val roles: List<String>,
+    val disabled: Boolean,
+    val lastLoginAt: Instant?,
+)
+
+@Serializable
+data class UserAuthProvider(
+    val id: String,
+    val userId: String,
+    val provider: String,
+    val providerSubject: String,
+    val email: String,
+    val emailVerified: Boolean,
+)
+
+@Serializable
+data class AuthRefreshToken(
+    val id: String,
+    val userId: String,
+    val tokenHash: String,
+    val familyId: String,
+    val expiresAt: Instant,
+    val revokedAt: Instant?,
+)
+```
+
+Security rule:
+
+- `password_hash` and `token_hash` are persistence-only fields.
+- They must never be returned by API response DTOs.
+- API response models should expose only safe user/session information.
 
 ## Ktor Backend Implementation
 
@@ -473,8 +528,8 @@ data class ProviderTokenResponse(
 
 ```kotlin
 data class VerifiedSocialIdentity(
-    val providerType: SocialProviderType,
-    val socialId: String,
+    val provider: String,
+    val providerSubject: String,
     val email: String?,
     val emailVerified: Boolean,
     val displayName: String?,
@@ -487,14 +542,14 @@ Google verification:
 - Fetch Google JWKS.
 - Verify `id_token` signature.
 - Validate `iss`, `aud`, `exp`, and optional `nonce`.
-- Use `sub` as `socialId`.
+- Use `sub` as `providerSubject`.
 
 Apple verification:
 
 - Fetch Apple JWKS.
 - Verify `id_token` signature.
 - Validate `iss = https://appleid.apple.com`, `aud`, `exp`, and optional `nonce`.
-- Use `sub` as `socialId`.
+- Use `sub` as `providerSubject`.
 - Persist email/name on first login if present.
 
 Facebook verification:
@@ -508,7 +563,31 @@ Facebook verification:
 GET https://graph.facebook.com/me?fields=id,name,email,picture&access_token=...
 ```
 
-- Use `id` as `socialId`.
+- Use `id` as `providerSubject`.
+
+### Repository Functions
+
+The current repository contract should expose schema-aligned lookup and linking methods:
+
+```kotlin
+fun findUserBySocialProvider(provider: String, subject: String): AppUser?
+
+fun linkSocialProviderToUser(
+    userId: String,
+    provider: String,
+    subject: String,
+    email: String,
+    emailVerified: Boolean = false,
+    displayName: String? = null,
+    avatarUrl: String? = null,
+): UserAuthProvider
+```
+
+Expected behavior:
+
+- `findUserBySocialProvider` joins `user_auth_providers` with `app_users`.
+- `linkSocialProviderToUser` inserts into `user_auth_providers`.
+- Existing password and refresh-token storage remains hashed and server-only.
 
 ### Kaze JWT Issuing
 

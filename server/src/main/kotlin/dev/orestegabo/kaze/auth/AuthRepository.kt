@@ -7,6 +7,7 @@ import javax.sql.DataSource
 internal interface AuthRepository {
     fun findByEmail(email: String): StoredAuthUser?
     fun findByProvider(provider: AuthProvider, providerSubject: String): StoredAuthUser?
+    fun findUserBySocialProvider(provider: String, subject: String): AppUser?
     fun createPasswordUser(
         email: String,
         passwordHash: String,
@@ -15,6 +16,15 @@ internal interface AuthRepository {
     ): StoredAuthUser
 
     fun upsertExternalUser(identity: ExternalIdentity): StoredAuthUser
+    fun linkSocialProviderToUser(
+        userId: String,
+        provider: String,
+        subject: String,
+        email: String,
+        emailVerified: Boolean = false,
+        displayName: String? = null,
+        avatarUrl: String? = null,
+    ): UserAuthProvider
     fun createOAuthAttempt(attempt: OAuthLoginAttempt, expiresAt: Instant)
     fun consumeOAuthAttempt(provider: AuthProvider, state: String): OAuthLoginAttempt?
     fun createOneTimeLoginToken(userId: String, tokenHash: String, expiresAt: Instant)
@@ -77,6 +87,24 @@ internal class JdbcAuthRepository(
             }
         }
 
+    override fun findUserBySocialProvider(provider: String, subject: String): AppUser? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT u.id, u.email, u.display_name, u.password_hash, u.roles, u.disabled, u.last_login_at
+                FROM app_users u
+                INNER JOIN user_auth_providers p ON p.user_id = u.id
+                WHERE p.provider = ? AND p.provider_subject = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, provider.trim().uppercase())
+                statement.setString(2, subject)
+                statement.executeQuery().use { result ->
+                    if (result.next()) result.toAppUser() else null
+                }
+            }
+        }
+
     override fun createPasswordUser(
         email: String,
         passwordHash: String,
@@ -93,12 +121,14 @@ internal class JdbcAuthRepository(
                     roles = roles,
                     connection = connection,
                 )
-                insertProvider(
+                linkSocialProviderToUser(
                     userId = user.user.id,
-                    provider = AuthProvider.PASSWORD,
-                    providerSubject = user.user.email,
+                    provider = AuthProvider.PASSWORD.name,
+                    subject = user.user.email,
                     email = user.user.email,
                     emailVerified = true,
+                    displayName = user.user.displayName,
+                    avatarUrl = null,
                     connection = connection,
                 )
                 connection.commit()
@@ -110,7 +140,7 @@ internal class JdbcAuthRepository(
         }
 
     override fun upsertExternalUser(identity: ExternalIdentity): StoredAuthUser =
-        findByProvider(identity.provider, identity.providerSubject)
+        findUserBySocialProvider(identity.provider.name, identity.providerSubject)?.toStoredAuthUser()
             ?: dataSource.connection.use { connection ->
                 connection.autoCommit = false
                 try {
@@ -122,10 +152,10 @@ internal class JdbcAuthRepository(
                         roles = setOf(AuthRole.CUSTOMER),
                         connection = connection,
                     )
-                    insertProvider(
+                    linkSocialProviderToUser(
                         userId = storedUser.user.id,
-                        provider = identity.provider,
-                        providerSubject = identity.providerSubject,
+                        provider = identity.provider.name,
+                        subject = identity.providerSubject,
                         email = identity.email,
                         emailVerified = identity.emailVerified,
                         displayName = identity.displayName,
@@ -381,33 +411,64 @@ internal class JdbcAuthRepository(
             }
         }
 
-    private fun insertProvider(
+    override fun linkSocialProviderToUser(
         userId: String,
-        provider: AuthProvider,
-        providerSubject: String,
+        provider: String,
+        subject: String,
         email: String,
-        emailVerified: Boolean = false,
-        displayName: String? = null,
-        avatarUrl: String? = null,
+        emailVerified: Boolean,
+        displayName: String?,
+        avatarUrl: String?,
+    ): UserAuthProvider =
+        dataSource.connection.use { connection ->
+            linkSocialProviderToUser(
+                userId = userId,
+                provider = provider,
+                subject = subject,
+                email = email,
+                emailVerified = emailVerified,
+                displayName = displayName,
+                avatarUrl = avatarUrl,
+                connection = connection,
+            )
+        }
+
+    private fun linkSocialProviderToUser(
+        userId: String,
+        provider: String,
+        subject: String,
+        email: String,
+        emailVerified: Boolean,
+        displayName: String?,
+        avatarUrl: String?,
         connection: java.sql.Connection,
-    ) {
+    ): UserAuthProvider =
         connection.prepareStatement(
             """
             INSERT INTO user_auth_providers (user_id, provider, provider_subject, email, email_verified, display_name, avatar_url)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT (provider, provider_subject) DO NOTHING
+            ON CONFLICT (provider, provider_subject) DO UPDATE
+            SET user_id = EXCLUDED.user_id,
+                email = EXCLUDED.email,
+                email_verified = EXCLUDED.email_verified,
+                display_name = EXCLUDED.display_name,
+                avatar_url = EXCLUDED.avatar_url,
+                updated_at = now()
+            RETURNING id, user_id, provider, provider_subject, email, email_verified
             """.trimIndent(),
         ).use { statement ->
             statement.setString(1, userId)
-            statement.setString(2, provider.name)
-            statement.setString(3, providerSubject)
+            statement.setString(2, provider.trim().uppercase())
+            statement.setString(3, subject)
             statement.setString(4, email.trim().lowercase())
             statement.setBoolean(5, emailVerified)
             statement.setString(6, displayName?.trim()?.takeIf { it.isNotEmpty() })
             statement.setString(7, avatarUrl?.trim()?.takeIf { it.isNotEmpty() })
-            statement.executeUpdate()
+            statement.executeQuery().use { result ->
+                check(result.next()) { "Social provider link insert did not return a row" }
+                result.toUserAuthProvider()
+            }
         }
-    }
 }
 
 private fun ResultSet.singleUserOrNull(): StoredAuthUser? =
@@ -429,10 +490,47 @@ private fun ResultSet.toStoredAuthUser(): StoredAuthUser =
         passwordHash = getString("password_hash"),
     )
 
+private fun ResultSet.toAppUser(): AppUser =
+    AppUser(
+        id = getString("id"),
+        email = getString("email"),
+        displayName = getString("display_name"),
+        passwordHash = getString("password_hash"),
+        roles = getArray("roles")
+            ?.array
+            ?.let { it as Array<*> }
+            ?.mapNotNull { value -> value?.toString() }
+            ?: listOf(AuthRole.CUSTOMER.name),
+        disabled = getBoolean("disabled"),
+        lastLoginAt = getTimestamp("last_login_at")?.toInstant(),
+    )
+
+private fun ResultSet.toUserAuthProvider(): UserAuthProvider =
+    UserAuthProvider(
+        id = getString("id"),
+        userId = getString("user_id"),
+        provider = getString("provider"),
+        providerSubject = getString("provider_subject"),
+        email = getString("email"),
+        emailVerified = getBoolean("email_verified"),
+    )
+
 private fun ResultSet.toStoredRefreshToken(): StoredRefreshToken =
     StoredRefreshToken(
         id = getString("id"),
         userId = getString("user_id"),
         tokenHash = getString("token_hash"),
         familyId = getString("family_id"),
+    )
+
+private fun AppUser.toStoredAuthUser(): StoredAuthUser =
+    StoredAuthUser(
+        user = AuthUser(
+            id = id,
+            email = email,
+            displayName = displayName,
+            roles = roles.mapNotNull { role -> runCatching { AuthRole.valueOf(role) }.getOrNull() }.toSet()
+                .ifEmpty { setOf(AuthRole.CUSTOMER) },
+        ),
+        passwordHash = passwordHash,
     )

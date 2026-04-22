@@ -18,39 +18,49 @@ internal enum class LegalPage(
     PRIVACY(
         title = "Privacy Policy",
         summary = "How Kaze may collect, use, and protect personal data.",
-        updatedLabel = "Last updated: April 4, 2026",
+        updatedLabel = "Last updated: April 22, 2026",
         icon = Icons.Default.Policy,
         sections = listOf(
             LegalSection(
                 heading = "Overview",
                 body = listOf(
-                    "Kaze is a private digital hospitality platform developed by GABO for hotel guests, event attendees, day visitors, and related hospitality users.",
+                    "Kaze is a digital hospitality and event platform developed by GABO for hotel guests, event attendees, organizers, venues, and related service providers.",
                     "Depending on the service setup, data may be handled by GABO, by a hotel or venue using Kaze, or by both parties under a business agreement.",
                 ),
             ),
             LegalSection(
                 heading = "Information Kaze may use",
                 body = listOf(
-                    "Kaze may process guest identity details, stay references, service requests, event invitations, access passes, map selections, device diagnostics, notification preferences, and support messages.",
-                    "The exact data used depends on which features are enabled by the hotel, venue, or event organizer.",
+                    "Kaze may process account details, social sign-in references, stay references, service requests, invitation records, RSVP choices, access passes, map selections, notification preferences, payment references, and support messages.",
+                    "The exact data used depends on which features are enabled by the hotel, venue, organizer, or business using Kaze.",
                 ),
             ),
             LegalSection(
-                heading = "Why information is used",
+                heading = "Guest mode and account mode",
                 body = listOf(
-                    "Information is used to provide guest services, show stay or event details, process requests, support venue navigation, manage access, improve reliability, and communicate important service updates.",
+                    "Some public browsing features may be available in guest mode without a full account.",
+                    "Private actions such as opening personal invitations, saving protected passes, managing bookings, making certain payments, or viewing private stay details may require sign-in.",
                 ),
             ),
             LegalSection(
-                heading = "Sharing and retention",
+                heading = "Payments and bookings",
+                body = listOf(
+                    "When payments, reservations, or booking-related actions are used, Kaze may process the data needed to show payment status, booking state, and venue or hotel confirmation details.",
+                    "Kaze may support payment methods commonly used in Rwanda, including mobile money and approved bank or card rails, depending on venue setup.",
+                ),
+            ),
+            LegalSection(
+                heading = "On-device AI features",
+                body = listOf(
+                    "When Kaze shows an on-device AI feature, the app is designed to keep that task on the device instead of sending the content to a remote AI server.",
+                    "Examples may include RSVP assistance, event explanations, or local helper features where available.",
+                ),
+            ),
+            LegalSection(
+                heading = "Sharing, retention, and rights",
                 body = listOf(
                     "Relevant data may be shared with authorized hotels, venues, service providers, contractors, or legal authorities when required.",
                     "Data is kept only as long as needed for operations, support, legal obligations, business records, or the applicable customer agreement.",
-                ),
-            ),
-            LegalSection(
-                heading = "Your rights",
-                body = listOf(
                     "Depending on applicable law, users may be able to request access, correction, deletion, restriction, objection, portability, or consent withdrawal.",
                     "For privacy requests, contact GABO at dev@kazerwanda.com.",
                 ),
@@ -60,7 +70,7 @@ internal enum class LegalPage(
     TERMS(
         title = "Terms of Use",
         summary = "Rules for using Kaze and authorized services.",
-        updatedLabel = "Last updated: April 4, 2026",
+        updatedLabel = "Last updated: April 22, 2026",
         icon = Icons.Default.Description,
         sections = listOf(
             LegalSection(
@@ -73,6 +83,7 @@ internal enum class LegalPage(
                 heading = "Authorized use",
                 body = listOf(
                     "Kaze may be used only by authorized business customers, hotel or venue staff, approved team members, approved contractors, and end users using an authorized Kaze service.",
+                    "End users may use Kaze to browse venues, manage invitations, access passes, bookings, stays, event schedules, and related services only for legitimate personal or business purposes.",
                 ),
             ),
             LegalSection(
@@ -82,9 +93,17 @@ internal enum class LegalPage(
                 ),
             ),
             LegalSection(
-                heading = "Availability",
+                heading = "Invitations, passes, and bookings",
+                body = listOf(
+                    "Invitation access, RSVP details, passes, venue information, room availability, and booking-related data may change when updated by the organizer, hotel, venue, or business operating the service.",
+                    "A displayed pass or invitation does not create rights beyond the rules and approvals attached to that event, stay, or venue.",
+                ),
+            ),
+            LegalSection(
+                heading = "Availability and changes",
                 body = listOf(
                     "Kaze may evolve over time. Features may be added, removed, limited, or refined as the product improves.",
+                    "Some features may be unavailable in some countries, venues, hotels, devices, or business setups.",
                 ),
             ),
             LegalSection(
@@ -140,15 +159,23 @@ internal enum class LegalPage(
                 ),
             ),
             LegalSection(
-                heading = "Customer data",
+                heading = "Authentication and access",
                 body = listOf(
-                    "Hotel, venue, guest, invitation, and access data is handled only by authorized people and only for legitimate business operations.",
+                    "Kaze may use email sign-in, password-based login, social sign-in providers, access tokens, refresh tokens, and session controls to protect accounts and connected services.",
+                    "Access to private invitations, passes, bookings, and stay details is limited to the user or authorized business roles linked to that data.",
                 ),
             ),
             LegalSection(
-                heading = "Third-party services",
+                heading = "Customer data",
                 body = listOf(
-                    "Kaze may rely on hosting, analytics, crash reporting, notifications, payment providers, maps, or wallet integrations. Each provider is reviewed for privacy, security, and contractual fit.",
+                    "Hotel, venue, guest, invitation, booking, payment-reference, and access data is handled only by authorized people and only for legitimate business operations.",
+                ),
+            ),
+            LegalSection(
+                heading = "Third-party and infrastructure services",
+                body = listOf(
+                    "Kaze may rely on hosting, notifications, payment providers, maps, wallet integrations, or social sign-in providers. Each provider is reviewed for privacy, security, and contractual fit.",
+                    "Infrastructure and operational choices may change over time as the product grows.",
                 ),
             ),
         ),

@@ -30,20 +30,18 @@ private fun Application.runSchemaStatements(
     config: DatabaseConfig,
     statements: List<String>,
 ) {
-    config.createDataSource().use { dataSource ->
-        dataSource.connection.use { connection ->
-            connection.autoCommit = false
-            try {
-                statements.forEach { sql ->
-                    connection.createStatement().use { statement ->
-                        statement.execute(sql)
-                    }
+    DatabaseFactory.dataSource.connection.use { connection ->
+        connection.autoCommit = false
+        try {
+            statements.forEach { sql ->
+                connection.createStatement().use { statement ->
+                    statement.execute(sql)
                 }
-                connection.commit()
-            } catch (cause: Throwable) {
-                connection.rollback()
-                throw cause
             }
+            connection.commit()
+        } catch (cause: Throwable) {
+            connection.rollback()
+            throw cause
         }
     }
 }

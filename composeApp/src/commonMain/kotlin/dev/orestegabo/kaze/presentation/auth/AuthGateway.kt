@@ -7,10 +7,12 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
 
@@ -20,7 +22,7 @@ internal interface AuthGateway {
     suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse
     suspend fun claimSession(loginToken: String): AuthSession
     suspend fun refresh(refreshToken: String): AuthSession
-    suspend fun logout(refreshToken: String?)
+    suspend fun logout(accessToken: String?, refreshToken: String?)
 }
 
 internal class KazeAuthGateway(
@@ -72,9 +74,12 @@ internal class KazeAuthGateway(
             )
         }.body<AuthResponse>().toSession()
 
-    override suspend fun logout(refreshToken: String?) {
+    override suspend fun logout(accessToken: String?, refreshToken: String?) {
         client.post("$authBaseUrl/auth/logout") {
             contentType(ContentType.Application.Json)
+            accessToken?.takeIf { it.isNotBlank() }?.let { token ->
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
             if (!refreshToken.isNullOrBlank()) {
                 setBody(AuthRefreshRequest(refreshToken = refreshToken))
             }
@@ -105,7 +110,7 @@ internal object DemoAuthGateway : AuthGateway {
     override suspend fun refresh(refreshToken: String): AuthSession =
         AuthSession(accessToken = "demo-local-session", refreshToken = refreshToken, email = "demo@kaze.local")
 
-    override suspend fun logout(refreshToken: String?) = Unit
+    override suspend fun logout(accessToken: String?, refreshToken: String?) = Unit
 }
 
 internal object NoopExternalUrlLauncher : ExternalUrlLauncher {

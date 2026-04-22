@@ -23,6 +23,7 @@ postgresql = "42.7.8"
 java-jwt = "4.5.0"
 jwks-rsa = "0.23.0"
 jbcrypt = "0.4"
+exposed = "0.53.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -53,6 +54,9 @@ postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" 
 java-jwt = { module = "com.auth0:java-jwt", version.ref = "java-jwt" }
 jwks-rsa = { module = "com.auth0:jwks-rsa", version.ref = "jwks-rsa" }
 jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-javaTime = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
 ktor-serverCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
 ktor-serverNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-serverAuth = { module = "io.ktor:ktor-server-auth-jvm", version.ref = "ktor" }

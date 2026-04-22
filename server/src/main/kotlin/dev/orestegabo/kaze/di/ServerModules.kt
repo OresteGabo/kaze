@@ -21,13 +21,13 @@ import dev.orestegabo.kaze.data.repository.ExperienceRepository
 import dev.orestegabo.kaze.data.repository.HotelRepository
 import dev.orestegabo.kaze.data.repository.MapRepository
 import dev.orestegabo.kaze.infrastructure.AmenityKnowledgeRepository
+import dev.orestegabo.kaze.infrastructure.DatabaseFactory
 import dev.orestegabo.kaze.infrastructure.GuestRepository
 import dev.orestegabo.kaze.infrastructure.InMemoryExperienceRepository
 import dev.orestegabo.kaze.infrastructure.InMemoryHotelRepository
 import dev.orestegabo.kaze.infrastructure.InMemoryMapRepository
 import dev.orestegabo.kaze.infrastructure.InMemoryStayRepository
 import dev.orestegabo.kaze.infrastructure.DatabaseConfig
-import dev.orestegabo.kaze.infrastructure.createDataSource
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -42,7 +42,7 @@ internal fun serverModule(
 ) = module {
     single { databaseConfig }
     single { jwtConfig }
-    single<DataSource> { get<DatabaseConfig>().createDataSource() }
+    single<DataSource> { DatabaseFactory.dataSource }
     single {
         Json {
             ignoreUnknownKeys = true

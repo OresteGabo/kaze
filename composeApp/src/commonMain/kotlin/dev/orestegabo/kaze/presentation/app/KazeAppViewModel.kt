@@ -225,8 +225,9 @@ internal class KazeAppViewModel(
 
     fun logout() {
         val refreshTokenJob = scope.launch {
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
             val refreshToken = secureStore.get(REFRESH_TOKEN_KEY)
-            runCatching { authGateway.logout(refreshToken) }
+            runCatching { authGateway.logout(accessToken, refreshToken) }
         }
         navigator.goTo(KazeDestination.HOME)
         uiState = uiState.copy(

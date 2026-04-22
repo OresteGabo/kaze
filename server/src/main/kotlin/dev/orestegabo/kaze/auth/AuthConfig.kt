@@ -53,47 +53,54 @@ internal data class AppleOAuthProviderConfig(
 }
 
 internal fun Application.loadJwtConfig(): JwtConfig =
-    JwtConfig(
-        issuer = configString("kaze.security.jwt.issuer", "kaze-api"),
-        audience = configString("kaze.security.jwt.audience", "kaze-mobile"),
-        realm = configString("kaze.security.jwt.realm", "Kaze API"),
-        secret = configString("kaze.security.jwt.secret", DEFAULT_DEV_JWT_SECRET),
-        accessTokenTtlSeconds = configString("kaze.security.jwt.accessTokenTtlSeconds", DEFAULT_ACCESS_TOKEN_TTL_SECONDS.toString()).toLong(),
-        refreshTokenTtlSeconds = configString("kaze.security.jwt.refreshTokenTtlSeconds", DEFAULT_REFRESH_TOKEN_TTL_SECONDS.toString()).toLong(),
-        oneTimeLoginTokenTtlSeconds = configString("kaze.security.jwt.oneTimeLoginTokenTtlSeconds", DEFAULT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS.toString()).toLong(),
-        requireJwtForApi = configString("kaze.security.jwt.requireForApi", "false").toBooleanStrictOrNull() ?: false,
-        googleClientIds = configCsv("kaze.security.oauth.googleClientIds"),
-        appleClientIds = configCsv("kaze.security.oauth.appleClientIds"),
-        socialAuth = SocialAuthConfig(
-            appDeepLinkRedirect = configString("kaze.security.oauth.appDeepLinkRedirect", "kaze://auth/callback"),
-            google = OAuthProviderConfig(
-                clientId = configString("kaze.security.oauth.google.clientId", ""),
-                clientSecret = configString("kaze.security.oauth.google.clientSecret", ""),
-                redirectUri = configString("kaze.security.oauth.google.redirectUri", ""),
-                authorizeUrl = "https://accounts.google.com/o/oauth2/v2/auth",
-                tokenUrl = "https://oauth2.googleapis.com/token",
-                scopes = listOf("openid", "email", "profile"),
+    run {
+        val googleConfig = OAuthProviderConfig(
+            clientId = configString("kaze.security.oauth.google.clientId", ""),
+            clientSecret = configString("kaze.security.oauth.google.clientSecret", ""),
+            redirectUri = configString("kaze.security.oauth.google.redirectUri", ""),
+            authorizeUrl = "https://accounts.google.com/o/oauth2/v2/auth",
+            tokenUrl = "https://oauth2.googleapis.com/token",
+            scopes = listOf("openid", "email", "profile"),
+        )
+        val appleConfig = AppleOAuthProviderConfig(
+            clientId = configString("kaze.security.oauth.apple.clientId", ""),
+            teamId = configString("kaze.security.oauth.apple.teamId", ""),
+            keyId = configString("kaze.security.oauth.apple.keyId", ""),
+            privateKeyPem = configString("kaze.security.oauth.apple.privateKeyPem", ""),
+            redirectUri = configString("kaze.security.oauth.apple.redirectUri", ""),
+            authorizeUrl = "https://appleid.apple.com/auth/authorize",
+            tokenUrl = "https://appleid.apple.com/auth/token",
+            scopes = listOf("name", "email"),
+        )
+
+        JwtConfig(
+            issuer = configString("kaze.security.jwt.issuer", "kaze-api"),
+            audience = configString("kaze.security.jwt.audience", "kaze-mobile"),
+            realm = configString("kaze.security.jwt.realm", "Kaze API"),
+            secret = configString("kaze.security.jwt.secret", DEFAULT_DEV_JWT_SECRET),
+            accessTokenTtlSeconds = configString("kaze.security.jwt.accessTokenTtlSeconds", DEFAULT_ACCESS_TOKEN_TTL_SECONDS.toString()).toLong(),
+            refreshTokenTtlSeconds = configString("kaze.security.jwt.refreshTokenTtlSeconds", DEFAULT_REFRESH_TOKEN_TTL_SECONDS.toString()).toLong(),
+            oneTimeLoginTokenTtlSeconds = configString("kaze.security.jwt.oneTimeLoginTokenTtlSeconds", DEFAULT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS.toString()).toLong(),
+            requireJwtForApi = configString("kaze.security.jwt.requireForApi", "false").toBooleanStrictOrNull() ?: false,
+            googleClientIds = configCsv("kaze.security.oauth.googleClientIds")
+                .ifEmpty { googleConfig.clientId.takeIf { it.isNotBlank() }?.let(::setOf) ?: emptySet() },
+            appleClientIds = configCsv("kaze.security.oauth.appleClientIds")
+                .ifEmpty { appleConfig.clientId.takeIf { it.isNotBlank() }?.let(::setOf) ?: emptySet() },
+            socialAuth = SocialAuthConfig(
+                appDeepLinkRedirect = configString("kaze.security.oauth.appDeepLinkRedirect", "kaze://auth/callback"),
+                google = googleConfig,
+                apple = appleConfig,
+                facebook = OAuthProviderConfig(
+                    clientId = configString("kaze.security.oauth.facebook.appId", ""),
+                    clientSecret = configString("kaze.security.oauth.facebook.appSecret", ""),
+                    redirectUri = configString("kaze.security.oauth.facebook.redirectUri", ""),
+                    authorizeUrl = "https://www.facebook.com/v19.0/dialog/oauth",
+                    tokenUrl = "https://graph.facebook.com/v19.0/oauth/access_token",
+                    scopes = listOf("email", "public_profile"),
+                ),
             ),
-            apple = AppleOAuthProviderConfig(
-                clientId = configString("kaze.security.oauth.apple.clientId", ""),
-                teamId = configString("kaze.security.oauth.apple.teamId", ""),
-                keyId = configString("kaze.security.oauth.apple.keyId", ""),
-                privateKeyPem = configString("kaze.security.oauth.apple.privateKeyPem", ""),
-                redirectUri = configString("kaze.security.oauth.apple.redirectUri", ""),
-                authorizeUrl = "https://appleid.apple.com/auth/authorize",
-                tokenUrl = "https://appleid.apple.com/auth/token",
-                scopes = listOf("name", "email"),
-            ),
-            facebook = OAuthProviderConfig(
-                clientId = configString("kaze.security.oauth.facebook.appId", ""),
-                clientSecret = configString("kaze.security.oauth.facebook.appSecret", ""),
-                redirectUri = configString("kaze.security.oauth.facebook.redirectUri", ""),
-                authorizeUrl = "https://www.facebook.com/v19.0/dialog/oauth",
-                tokenUrl = "https://graph.facebook.com/v19.0/oauth/access_token",
-                scopes = listOf("email", "public_profile"),
-            ),
-        ),
-    )
+        )
+    }
 
 private fun Application.configString(path: String, default: String): String =
     environment.config.propertyOrNull(path)?.getString()?.trim()?.takeIf { it.isNotEmpty() } ?: default

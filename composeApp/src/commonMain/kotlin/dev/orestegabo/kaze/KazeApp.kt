@@ -27,8 +27,6 @@ import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.presentation.demo.InvitationState
 import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
 import dev.orestegabo.kaze.presentation.demo.invitationPreviews
-import dev.orestegabo.kaze.presentation.demo.publicVenueCategories
-import dev.orestegabo.kaze.presentation.demo.publicVenues
 import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import dev.orestegabo.kaze.presentation.di.rememberKazeDependencies
 import dev.orestegabo.kaze.presentation.app.KazeSessionMode
@@ -332,14 +330,11 @@ fun App() {
                                                 accessContexts = stayUiState.accessContexts,
                                                 selectedAccessContextId = stayUiState.selectedAccessContextId,
                                                 stayMoments = stayUiState.stayMoments,
-                                                suggestionActivities = stayUiState.suggestionActivities,
                                                 activeStayScreen = stayUiState.activeStayScreen,
                                                 lateCheckoutRequest = stayUiState.lateCheckoutRequest,
                                                 lateCheckoutDraft = stayUiState.lateCheckoutDraft,
                                                 serviceRequestDraft = stayUiState.serviceRequestDraft,
                                                 submittedServiceRequests = stayUiState.submittedServiceRequests,
-                                                venueCategories = publicVenueCategories,
-                                                featuredVenues = publicVenues,
                                                 invitations = visibleInvitations,
                                                 isGuestMode = isGuestMode,
                                                 onBackToStayHome = stayViewModel::onBackToHome,
@@ -350,9 +345,6 @@ fun App() {
                                                 onAccessContextSelected = stayViewModel::onAccessContextSelected,
                                                 onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
                                                 onEnterCode = ::handleJoinCode,
-                                                onOpenCategory = { openPublicBrowse(it.title) },
-                                                onOpenVenue = ::openVenue,
-                                                onOpenVenueMap = ::openVenueMap,
                                                 onOpenInvitation = ::openInvitation,
                                                 onSeeAllInvitations = ::openInvitations,
                                                 bottomContentPadding = bottomContentPadding,
@@ -472,14 +464,11 @@ fun App() {
                                             accessContexts = stayUiState.accessContexts,
                                             selectedAccessContextId = stayUiState.selectedAccessContextId,
                                             stayMoments = stayUiState.stayMoments,
-                                            suggestionActivities = stayUiState.suggestionActivities,
                                             activeStayScreen = stayUiState.activeStayScreen,
                                             lateCheckoutRequest = stayUiState.lateCheckoutRequest,
                                             lateCheckoutDraft = stayUiState.lateCheckoutDraft,
                                             serviceRequestDraft = stayUiState.serviceRequestDraft,
                                             submittedServiceRequests = stayUiState.submittedServiceRequests,
-                                            venueCategories = publicVenueCategories,
-                                            featuredVenues = publicVenues,
                                             invitations = visibleInvitations,
                                             isGuestMode = isGuestMode,
                                             onBackToStayHome = stayViewModel::onBackToHome,
@@ -490,9 +479,6 @@ fun App() {
                                             onAccessContextSelected = stayViewModel::onAccessContextSelected,
                                             onPrimaryAction = { action -> handleStayResult(stayViewModel.handleAction(action)) },
                                             onEnterCode = ::handleJoinCode,
-                                            onOpenCategory = { openPublicBrowse(it.title) },
-                                            onOpenVenue = ::openVenue,
-                                            onOpenVenueMap = ::openVenueMap,
                                             onOpenInvitation = ::openInvitation,
                                             onSeeAllInvitations = ::openInvitations,
                                             bottomContentPadding = bottomContentPadding,

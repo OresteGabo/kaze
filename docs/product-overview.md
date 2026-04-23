@@ -2,45 +2,42 @@
 
 ## What Kaze Is
 
-Kaze is a digital concierge, venue-navigation, and venue-commerce platform for hospitality and event environments.
+Kaze is an event operating system for conferences, weddings, summits, and premium gatherings.
 
 It is designed for:
-- luxury hotels
-- conference and summit venues
-- weddings and private events
-- day-access experiences like spa, pool, or dining passes
-- public venue browsing before authentication
-- future apartment discovery for local stay alternatives
-- future venue categories such as stadiums, government buildings, and transport spaces
+- attendees and invited guests
+- organizers and hosts
+- event-ready venues
+- service providers connected to an event
+- public event and venue discovery before authentication
+
+Kaze is not trying to be a generic hotel utility app. Its core job is to make event experiences feel organized, premium, easy to enter, and easy to monetize.
 
 ## Core User Types
 
-Kaze should not assume every person has a room.
-
-Supported visitor profiles:
-- hotel guest with a room stay
-- conference attendee without a room
-- event guest with limited venue access
-- day visitor with amenity-specific access
-- VIP or invited private guest
+Supported user groups:
+- attendee or invited guest
+- organizer or host
+- venue partner
+- service partner
+- VIP or restricted-access guest
 
 ## Core Experience
 
-Kaze combines five product ideas:
-- a personalized itinerary
-- a service-request layer
-- a concierge-style recommendation layer
-- indoor maps with access-aware areas
-- a digital access pass
+Kaze combines:
+- invitations and RSVP
+- digital event passes
+- event schedules and timing
+- venue guidance and access-aware maps
+- event-linked services
+- local payments for packages and add-ons
 
-It is also growing toward:
-- venue reservation workflows
-- local payments
-- venue add-on service sales
-- reusable map/data infrastructure for many types of spaces
-- seating and layout planning for reservable venues
-- invitation-based entry and short-code join flows
-- public venue search with pricing and discoverability
+The ideal journey is:
+1. discover an event or receive an invitation
+2. confirm attendance
+3. receive the right pass
+4. arrive and move confidently through the venue
+5. use relevant event-linked services before, during, or after the event
 
 ## Design Direction
 
@@ -48,21 +45,25 @@ The app should feel:
 - premium
 - quiet
 - fast
+- event-first
 - architectural
-- hospitality-first
 
 It should avoid looking like:
 - a generic Material demo
-- a conference clone with hotel words pasted on top
 - a hotel PMS admin screen
+- a random marketplace
+- a stuffed super-app with unrelated tools
 
-## Current Navigation
+## Current Product Center
 
-- `Entry`: explore venues, accept invitations, or enter a short code
-- `Stay`: itinerary and access identity
-- `Requests`: things the visitor wants to ask for
-- `Suggestions`: relevant recommendations, not yet confirmed
-- `Map`: venue and wayfinding experience
+The product center should be:
+- entry and invitations
+- pass and access
+- event details and schedule
+- venue/place guidance
+- event-linked services
+
+Things like generic room-service or hotel-stay workflows should not compete with the main event story.
 
 ## Entry And Access Model
 
@@ -71,74 +72,69 @@ Kaze should support both open discovery and restricted access.
 ### Public discovery
 
 Without signing in, a person should be able to:
-- browse venues
-- compare conference rooms
-- view wedding venues
-- see pricing and key details
-- later discover apartments and other local stay options
+- browse events and event-ready venues
+- compare venues for conferences and weddings
+- see pricing, capacity, and key context
+- understand the type of experience Kaze supports
 
 ### Private entry
 
-When a person already has a relationship with a venue or event, Kaze should support:
+When a person already has a relationship with an event, Kaze should support:
 - invitation-based entry
 - short code entry
-- search by venue, room, or event name
+- search by event or venue name
 
 Recommended first-run flow after onboarding:
-- `Explore venues`
+- `Explore events`
 - `I have an invitation`
 - `Enter code`
 
 ## Invitation And Pass Flow
 
-For conferences, weddings, and private events, organizers should be able to invite people directly.
+Invitations should be a first-class product path.
 
 Suggested flow:
 1. organizer creates an event
 2. organizer invites guests, likely by phone number and optional name
-3. invitee receives an invitation
+3. invitee receives or finds the invitation
 4. Kaze matches the invitation or lets the person confirm it manually
 5. after confirmation, Kaze generates the correct pass
 
-This is stronger than requiring every user to search manually, while still keeping short codes and search available as fallback entry paths.
+This is stronger than forcing every user to search manually, while still keeping short codes and search as fallback entry paths.
 
 ## Product Principle
 
-Kaze should model access, not only accommodation.
+Kaze should model event access, movement, and event-linked value.
 
 That means the system can support:
-- room access
-- ballroom/event access
-- restaurant privileges
-- pool/spa/day-pass access
-- restricted or hidden hotel zones
+- event hall access
+- restricted zones
+- VIP areas
+- organizer or staff access
+- service entitlements tied to a ticket, invitation, or package
 
 ## Commerce Direction
 
-Kaze should be able to support paid venue interactions, especially where local venues and organizers need a simpler and cheaper alternative to large international intermediaries.
+Kaze should support paid event interactions, especially where local organizers and venues need a simpler and cheaper alternative to fragmented manual workflows.
 
 Important commercial directions:
-- conference room bookings
-- wedding venue bookings
-- paid amenity/day-pass reservations
-- public venue discovery with conversion into reservation or invitation flows
-- event deposits and balance collection
-- venue add-on services sold during booking
+- event package sales
+- venue discovery with conversion into booking or invitation flows
+- deposits and balance collection
+- service packages sold during booking or after invitation acceptance
+- organizer-facing tools that justify recurring or per-event fees
 
 Potential add-on categories:
-- event styling / decoration
-- cleaning
-- insurance
 - camera and photography services
 - videography and live streaming
-
-Important terminology:
-- `layout planning` means how chairs, tables, aisles, and seating structures are arranged
-- `event styling` means flowers, lighting, decor, and other presentation services
+- transport
+- printing and branding
+- decor and styling
+- hospitality bundles relevant to the event
 
 ## Payments Direction
 
-For Rwanda, payment support should prioritize methods that users and venue operators already understand and trust.
+For Rwanda, payment support should prioritize methods people and businesses already understand and trust.
 
 Priority methods:
 - MTN MoMo
@@ -148,50 +144,40 @@ Priority methods:
 
 ## Platform Direction
 
-Kaze should not treat maps as a hotel-only feature.
+Kaze can still keep a reusable venue-platform layer underneath the product.
 
-The venue-map capability can become a reusable platform that models:
+That layer may model:
 - sites
 - buildings
-- floors/levels
-- rooms
-- halls
-- seats
-- fixed objects
-- movable layout objects
-- zones
-- gates
-- amenities
+- floors
+- rooms and halls
+- seats and sections
+- gates and entry points
+- amenities and points of interest
 - restricted areas
+- fixed and movable layout objects
 
-That would allow reuse across:
-- hotel apps
+That makes Kaze reusable across:
 - conference apps
 - wedding venue apps
-- stadium/ticketing apps
-- government/public-building guidance apps
+- ticketed event experiences
+- future venue categories where access and navigation matter
 
-It can also support:
-- seating plans for wedding and conference venues
-- event entry controlled by Kaze Pass
-- different room-layout presets based on attendee count
+But this platform layer should serve the event product, not replace it as the main story.
 
 ## Competitive Position
 
-Kaze does not need to start with hotel room inventory distribution.
+Kaze does not need to start with hotel room inventory distribution or generic hotel room-service workflows.
 
 Why:
-- large international hotel-booking platforms already dominate that space
-- many local hotels already depend on those channels
-- room distribution is operationally complex
+- those flows make the product broad too quickly
+- incumbents already dominate large parts of hotel distribution
+- Kaze has a stronger advantage in event coordination, access, and local service linkage
 
-However, Kaze can still create strong value by:
-- reducing venue booking friction
-- lowering commission pressure on venues
+Kaze can create stronger value by:
+- reducing event booking friction
+- lowering commission pressure on venues and organizers
 - adding local payment options
-- bundling services around reservations
-- offering direct relationships for venues that want more control
-
-Room reservation support can still be explored later if it becomes commercially attractive.
-
-Apartments are also a reasonable future category, especially if Kaze becomes a broader local discovery and booking platform rather than only a hotel product.
+- bundling services around an event
+- owning the relationship between guest, organizer, venue, and service provider
+- later vertically integrating the strongest service categories into Kaze-owned companies

@@ -26,7 +26,7 @@ internal actual fun createPlatformAuthHttpClient(json: Json): HttpClient =
 internal actual fun defaultAuthApiBaseUrl(): String =
     (NSBundle.mainBundle.objectForInfoDictionaryKey("KAZE_API_BASE_URL") as? String)
         ?.takeIf { it.isNotBlank() }
-        ?: "http://127.0.0.1:8080/api/v1"
+        ?: "https://kaze-api-338266348516.europe-west1.run.app/api/v1"
 
 internal actual fun defaultDeviceLabel(): String =
     UIDevice.currentDevice.name

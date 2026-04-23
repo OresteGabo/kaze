@@ -4,6 +4,12 @@
 
 This roadmap tracks Kaze's path from prototype to production. It is intentionally product-focused and business-focused, not just engineering-focused.
 
+Current product direction:
+- event-first
+- conference and wedding centered
+- venue-aware, not hotel-bloated
+- focused on passes, schedules, access, and event-linked services
+
 Status guide:
 - `[x]` Done
 - `[~]` In progress / partially done
@@ -23,24 +29,26 @@ Status guide:
 - [ ] production dependency injection strategy
 - [ ] release build flavor strategy
 
-## Core Guest Experience
+## Core Event Experience
 
 - [x] onboarding flow
 - [ ] first-run entry screen after onboarding
-- [ ] public venue discovery without sign-in
-- [ ] venue/event search by name
+- [ ] public event and venue discovery without sign-in
+- [ ] event and venue search by name
 - [ ] short code entry flow for conferences, weddings, and private events
 - [ ] invitation-first join flow
 - [ ] invitation acceptance and identity confirmation flow
 - [ ] post-invitation Kaze Pass generation
-- [x] stay tab with pass, schedule, requests, and suggestions
+- [~] pass-centered home and event entry experience
 - [x] event schedule flow
 - [x] explore flow
-- [x] indoor map screen
+- [x] venue guidance and indoor map screen
 - [x] digital access pass UI
-- [x] hotel-branded theme support
+- [x] branded theme support
 - [x] automatic light/dark theme switching
 - [~] guest-facing UX copy cleanup
+- [ ] event-first navigation cleanup
+- [ ] reduce or remove generic hotel-only flows from primary UX
 - [ ] accessibility review
 - [ ] localization strategy
 - [ ] tablet layout refinement
@@ -73,7 +81,7 @@ Description:
 Provide an on-device assistant that answers schedule, venue, access, and FAQ questions from cached event data. Guests can ask where a session is, when dinner starts, or whether a room is included in their pass without needing the internet.
 
 Why it matters:
-Hotels, weddings, and conferences often have weak indoor connectivity. Offline answers keep guests oriented, reduce staff interruptions, and make Kaze useful even in low-network environments.
+Weddings and conferences often have weak indoor connectivity. Offline answers keep guests oriented, reduce staff interruptions, and make Kaze useful even in low-network environments.
 
 ### 🛡️ Local Privacy Shield
 
@@ -135,21 +143,23 @@ Summarize local receipts, deposits, add-on services, and event costs from photos
 Why it matters:
 Organizers and guests often track payments across mobile money, cash, cards, and bank slips. Local summaries help users stay organized while keeping financial images private unless they choose to upload them.
 
-## Service Requests
+## Event Services And Marketplace
 
 - [x] request catalog UI
-- [x] late checkout request flow
-- [x] towel request flow
-- [x] laundry pickup request flow
-- [x] in-room dining request flow
-- [x] concierge help request flow
-- [x] custom request flow
-- [x] request history UI
+- [~] service request patterns exist in UI
+- [ ] photography service flow
+- [ ] videography service flow
+- [ ] live-streaming service flow
+- [ ] transport service flow
+- [ ] printing and branding service flow
+- [ ] event decor/styling service flow
+- [ ] vendor profile and offer cards
+- [ ] request history UI
 - [x] request success feedback
 - [ ] real request persistence from backend
-- [ ] request status updates from hotel systems
+- [ ] request status updates from provider systems
 - [ ] cancellation/edit rules from backend
-- [ ] staff-side request fulfillment flow
+- [ ] partner-side request fulfillment flow
 - [ ] request SLA / ETA display
 
 ## Maps And Wayfinding
@@ -167,8 +177,8 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 - [ ] map labels from live hotel data
 - [ ] restricted-area overlays from policy data
 - [ ] offline map caching strategy
-- [ ] reusable venue-maps service/database for hotels and non-hotel venues
-- [ ] generic venue-space model for stadiums, government buildings, and transport spaces
+- [ ] reusable venue-maps service/database for event venues and partner places
+- [ ] generic place model for venues and service locations
 - [ ] numbering/identification model for seats, zones, rooms, gates, and sections
 - [ ] standalone map-management API for reuse across multiple apps
 - [ ] fixed-versus-movable object model for venue layouts
@@ -220,13 +230,13 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 - [ ] notification preferences UI
 - [ ] notification deep-link handling
 - [ ] request status notifications
-- [ ] stay reminder notifications
+- [ ] event reminder notifications
 
 ## Security, Identity, And Privacy
 
 - [x] secure-store abstraction
 - [x] onboarding persistence
-- [ ] guest authentication
+- [ ] guest and attendee authentication
 - [ ] phone-number-based invitation matching
 - [ ] role and access control model
 - [ ] encrypted sensitive local data
@@ -241,22 +251,20 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 
 - [~] backend module exists
 - [ ] production API endpoints
-- [ ] public venue catalog API
+- [ ] public event and venue catalog API
 - [ ] event/venue search API
 - [ ] short-code lookup and join API
 - [ ] invitation API
 - [ ] invitation-to-pass entitlement flow
 - [ ] venue reservations API
-- [ ] venue commerce API for add-on services
+- [ ] event services commerce API
 - [ ] payment orchestration layer
 - [ ] Rwanda mobile-money integrations
 - [ ] card/bank payment integrations for local rails
 - [ ] reservation-to-pass entitlement integration
-- [ ] hotel PMS integration
-- [ ] room assignment integration
-- [ ] billing / folio integration
-- [ ] housekeeping integration
-- [ ] concierge / staff dashboard integration
+- [ ] organizer dashboard integration
+- [ ] provider dashboard integration
+- [ ] venue operations integration where event-relevant
 - [ ] event system integration
 - [ ] map/venue management admin tools
 - [ ] observability for backend services

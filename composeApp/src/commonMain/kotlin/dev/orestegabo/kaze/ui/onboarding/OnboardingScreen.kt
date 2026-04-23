@@ -23,14 +23,16 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.RoomService
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Spa
-import androidx.compose.material.icons.filled.SupportAgent
-import androidx.compose.material.icons.filled.TempleBuddhist
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -84,35 +86,35 @@ internal data class OnboardingFeature(
 internal val kazeOnboardingPages = listOf(
     OnboardingPage(
         eyebrow = "Welcome to Kaze",
-        title = "Your hotel in one app",
-        body = "See your stay, explore hotel services, and move through the property without needing to call or visit the front desk.",
-        footer = "Keep your room details, directions, and hotel services in one place during your stay.",
+        title = "Your event in one flow",
+        body = "Open invitations, confirm your place, keep your pass ready, and move through conferences or celebrations without confusion.",
+        footer = "From invite to entry, Kaze keeps the event journey clear and fast.",
         highlights = listOf(
-            OnboardingFeature(Icons.Default.Explore, "Stay details in one place"),
-            OnboardingFeature(Icons.Default.RoomService, "Hotel services without calling"),
-            OnboardingFeature(Icons.Default.SupportAgent, "Less front-desk friction"),
+            OnboardingFeature(Icons.Default.Verified, "Invites and RSVP together"),
+            OnboardingFeature(Icons.Default.QrCode2, "One event pass"),
+            OnboardingFeature(Icons.Default.Explore, "Guest flow in one place"),
         ),
     ),
     OnboardingPage(
-        eyebrow = "Map and Events",
-        title = "Find rooms, amenities, and event spaces fast",
-        body = "Use the map to move across floors, locate places like restaurants, pools, or ballrooms, and see what is happening today.",
-        footer = "Check where to go next without losing time moving around the hotel.",
+        eyebrow = "Schedules and venues",
+        title = "Know where to go next",
+        body = "Follow the schedule, find the right hall, and stay oriented across large venues without asking around every few minutes.",
+        footer = "Guests should spend their energy on the event, not on figuring out the building.",
         highlights = listOf(
-            OnboardingFeature(Icons.Default.Map, "Indoor map across floors"),
-            OnboardingFeature(Icons.Default.Schedule, "Today's sessions and timing"),
-            OnboardingFeature(Icons.Default.Spa, "Amenities easier to find"),
+            OnboardingFeature(Icons.Default.Schedule, "Live event timing"),
+            OnboardingFeature(Icons.Default.Map, "Venue guidance"),
+            OnboardingFeature(Icons.Default.Groups, "Better guest movement"),
         ),
     ),
     OnboardingPage(
-        eyebrow = "Requests and Access",
-        title = "Request services with less back and forth",
-        body = "Ask for services like late checkout, towels, dining, or help from your phone, and keep one digital pass for access when needed.",
-        footer = "Send requests quietly from your phone and keep your access details ready when you need them.",
+        eyebrow = "Services and business",
+        title = "Link services to the event",
+        body = "Offer photography, video, styling, transport, printing, and other event services directly where guests and organizers already are.",
+        footer = "Kaze is strongest when passes, venues, and event-linked services work together.",
         highlights = listOf(
-            OnboardingFeature(Icons.Default.RoomService, "Service requests from your room"),
-            OnboardingFeature(Icons.Default.QrCode2, "One digital access pass"),
-            OnboardingFeature(Icons.Default.TempleBuddhist, "Quieter guest experience"),
+            OnboardingFeature(Icons.Default.RoomService, "Book event add-ons"),
+            OnboardingFeature(Icons.Default.Storefront, "Partner services"),
+            OnboardingFeature(Icons.Default.Payments, "Local payments"),
         ),
     ),
 )

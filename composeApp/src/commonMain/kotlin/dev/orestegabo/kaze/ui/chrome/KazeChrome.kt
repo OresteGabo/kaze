@@ -164,15 +164,49 @@ private fun KazeNavigationContainer(
     content: @Composable () -> Unit,
 ) {
     val uiPalette = KazeTheme.ui
+    val colors = MaterialTheme.colorScheme
     Surface(
         modifier = modifier,
-        color = uiPalette.floatingShell,
-        shape = RoundedCornerShape(26.dp),
-        tonalElevation = 8.dp,
-        shadowElevation = 12.dp,
-        border = BorderStroke(1.dp, uiPalette.floatingShellBorder),
+        color = Color.Transparent,
+        shape = RoundedCornerShape(30.dp),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
     ) {
-        content()
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(30.dp))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            uiPalette.floatingShell.copy(alpha = 0.96f),
+                            colors.surface.copy(alpha = 0.92f),
+                        ),
+                    ),
+                )
+                .border(
+                    BorderStroke(1.dp, uiPalette.floatingShellBorder.copy(alpha = 0.9f)),
+                    RoundedCornerShape(30.dp),
+                ),
+        ) {
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val w = size.width
+                val h = size.height
+                drawLine(
+                    color = colors.primary.copy(alpha = 0.10f),
+                    start = Offset(w * 0.10f, h * 0.20f),
+                    end = Offset(w * 0.88f, h * 0.20f),
+                    strokeWidth = 3f,
+                    cap = StrokeCap.Round,
+                )
+                drawCircle(
+                    color = colors.secondary.copy(alpha = 0.08f),
+                    radius = w * 0.12f,
+                    center = Offset(w * 0.90f, h * 0.12f),
+                    style = Stroke(width = 3f),
+                )
+            }
+            content()
+        }
     }
 }
 
@@ -185,19 +219,20 @@ private fun KazeNavigationItemFrame(
 ) {
     val colors = MaterialTheme.colorScheme
     val containerColor by animateColorAsState(
-        targetValue = if (selected) colors.secondaryContainer else Color.Transparent,
+        targetValue = if (selected) colors.surface.copy(alpha = 0.94f) else Color.Transparent,
         label = "kazeNavContainer",
     )
     val contentColor by animateColorAsState(
-        targetValue = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant,
+        targetValue = if (selected) colors.onSurface else colors.onSurfaceVariant.copy(alpha = 0.92f),
         label = "kazeNavContent",
     )
     Surface(
         onClick = onClick,
         color = containerColor,
-        shape = RoundedCornerShape(20.dp),
-        tonalElevation = if (selected) 2.dp else 0.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(22.dp),
+        tonalElevation = if (selected) 1.dp else 0.dp,
+        shadowElevation = if (selected) 2.dp else 0.dp,
+        border = if (selected) BorderStroke(1.dp, colors.outline.copy(alpha = 0.12f)) else null,
         modifier = modifier,
     ) {
         content(contentColor)
@@ -221,23 +256,26 @@ private fun KazeBottomNavItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 4.dp),
+                .padding(horizontal = 6.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             if (isHome) {
                 Box(
                     modifier = Modifier
-                        .width(44.dp)
-                        .height(52.dp),
+                        .width(46.dp)
+                        .height(46.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent,
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(
                         painter = painterResource(Res.drawable.k_mark_raster),
                         contentDescription = destination.label,
                         modifier = Modifier
-                            .requiredSize(60.dp)
-                            .offset(y = (-4).dp),
+                            .requiredSize(28.dp),
                         colorFilter = ColorFilter.tint(contentColor),
                     )
                 }
@@ -245,11 +283,11 @@ private fun KazeBottomNavItem(
                 Box {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(CircleShape)
                             .background(
-                                if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f) else Color.Transparent,
+                                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent,
                             )
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                            .size(42.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -271,13 +309,17 @@ private fun KazeBottomNavItem(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
+                modifier = Modifier.padding(top = 2.dp),
             )
             Box(
                 modifier = Modifier
-                    .padding(top = 4.dp)
-                    .size(width = 16.dp, height = 3.dp)
+                    .padding(top = 5.dp)
+                    .size(width = if (selected) 18.dp else 10.dp, height = 3.dp)
                     .clip(RoundedCornerShape(999.dp))
-                    .background(if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent),
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.88f)
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+                    ),
             )
         }
     }
@@ -348,18 +390,18 @@ private fun KazeSideNavItem(
             Box {
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(CircleShape)
                         .background(
-                            if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f) else Color.Transparent,
+                            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent,
                         )
-                        .padding(horizontal = if (isHome) 10.dp else 8.dp, vertical = 8.dp),
+                        .size(42.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (isHome) {
                         Image(
                             painter = painterResource(Res.drawable.k_mark_raster),
                             contentDescription = destination.label,
-                            modifier = Modifier.size(26.dp),
+                            modifier = Modifier.size(24.dp),
                             colorFilter = ColorFilter.tint(contentColor),
                         )
                     } else {
@@ -387,9 +429,12 @@ private fun KazeSideNavItem(
             Box(
                 modifier = Modifier
                     .padding(top = 6.dp)
-                    .size(width = 18.dp, height = 3.dp)
+                    .size(width = if (selected) 18.dp else 10.dp, height = 3.dp)
                     .clip(RoundedCornerShape(999.dp))
-                    .background(if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent),
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.88f)
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+                    ),
             )
         }
     }

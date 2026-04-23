@@ -261,9 +261,9 @@ private fun AuthEntryHeader(isCreatingAccount: Boolean) {
             )
             Text(
                 if (isCreatingAccount) {
-                    "Save your passes, invitations, bookings, and venue access across devices."
+                    "Save your passes, invitations, event access, and linked services across devices."
                 } else {
-                    "Access your passes, invitations, stays, and venue services from one account."
+                    "Access your passes, invitations, events, and linked services from one account."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f),

@@ -28,6 +28,10 @@ dependencyResolutionManagement {
     }
 }
 
-include(":composeApp")
+val serverOnlyBuild = System.getenv("KAZE_SERVER_ONLY") == "true"
+
+if (!serverOnlyBuild) {
+    include(":composeApp")
+}
 include(":server")
 include(":shared")

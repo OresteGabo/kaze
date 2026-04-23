@@ -24,11 +24,7 @@ internal actual fun createPlatformAuthHttpClient(json: Json): HttpClient =
     }
 
 internal actual fun defaultAuthApiBaseUrl(): String =
-    if (isAndroidEmulator()) {
-        "http://10.0.2.2:8080/api/v1"
-    } else {
-        "http://172.20.10.2:8080/api/v1"
-    }
+    "https://kaze-api-338266348516.europe-west1.run.app/api/v1"
 
 internal actual fun defaultDeviceLabel(): String = "Android"
 
@@ -55,23 +51,6 @@ internal object KazeAuthAndroidPlatform {
 
 private class AndroidExternalUrlLauncher : ExternalUrlLauncher {
     override fun open(url: String): Boolean = KazeAuthAndroidPlatform.open(url)
-}
-
-private fun isAndroidEmulator(): Boolean {
-    val fingerprint = Build.FINGERPRINT.lowercase()
-    val model = Build.MODEL.lowercase()
-    val manufacturer = Build.MANUFACTURER.lowercase()
-    val brand = Build.BRAND.lowercase()
-    val device = Build.DEVICE.lowercase()
-    val product = Build.PRODUCT.lowercase()
-    return fingerprint.startsWith("generic") ||
-        fingerprint.contains("emulator") ||
-        model.contains("emulator") ||
-        model.contains("android sdk built for") ||
-        manufacturer.contains("genymotion") ||
-        brand.startsWith("generic") && device.startsWith("generic") ||
-        product.contains("sdk_gphone") ||
-        product.contains("emulator")
 }
 
 private const val AUTH_CONNECT_TIMEOUT_MS = 5_000L

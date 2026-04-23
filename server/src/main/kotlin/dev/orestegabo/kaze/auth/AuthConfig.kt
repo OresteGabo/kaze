@@ -55,59 +55,70 @@ internal data class AppleOAuthProviderConfig(
 internal fun Application.loadJwtConfig(): JwtConfig =
     run {
         val googleConfig = OAuthProviderConfig(
-            clientId = configString("kaze.security.oauth.google.clientId", ""),
-            clientSecret = configString("kaze.security.oauth.google.clientSecret", ""),
-            redirectUri = configString("kaze.security.oauth.google.redirectUri", ""),
+            clientId = configString("kaze.security.oauth.google.clientId", "", "GOOGLE_OAUTH_CLIENT_ID"),
+            clientSecret = configString("kaze.security.oauth.google.clientSecret", "", "GOOGLE_OAUTH_CLIENT_SECRET"),
+            redirectUri = configString("kaze.security.oauth.google.redirectUri", "", "GOOGLE_OAUTH_REDIRECT_URI"),
             authorizeUrl = "https://accounts.google.com/o/oauth2/v2/auth",
             tokenUrl = "https://oauth2.googleapis.com/token",
             scopes = listOf("openid", "email", "profile"),
         )
         val appleConfig = AppleOAuthProviderConfig(
-            clientId = configString("kaze.security.oauth.apple.clientId", ""),
-            teamId = configString("kaze.security.oauth.apple.teamId", ""),
-            keyId = configString("kaze.security.oauth.apple.keyId", ""),
-            privateKeyPem = configString("kaze.security.oauth.apple.privateKeyPem", ""),
-            redirectUri = configString("kaze.security.oauth.apple.redirectUri", ""),
+            clientId = configString("kaze.security.oauth.apple.clientId", "", "APPLE_SERVICE_ID"),
+            teamId = configString("kaze.security.oauth.apple.teamId", "", "APPLE_TEAM_ID"),
+            keyId = configString("kaze.security.oauth.apple.keyId", "", "APPLE_KEY_ID"),
+            privateKeyPem = configString("kaze.security.oauth.apple.privateKeyPem", "", "APPLE_PRIVATE_KEY_PEM"),
+            redirectUri = configString("kaze.security.oauth.apple.redirectUri", "", "APPLE_REDIRECT_URI"),
             authorizeUrl = "https://appleid.apple.com/auth/authorize",
             tokenUrl = "https://appleid.apple.com/auth/token",
             scopes = listOf("name", "email"),
         )
 
         JwtConfig(
-            issuer = configString("kaze.security.jwt.issuer", "kaze-api"),
-            audience = configString("kaze.security.jwt.audience", "kaze-mobile"),
-            realm = configString("kaze.security.jwt.realm", "Kaze API"),
-            secret = configString("kaze.security.jwt.secret", DEFAULT_DEV_JWT_SECRET),
-            accessTokenTtlSeconds = configString("kaze.security.jwt.accessTokenTtlSeconds", DEFAULT_ACCESS_TOKEN_TTL_SECONDS.toString()).toLong(),
-            refreshTokenTtlSeconds = configString("kaze.security.jwt.refreshTokenTtlSeconds", DEFAULT_REFRESH_TOKEN_TTL_SECONDS.toString()).toLong(),
-            oneTimeLoginTokenTtlSeconds = configString("kaze.security.jwt.oneTimeLoginTokenTtlSeconds", DEFAULT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS.toString()).toLong(),
-            requireJwtForApi = configString("kaze.security.jwt.requireForApi", "false").toBooleanStrictOrNull() ?: false,
-            googleClientIds = configCsv("kaze.security.oauth.googleClientIds")
+            issuer = configString("kaze.security.jwt.issuer", "kaze-api", "KAZE_JWT_ISSUER"),
+            audience = configString("kaze.security.jwt.audience", "kaze-mobile", "KAZE_JWT_AUDIENCE"),
+            realm = configString("kaze.security.jwt.realm", "Kaze API", "KAZE_JWT_REALM"),
+            secret = configString("kaze.security.jwt.secret", DEFAULT_DEV_JWT_SECRET, "KAZE_JWT_SECRET"),
+            accessTokenTtlSeconds = configString("kaze.security.jwt.accessTokenTtlSeconds", DEFAULT_ACCESS_TOKEN_TTL_SECONDS.toString(), "KAZE_JWT_ACCESS_TOKEN_TTL_SECONDS").toLong(),
+            refreshTokenTtlSeconds = configString("kaze.security.jwt.refreshTokenTtlSeconds", DEFAULT_REFRESH_TOKEN_TTL_SECONDS.toString(), "KAZE_JWT_REFRESH_TOKEN_TTL_SECONDS").toLong(),
+            oneTimeLoginTokenTtlSeconds = configString("kaze.security.jwt.oneTimeLoginTokenTtlSeconds", DEFAULT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS.toString(), "KAZE_JWT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS").toLong(),
+            requireJwtForApi = configString("kaze.security.jwt.requireForApi", "false", "KAZE_JWT_REQUIRE_FOR_API").toBooleanStrictOrNull() ?: false,
+            googleClientIds = configCsv("kaze.security.oauth.googleClientIds", "KAZE_GOOGLE_CLIENT_IDS")
                 .ifEmpty { googleConfig.clientId.takeIf { it.isNotBlank() }?.let(::setOf) ?: emptySet() },
-            appleClientIds = configCsv("kaze.security.oauth.appleClientIds")
+            appleClientIds = configCsv("kaze.security.oauth.appleClientIds", "KAZE_APPLE_CLIENT_IDS")
                 .ifEmpty { appleConfig.clientId.takeIf { it.isNotBlank() }?.let(::setOf) ?: emptySet() },
             socialAuth = SocialAuthConfig(
-                appDeepLinkRedirect = configString("kaze.security.oauth.appDeepLinkRedirect", "kaze://auth/callback"),
+                appDeepLinkRedirect = configString("kaze.security.oauth.appDeepLinkRedirect", "kaze://auth/callback", "KAZE_AUTH_APP_DEEP_LINK_REDIRECT"),
                 google = googleConfig,
                 apple = appleConfig,
                 facebook = OAuthProviderConfig(
-                    clientId = configString("kaze.security.oauth.facebook.appId", ""),
-                    clientSecret = configString("kaze.security.oauth.facebook.appSecret", ""),
-                    redirectUri = configString("kaze.security.oauth.facebook.redirectUri", ""),
+                    clientId = configString("kaze.security.oauth.facebook.appId", "", "FACEBOOK_APP_ID"),
+                    clientSecret = configString("kaze.security.oauth.facebook.appSecret", "", "FACEBOOK_APP_SECRET"),
+                    redirectUri = configString("kaze.security.oauth.facebook.redirectUri", "", "FACEBOOK_REDIRECT_URI"),
                     authorizeUrl = "https://www.facebook.com/v19.0/dialog/oauth",
                     tokenUrl = "https://graph.facebook.com/v19.0/oauth/access_token",
                     scopes = listOf("email", "public_profile"),
                 ),
             ),
         )
+    }.also { config ->
+        environment.log.info(
+            "Social auth config loaded. googleConfigured={}, appleConfigured={}, facebookConfigured={}",
+            config.socialAuth.google.isConfigured && config.socialAuth.google.clientSecret.isNotBlank(),
+            config.socialAuth.apple.isConfigured,
+            config.socialAuth.facebook.isConfigured && config.socialAuth.facebook.clientSecret.isNotBlank(),
+        )
     }
 
-private fun Application.configString(path: String, default: String): String =
-    environment.config.propertyOrNull(path)?.getString()?.trim()?.takeIf { it.isNotEmpty() } ?: default
+private fun Application.configString(path: String, default: String, envVar: String? = null): String =
+    environment.config.propertyOrNull(path)?.getString()?.trim()?.takeIf { it.isNotEmpty() }
+        ?: envVar?.let(System::getenv)?.trim()?.takeIf { it.isNotEmpty() }
+        ?: default
 
-private fun Application.configCsv(path: String): Set<String> =
-    environment.config.propertyOrNull(path)
-        ?.getString()
+private fun Application.configCsv(path: String, envVar: String? = null): Set<String> =
+    (
+        environment.config.propertyOrNull(path)?.getString()
+            ?: envVar?.let(System::getenv)
+        )
         ?.split(",")
         ?.map { it.trim() }
         ?.filter { it.isNotEmpty() }

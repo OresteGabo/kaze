@@ -130,12 +130,16 @@ internal fun HomeScreen(
                     onPrimaryAction = onPrimaryAction,
                 )
             } else {
-                GuestPassPreviewCard(
+                GuestHomeShowcase(
+                    invitations = invitations,
+                    code = joinCode,
+                    onCodeChange = { joinCode = it.uppercase() },
+                    onSubmitCode = { onEnterCode(joinCode) },
                     onOpenInvitations = onSeeAllInvitations,
                 )
             }
 
-            if (isExpanded) {
+            if (!isGuestMode && isExpanded) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -152,7 +156,7 @@ internal fun HomeScreen(
                         )
                     }
                 }
-            } else {
+            } else if (!isGuestMode) {
                 HomeHeroCard()
                 CodeEntryCard(
                     code = joinCode,

@@ -25,21 +25,21 @@ internal class ExploreViewModel(
 
     fun onHighlightAction(highlight: AmenityHighlight): ExploreActionResult =
         when (highlight.actionLabel) {
-            "Open amenity map", "Open amenity", "Start route" -> ExploreActionResult.NavigateToMap(
+            "Open amenity map", "Open amenity", "Open venue map", "Start route" -> ExploreActionResult.NavigateToMap(
                 route = "Arrival route to ${highlight.locationLabel}",
                 floorId = "l1",
                 floorLabel = highlight.locationLabel,
             )
-            else -> ExploreActionResult.Feedback("${highlight.title} reserved.")
+            else -> ExploreActionResult.Feedback("${highlight.title} saved for this event journey.")
         }
 
     fun reserveExperience(): ExploreActionResult.Feedback =
-        ExploreActionResult.Feedback("Experience reserved.")
+        ExploreActionResult.Feedback("Event services are ready to explore.")
 
     fun openPoolDeckRoute(): ExploreActionResult.NavigateToMap =
         ExploreActionResult.NavigateToMap(
-            route = "Arrival route to Pool Deck",
+            route = "Arrival route to Main Venue",
             floorId = "l1",
-            floorLabel = "Pool Deck",
+            floorLabel = "Main Venue",
         )
 }

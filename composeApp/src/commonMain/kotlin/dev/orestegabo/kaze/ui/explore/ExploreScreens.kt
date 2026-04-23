@@ -87,17 +87,17 @@ internal fun ExploreScreen(
                     Box(modifier = Modifier.weight(0.95f)) {
                         SectionIntroCard(
                             eyebrow = "Explore",
-                            title = "Discover the hotel",
-                            subtitle = "Browse amenities and experiences available across the property, whether included or paid separately.",
+                            title = "Discover event-ready places",
+                            subtitle = "Browse venues, event services, and useful experiences linked to conferences, weddings, and premium gatherings.",
                             icon = Icons.Default.Explore,
                         )
                     }
                     Box(modifier = Modifier.weight(1.05f)) {
                         HighlightPanel(
-                            title = "Tonight's highlighted experiences",
-                            body = "Sunset jazz at the lounge, chef's table seating, and a guided art walk through the lobby collection.",
-                            primaryLabel = "Reserve activity",
-                            secondaryLabel = "Open amenity map",
+                            title = "Featured event experiences",
+                            body = "Photography, live production, hospitality add-ons, and venue moments that can strengthen the event journey.",
+                            primaryLabel = "Open services",
+                            secondaryLabel = "Open venue map",
                             onPrimaryClick = onHeroPrimary,
                             onSecondaryClick = onHeroSecondary,
                         )
@@ -106,15 +106,15 @@ internal fun ExploreScreen(
             } else {
                 SectionIntroCard(
                     eyebrow = "Explore",
-                    title = "Discover the hotel",
-                    subtitle = "Browse amenities and experiences available across the property, whether included or paid separately.",
+                    title = "Discover event-ready places",
+                    subtitle = "Browse venues, event services, and useful experiences linked to conferences, weddings, and premium gatherings.",
                     icon = Icons.Default.Explore,
                 )
                 HighlightPanel(
-                    title = "Tonight's highlighted experiences",
-                    body = "Sunset jazz at the lounge, chef's table seating, and a guided art walk through the lobby collection.",
-                    primaryLabel = "Reserve activity",
-                    secondaryLabel = "Open amenity map",
+                    title = "Featured event experiences",
+                    body = "Photography, live production, hospitality add-ons, and venue moments that can strengthen the event journey.",
+                    primaryLabel = "Open services",
+                    secondaryLabel = "Open venue map",
                     onPrimaryClick = onHeroPrimary,
                     onSecondaryClick = onHeroSecondary,
                 )

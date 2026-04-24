@@ -113,8 +113,12 @@ fun App() {
         val exploreUiState = exploreViewModel.uiState
         val mapUiState = mapViewModel.uiState
         val isGuestMode = uiState.sessionMode == KazeSessionMode.GUEST
+        val needsProfileCompletion = uiState.sessionMode == KazeSessionMode.AUTHENTICATED &&
+            uiState.sessionDisplayName.isBlank()
         val resolvedGuestName = when (uiState.sessionMode) {
-            KazeSessionMode.AUTHENTICATED -> uiState.sessionEmail.toDisplayNameFromEmail()
+            KazeSessionMode.AUTHENTICATED -> uiState.sessionDisplayName
+                .takeIf { it.isNotBlank() }
+                ?: uiState.sessionEmail.toDisplayNameFromEmail()
             KazeSessionMode.GUEST, null -> stayUiState.guestName
         }
         val visibleInvitations = invitationPreviews
@@ -443,6 +447,9 @@ fun App() {
                                                 themeMode = uiState.themeMode,
                                                 edgeAiEnabled = uiState.edgeAiEnabled,
                                                 sessionLabel = sessionLabel,
+                                                sessionDisplayName = uiState.sessionDisplayName,
+                                                sessionEmail = uiState.sessionEmail,
+                                                needsProfileCompletion = needsProfileCompletion,
                                                 onThemeModeChange = appViewModel::onThemeModeChanged,
                                                 onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
                                                 onLogout = appViewModel::logout,
@@ -577,6 +584,9 @@ fun App() {
                                             themeMode = uiState.themeMode,
                                             edgeAiEnabled = uiState.edgeAiEnabled,
                                             sessionLabel = sessionLabel,
+                                            sessionDisplayName = uiState.sessionDisplayName,
+                                            sessionEmail = uiState.sessionEmail,
+                                            needsProfileCompletion = needsProfileCompletion,
                                             onThemeModeChange = appViewModel::onThemeModeChanged,
                                             onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
                                             onLogout = appViewModel::logout,

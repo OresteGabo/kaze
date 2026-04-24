@@ -12,6 +12,7 @@ internal data class AuthSession(
     val accessToken: String,
     val refreshToken: String?,
     val email: String,
+    val displayName: String? = null,
 )
 
 @Serializable

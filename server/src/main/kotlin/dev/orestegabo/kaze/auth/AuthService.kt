@@ -22,21 +22,34 @@ internal class AuthService(
 
     fun signup(request: AuthSignupRequest): AuthResponseDto {
         val email = normalizeEmail(request.email)
+        val username = request.username?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeUsername)
+        val phoneNumber = request.phoneNumber?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizePhoneNumber)
         validatePassword(request.password)
         if (repository.findByEmail(email) != null) {
             throw AuthProblemException(HttpStatusCode.Conflict, "email_already_registered", "This email is already registered.")
+        }
+        if (username != null && repository.findByUsername(username) != null) {
+            throw AuthProblemException(HttpStatusCode.Conflict, "username_already_registered", "This username is already taken.")
+        }
+        if (phoneNumber != null && repository.findByPhoneNumber(phoneNumber) != null) {
+            throw AuthProblemException(HttpStatusCode.Conflict, "phone_number_already_registered", "This phone number is already registered.")
         }
 
         val user = repository.createPasswordUser(
             email = email,
             passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt(BCRYPT_COST)),
-            displayName = request.displayName,
+            displayName = request.displayName?.trim()?.takeIf { it.isNotEmpty() } ?: username,
+            username = username,
+            phoneNumber = phoneNumber,
         ).user
         return user.toAuthResponse()
     }
 
     fun signin(request: AuthSigninRequest): AuthResponseDto {
-        val storedUser = repository.findByEmail(normalizeEmail(request.email))
+        val identifier = request.identifier?.trim()?.takeIf { it.isNotEmpty() }
+            ?: request.email?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw invalidCredentials()
+        val storedUser = findUserByIdentifier(identifier)
             ?: throw invalidCredentials()
         val passwordHash = storedUser.passwordHash ?: throw invalidCredentials()
         if (!BCrypt.checkpw(request.password, passwordHash)) throw invalidCredentials()
@@ -215,12 +228,49 @@ internal class AuthService(
         )
 
     private fun invalidCredentials(): AuthProblemException =
-        AuthProblemException(HttpStatusCode.Unauthorized, "invalid_credentials", "Email or password is incorrect.")
+        AuthProblemException(HttpStatusCode.Unauthorized, "invalid_credentials", "Identifier or password is incorrect.")
+
+    private fun findUserByIdentifier(identifier: String): StoredAuthUser? =
+        when {
+            '@' in identifier -> repository.findByEmail(normalizeEmail(identifier))
+            looksLikePhoneNumber(identifier) -> repository.findByPhoneNumber(normalizePhoneNumber(identifier))
+            else -> repository.findByUsername(normalizeUsername(identifier))
+        }
 
     private fun normalizeEmail(email: String): String {
         val normalized = email.trim().lowercase()
         require(EMAIL_REGEX.matches(normalized)) { "A valid email address is required." }
         return normalized
+    }
+
+    private fun normalizeUsername(username: String): String {
+        val normalized = username.trim().lowercase()
+        require(USERNAME_REGEX.matches(normalized)) {
+            "Username must be 3 to 32 characters and use only letters, numbers, dots, and underscores."
+        }
+        return normalized
+    }
+
+    private fun normalizePhoneNumber(phoneNumber: String): String {
+        val trimmed = phoneNumber.trim()
+        val normalized = buildString(trimmed.length) {
+            trimmed.forEachIndexed { index, char ->
+                when {
+                    char.isDigit() -> append(char)
+                    char == '+' && index == 0 -> append(char)
+                }
+            }
+        }
+        require(PHONE_NUMBER_REGEX.matches(normalized)) {
+            "Phone number must be a valid international number."
+        }
+        return normalized
+    }
+
+    private fun looksLikePhoneNumber(identifier: String): Boolean {
+        val compact = identifier.filter { it.isDigit() || it == '+' }
+        val digitCount = compact.count { it.isDigit() }
+        return digitCount in 8..15 && compact.any { it.isDigit() }
     }
 
     private fun validatePassword(password: String) {
@@ -258,3 +308,5 @@ private const val MIN_PASSWORD_LENGTH = 8
 private const val BCRYPT_COST = 12
 private const val OAUTH_ATTEMPT_TTL_SECONDS = 600L
 private val EMAIL_REGEX = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
+private val USERNAME_REGEX = Regex("^[a-z0-9._]{3,32}$")
+private val PHONE_NUMBER_REGEX = Regex("^\\+?[1-9][0-9]{7,14}$")

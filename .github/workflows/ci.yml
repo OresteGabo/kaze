@@ -56,6 +56,14 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaze?sslmode=disable
         run: ./gradlew :composeApp:compileDebugKotlinAndroid :shared:jvmTest :server:test --no-daemon
 
+      - name: Print failing server test details
+        if: failure()
+        run: |
+          if [ -d server/build/test-results/test ]; then
+            echo "---- server test failures ----"
+            grep -R -n "<testcase\\|<failure\\|<error" server/build/test-results/test || true
+          fi
+
       - name: Validate server distribution packaging
         env:
           KAZE_SERVER_ONLY: "true"

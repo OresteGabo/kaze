@@ -11,6 +11,7 @@ internal data class KazeAppUiState(
     val onboardingPage: Int = 0,
     val sessionMode: KazeSessionMode? = null,
     val sessionEmail: String = "",
+    val sessionDisplayName: String = "",
     val themeMode: KazeThemeMode = KazeThemeMode.SYSTEM,
     val edgeAiEnabled: Boolean = true,
     val currentDestination: KazeDestination = KazeDestination.HOME,

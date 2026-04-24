@@ -52,10 +52,13 @@ internal fun HomeSettingsScreen(
     edgeAiEnabled: Boolean,
     sessionLabel: String,
     sessionDisplayName: String,
+    sessionUsername: String,
     sessionEmail: String,
+    sessionPhoneNumber: String,
     needsProfileCompletion: Boolean,
     onThemeModeChange: (KazeThemeMode) -> Unit,
     onEdgeAiEnabledChange: (Boolean) -> Unit,
+    onUpdateProfile: (String, String, String) -> Unit,
     onLogout: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -69,9 +72,12 @@ internal fun HomeSettingsScreen(
         SettingsDetailScreen(
             page = page,
             sessionDisplayName = sessionDisplayName,
+            sessionUsername = sessionUsername,
             sessionEmail = sessionEmail,
+            sessionPhoneNumber = sessionPhoneNumber,
             needsProfileCompletion = needsProfileCompletion,
             bottomContentPadding = bottomContentPadding,
+            onUpdateProfile = onUpdateProfile,
             onBack = { selectedSettingsPage = null },
         )
         return

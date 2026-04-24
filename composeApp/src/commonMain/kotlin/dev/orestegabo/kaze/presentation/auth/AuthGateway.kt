@@ -159,3 +159,25 @@ internal fun Throwable.toAuthMessage(): String =
             else -> "Could not complete sign-in. Please try again."
         }
     }
+
+internal fun Throwable.toSignupMessage(): String =
+    when (this) {
+        is HttpRequestTimeoutException -> {
+            "Kaze is taking longer than usual to create your account. Please check your internet and try again."
+        }
+        is ClientRequestException -> when (response.status.value) {
+            400 -> "Please check your details and try again."
+            409 -> "That email, username, or phone number is already in use."
+            else -> "Could not create your account. Please try again."
+        }
+        is ServerResponseException -> "Kaze is having trouble creating your account. Please try again."
+        else -> when {
+            message?.contains("Connection refused", ignoreCase = true) == true -> {
+                "Kaze could not connect right now. Please check your internet and try again."
+            }
+            message?.contains("Failed to connect", ignoreCase = true) == true -> {
+                "Kaze could not connect right now. Please check your internet and try again."
+            }
+            else -> "Could not create your account. Please try again."
+        }
+    }

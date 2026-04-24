@@ -20,14 +20,15 @@ import dev.orestegabo.kaze.application.ServerDependencies
 import dev.orestegabo.kaze.data.repository.ExperienceRepository
 import dev.orestegabo.kaze.data.repository.HotelRepository
 import dev.orestegabo.kaze.data.repository.MapRepository
+import dev.orestegabo.kaze.data.repository.StayRepository
 import dev.orestegabo.kaze.infrastructure.AmenityKnowledgeRepository
 import dev.orestegabo.kaze.infrastructure.DatabaseFactory
 import dev.orestegabo.kaze.infrastructure.GuestRepository
-import dev.orestegabo.kaze.infrastructure.InMemoryExperienceRepository
-import dev.orestegabo.kaze.infrastructure.InMemoryHotelRepository
-import dev.orestegabo.kaze.infrastructure.InMemoryMapRepository
-import dev.orestegabo.kaze.infrastructure.InMemoryStayRepository
 import dev.orestegabo.kaze.infrastructure.DatabaseConfig
+import dev.orestegabo.kaze.infrastructure.JdbcExperienceRepository
+import dev.orestegabo.kaze.infrastructure.JdbcHotelRepository
+import dev.orestegabo.kaze.infrastructure.JdbcMapRepository
+import dev.orestegabo.kaze.infrastructure.JdbcStayRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -78,12 +79,12 @@ internal fun serverModule(
         )
     }
 
-    single<HotelRepository> { InMemoryHotelRepository() }
-    single<ExperienceRepository> { InMemoryExperienceRepository() }
-    single<MapRepository> { InMemoryMapRepository() }
-    single { GuestRepository() }
-    single { InMemoryStayRepository() }
-    single { AmenityKnowledgeRepository() }
+    single<HotelRepository> { JdbcHotelRepository(get()) }
+    single<ExperienceRepository> { JdbcExperienceRepository(get()) }
+    single<MapRepository> { JdbcMapRepository(get()) }
+    single { GuestRepository(get()) }
+    single<StayRepository> { JdbcStayRepository(get()) }
+    single { AmenityKnowledgeRepository(get()) }
 
     single { HotelQueryService(get()) }
     single { GuestStayService(get(), get()) }

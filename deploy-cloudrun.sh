@@ -2,25 +2,35 @@
 
 set -eu
 
+ROOT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
+cd "$ROOT_DIR"
+
+LOCAL_ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env.server.local}"
+
+if [ -f "$LOCAL_ENV_FILE" ]; then
+  # shellcheck disable=SC1090
+  . "$LOCAL_ENV_FILE"
+fi
+
 SERVICE_NAME="${SERVICE_NAME:-kaze-api}"
 REGION="${REGION:-europe-west1}"
 PROJECT_ID="${PROJECT_ID:-}"
 
 if [ -z "$PROJECT_ID" ]; then
   echo "Missing PROJECT_ID"
-  echo "Usage: PROJECT_ID=your-gcp-project-id /bin/sh ./deploy-cloudrun.sh"
+  echo "Set PROJECT_ID in $LOCAL_ENV_FILE or export it before running ./deploy-cloudrun.sh."
   exit 1
 fi
 
 if [ -z "${DATABASE_URL:-}" ]; then
   echo "Missing DATABASE_URL"
-  echo "Export your Neon DATABASE_URL before deploying."
+  echo "Set DATABASE_URL in $LOCAL_ENV_FILE or export it before deploying."
   exit 1
 fi
 
 if [ -z "${KAZE_JWT_SECRET:-}" ]; then
   echo "Missing KAZE_JWT_SECRET"
-  echo "Export a long random JWT secret before deploying."
+  echo "Set KAZE_JWT_SECRET in $LOCAL_ENV_FILE or export it before deploying."
   exit 1
 fi
 

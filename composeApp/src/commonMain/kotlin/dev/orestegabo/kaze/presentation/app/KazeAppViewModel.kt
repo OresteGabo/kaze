@@ -84,6 +84,7 @@ internal class KazeAppViewModel(
                 isOnboardingVisible = !hasSeenOnboarding,
                 onboardingPage = 0,
                 sessionMode = persistedSessionMode,
+                sessionUserId = secureStore.get(SESSION_USER_ID_KEY).orEmpty(),
                 sessionEmail = secureStore.get(SESSION_EMAIL_KEY).orEmpty(),
                 sessionDisplayName = secureStore.get(SESSION_DISPLAY_NAME_KEY).orEmpty(),
                 sessionUsername = secureStore.get(SESSION_USERNAME_KEY).orEmpty(),
@@ -253,6 +254,7 @@ internal class KazeAppViewModel(
         navigator.goTo(KazeDestination.HOME)
         uiState = uiState.copy(
             sessionMode = null,
+            sessionUserId = "",
             sessionEmail = "",
             sessionDisplayName = "",
             sessionUsername = "",
@@ -264,6 +266,7 @@ internal class KazeAppViewModel(
         scope.launch {
             refreshTokenJob.join()
             secureStore.remove(SESSION_MODE_KEY)
+            secureStore.remove(SESSION_USER_ID_KEY)
             secureStore.remove(SESSION_EMAIL_KEY)
             secureStore.remove(SESSION_DISPLAY_NAME_KEY)
             secureStore.remove(SESSION_USERNAME_KEY)
@@ -295,6 +298,7 @@ internal class KazeAppViewModel(
             }
                 .onSuccess { user ->
                     applyProfileState(
+                        userId = uiState.sessionUserId,
                         email = user.email,
                         displayName = user.displayName.orEmpty(),
                         username = user.username.orEmpty(),
@@ -323,6 +327,7 @@ internal class KazeAppViewModel(
     ) {
         startSession(
             mode = KazeSessionMode.AUTHENTICATED,
+            userId = session.userId,
             email = session.email,
             displayName = session.displayName.orEmpty(),
             username = session.username.orEmpty(),
@@ -335,6 +340,7 @@ internal class KazeAppViewModel(
 
     private fun startSession(
         mode: KazeSessionMode,
+        userId: String = "",
         email: String,
         displayName: String,
         username: String = "",
@@ -349,6 +355,7 @@ internal class KazeAppViewModel(
             isStartupTakingTooLong = false,
             isOnboardingVisible = false,
             sessionMode = mode,
+            sessionUserId = userId,
             sessionEmail = email,
             sessionDisplayName = displayName,
             sessionUsername = username,
@@ -358,6 +365,11 @@ internal class KazeAppViewModel(
         )
         scope.launch {
             secureStore.put(SESSION_MODE_KEY, mode.name)
+            if (userId.isBlank()) {
+                secureStore.remove(SESSION_USER_ID_KEY)
+            } else {
+                secureStore.put(SESSION_USER_ID_KEY, userId)
+            }
             if (email.isBlank()) {
                 secureStore.remove(SESSION_EMAIL_KEY)
             } else {
@@ -400,6 +412,7 @@ internal class KazeAppViewModel(
             runCatching { authGateway.getProfile(accessToken) }
                 .onSuccess { user ->
                     applyProfileState(
+                        userId = user.id,
                         email = user.email,
                         displayName = user.displayName.orEmpty(),
                         username = user.username.orEmpty(),
@@ -410,18 +423,25 @@ internal class KazeAppViewModel(
     }
 
     private fun applyProfileState(
+        userId: String,
         email: String,
         displayName: String,
         username: String,
         phoneNumber: String,
     ) {
         uiState = uiState.copy(
+            sessionUserId = userId,
             sessionEmail = email,
             sessionDisplayName = displayName,
             sessionUsername = username,
             sessionPhoneNumber = phoneNumber,
         )
         scope.launch {
+            if (userId.isBlank()) {
+                secureStore.remove(SESSION_USER_ID_KEY)
+            } else {
+                secureStore.put(SESSION_USER_ID_KEY, userId)
+            }
             if (email.isBlank()) {
                 secureStore.remove(SESSION_EMAIL_KEY)
             } else {
@@ -488,6 +508,7 @@ internal class KazeAppViewModel(
         const val THEME_MODE_KEY = "app.theme_mode"
         const val EDGE_AI_ENABLED_KEY = "app.edge_ai_enabled"
         const val SESSION_MODE_KEY = "app.session_mode"
+        const val SESSION_USER_ID_KEY = "app.session_user_id"
         const val SESSION_EMAIL_KEY = "app.session_email"
         const val SESSION_DISPLAY_NAME_KEY = "app.session_display_name"
         const val SESSION_USERNAME_KEY = "app.session_username"

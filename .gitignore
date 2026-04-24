@@ -27,5 +27,5 @@ logs/
 **/logs/
 
 # Local run helpers with secrets
-run-server.sh
 /export-config.sh
+.env.server.local

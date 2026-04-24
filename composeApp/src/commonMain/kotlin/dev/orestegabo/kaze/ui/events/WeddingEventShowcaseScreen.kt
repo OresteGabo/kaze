@@ -115,7 +115,7 @@ private fun WeddingHero(invitation: InvitationPreview) {
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.Black.copy(alpha = 0.14f),
+                            colors.scrim.copy(alpha = 0.14f),
                             pass.cardBaseMiddle.copy(alpha = 0.42f),
                             pass.cardBaseStart.copy(alpha = 0.96f),
                         ),
@@ -137,7 +137,7 @@ private fun WeddingHero(invitation: InvitationPreview) {
             Surface(
                 shape = RoundedCornerShape(999.dp),
                 color = colors.tertiary.copy(alpha = 0.22f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+                border = BorderStroke(1.dp, pass.cardOnSurface.copy(alpha = 0.16f)),
             ) {
                 Text(
                     "Wedding day",

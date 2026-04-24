@@ -237,7 +237,7 @@ internal class InMemoryExperienceRepository : ExperienceRepository {
 
     override suspend fun getAmenityHighlights(hotelId: String): List<AmenityHighlight> =
         listOf(
-            AmenityHighlight(
+            /*AmenityHighlight(
                 id = "amenity_pool",
                 title = "Infinity pool quiet hours",
                 description = "A calmer pool deck period curated for business travelers between meetings.",
@@ -266,11 +266,11 @@ internal class InMemoryExperienceRepository : ExperienceRepository {
                 categoryLabel = "Evening experience",
                 accessLabel = "Extra charge",
                 actionLabel = "Reserve table",
-            ),
+            ),*/
         )
 
-    private val allSessions = listOf(
-        ScheduledExperience(
+    private val allSessions: List<ScheduledExperience> = listOf(
+        /*ScheduledExperience(
             id = "session_welcome",
             dayId = "day1",
             title = "Welcome reception",
@@ -309,7 +309,7 @@ internal class InMemoryExperienceRepository : ExperienceRepository {
             endIso = "2026-04-05T11:30:00Z",
             venueLabel = "Kivu Terrace",
             hostLabel = "Events Team",
-        ),
+        ),*/
     )
 }
 

@@ -50,6 +50,9 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 internal fun SettingsDetailScreen(
     page: SettingsDetailPage,
+    sessionDisplayName: String,
+    sessionEmail: String,
+    needsProfileCompletion: Boolean,
     bottomContentPadding: Dp,
     onBack: () -> Unit,
 ) {
@@ -73,7 +76,11 @@ internal fun SettingsDetailScreen(
         )
 
         if (page == SettingsDetailPage.ACCOUNT) {
-            PersonalDataSnapshotCard()
+            PersonalDataSnapshotCard(
+                displayName = sessionDisplayName,
+                email = sessionEmail,
+                needsProfileCompletion = needsProfileCompletion,
+            )
         }
         if (page == SettingsDetailPage.PRIVACY_CONTROLS) {
             DataCollectionSettingsCard()
@@ -185,6 +192,7 @@ private fun HelpSupportCard() {
                 items = listOf(
                     "What if event or venue information looks wrong?" to "Use Report a problem so the venue, organizer, or Kaze support can review it.",
                     "How do I contact support?" to "Contact support at dev@kazerwanda.com.",
+                    "How do I delete my account?" to "Account deletion is handled through support so it is never triggered by accident. Contact Kaze support if you want to permanently remove your account.",
                 ),
             )
         }
@@ -597,7 +605,15 @@ private fun DataCollectionRow(
 }
 
 @Composable
-private fun PersonalDataSnapshotCard() {
+private fun PersonalDataSnapshotCard(
+    displayName: String,
+    email: String,
+    needsProfileCompletion: Boolean,
+) {
+    val resolvedName = displayName.takeIf { it.isNotBlank() } ?: "Add your full name"
+    val resolvedEmail = email.takeIf { it.isNotBlank() } ?: "Add your email"
+    val resolvedPhone = if (needsProfileCompletion) "Add your phone number" else "Phone not added yet"
+    val profileStatus = if (needsProfileCompletion) "Needs completion" else "Basic profile active"
     Surface(
         shape = RoundedCornerShape(26.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
@@ -622,14 +638,12 @@ private fun PersonalDataSnapshotCard() {
                 )
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                PersonalDataRow(label = "Full name", value = "Alice Muhire", action = "Edit", icon = Icons.Default.Edit)
-                PersonalDataRow(label = "Linked email", value = "alice.muhire@example.com", action = "Edit", icon = Icons.Default.Email)
-                PersonalDataRow(label = "Linked phone", value = "+250 7XX XXX XXX", action = "Edit", icon = Icons.Default.Phone)
-                PersonalDataRow(label = "Active profile", value = "Guest and organizer", action = "Manage", icon = Icons.Default.AccountCircle)
+                PersonalDataRow(label = "Full name", value = resolvedName, action = "Edit", icon = Icons.Default.Edit)
+                PersonalDataRow(label = "Linked email", value = resolvedEmail, action = "Verified", icon = Icons.Default.Email)
+                PersonalDataRow(label = "Linked phone", value = resolvedPhone, action = "Add", icon = Icons.Default.Phone)
+                PersonalDataRow(label = "Active profile", value = profileStatus, action = "Manage", icon = Icons.Default.AccountCircle)
                 PersonalDataRow(label = "Data export", value = "Download a copy of your personal data", action = "Request", icon = Icons.Default.Download)
-                PersonalDataRow(label = "Delete request", value = "Ask Kaze to remove personal data that is no longer needed", action = "Request", icon = Icons.Default.PrivacyTip)
             }
-            // TODO Load these values from the authenticated user profile and real data export workflow.
         }
     }
 }
@@ -684,6 +698,7 @@ private fun PersonalDataRow(
         }
     }
 }
+
 
 @Composable
 internal fun LegalDetailScreen(

@@ -42,7 +42,7 @@ internal fun Application.loadDatabaseConfig(): DatabaseConfig =
             password = when {
                 explicitPassword != null -> explicitPassword
                 parsedConnection.password != null -> parsedConnection.password
-                else -> "Muhirehonore@1*"
+                else -> ""
             },
             maximumPoolSize = environment.config.propertyOrNull("kaze.database.maximumPoolSize")?.getString()?.toInt() ?: 5,
             schemaMode = DatabaseSchemaMode.fromConfig(

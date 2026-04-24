@@ -119,6 +119,7 @@ internal class KazeAuthGateway(
 
     private fun AuthResponse.toSession(): AuthSession =
         AuthSession(
+            userId = user.id,
             accessToken = accessToken,
             refreshToken = refreshToken,
             email = user.email,
@@ -130,10 +131,10 @@ internal class KazeAuthGateway(
 
 internal object DemoAuthGateway : AuthGateway {
     override suspend fun signIn(email: String, password: String): AuthSession =
-        AuthSession(accessToken = "demo-local-session", refreshToken = null, email = email.trim().lowercase())
+        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = null, email = email.trim().lowercase())
 
     override suspend fun createAccount(email: String, password: String): AuthSession =
-        AuthSession(accessToken = "demo-local-session", refreshToken = null, email = email.trim().lowercase())
+        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = null, email = email.trim().lowercase())
 
     override suspend fun getProfile(accessToken: String): AuthUser =
         AuthUser(
@@ -162,10 +163,10 @@ internal object DemoAuthGateway : AuthGateway {
         AuthStartResponse(authorizationUrl = "", state = "")
 
     override suspend fun claimSession(loginToken: String): AuthSession =
-        AuthSession(accessToken = "demo-local-session", refreshToken = null, email = "demo@kaze.local")
+        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = null, email = "demo@kaze.local")
 
     override suspend fun refresh(refreshToken: String): AuthSession =
-        AuthSession(accessToken = "demo-local-session", refreshToken = refreshToken, email = "demo@kaze.local")
+        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = refreshToken, email = "demo@kaze.local")
 
     override suspend fun logout(accessToken: String?, refreshToken: String?) = Unit
 }

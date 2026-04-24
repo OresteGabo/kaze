@@ -10,6 +10,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -19,6 +20,13 @@ import kotlinx.serialization.json.Json
 internal interface AuthGateway {
     suspend fun signIn(email: String, password: String): AuthSession
     suspend fun createAccount(email: String, password: String): AuthSession
+    suspend fun getProfile(accessToken: String): AuthUser
+    suspend fun updateProfile(
+        accessToken: String,
+        displayName: String,
+        username: String?,
+        phoneNumber: String?,
+    ): AuthUser
     suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse
     suspend fun claimSession(loginToken: String): AuthSession
     suspend fun refresh(refreshToken: String): AuthSession
@@ -44,6 +52,29 @@ internal class KazeAuthGateway(
             contentType(ContentType.Application.Json)
             setBody(AuthSignupRequest(email = email, password = password))
         }.body<AuthResponse>().toSession()
+
+    override suspend fun getProfile(accessToken: String): AuthUser =
+        client.get("$authBaseUrl/auth/me") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body()
+
+    override suspend fun updateProfile(
+        accessToken: String,
+        displayName: String,
+        username: String?,
+        phoneNumber: String?,
+    ): AuthUser =
+        client.put("$authBaseUrl/auth/me") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(
+                AuthProfileUpdateRequest(
+                    displayName = displayName,
+                    username = username,
+                    phoneNumber = phoneNumber,
+                ),
+            )
+        }.body()
 
     override suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse =
         client.get("$authBaseUrl/auth/${provider.routeName}/start") {
@@ -92,6 +123,8 @@ internal class KazeAuthGateway(
             refreshToken = refreshToken,
             email = user.email,
             displayName = user.displayName,
+            username = user.username,
+            phoneNumber = user.phoneNumber,
         )
 }
 
@@ -101,6 +134,29 @@ internal object DemoAuthGateway : AuthGateway {
 
     override suspend fun createAccount(email: String, password: String): AuthSession =
         AuthSession(accessToken = "demo-local-session", refreshToken = null, email = email.trim().lowercase())
+
+    override suspend fun getProfile(accessToken: String): AuthUser =
+        AuthUser(
+            id = "demo-user",
+            email = "demo@kaze.local",
+            displayName = "Kaze Demo",
+            username = "kaze.demo",
+            phoneNumber = "+250700000000",
+        )
+
+    override suspend fun updateProfile(
+        accessToken: String,
+        displayName: String,
+        username: String?,
+        phoneNumber: String?,
+    ): AuthUser =
+        AuthUser(
+            id = "demo-user",
+            email = "demo@kaze.local",
+            displayName = displayName,
+            username = username,
+            phoneNumber = phoneNumber,
+        )
 
     override suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse =
         AuthStartResponse(authorizationUrl = "", state = "")
@@ -181,4 +237,18 @@ internal fun Throwable.toSignupMessage(): String =
             }
             else -> "Could not create your account. Please try again."
         }
+    }
+
+internal fun Throwable.toProfileMessage(): String =
+    when (this) {
+        is HttpRequestTimeoutException -> "Kaze is taking longer than usual to save your profile. Please try again."
+        is ClientRequestException -> when (response.status.value) {
+            400 -> "Please check your name, username, and phone number."
+            401 -> "Your session expired. Please sign in again."
+            405 -> "Profile saving is not live on the server yet. Redeploy the backend, then try again."
+            409 -> "That username or phone number is already in use."
+            else -> "Could not save your profile right now."
+        }
+        is ServerResponseException -> "Kaze is having trouble saving your profile. Please try again."
+        else -> "Could not save your profile right now."
     }

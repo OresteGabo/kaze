@@ -14,8 +14,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.server.config.MapApplicationConfig
-import io.ktor.server.testing.testApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -25,8 +23,7 @@ import java.util.Date
 class ApiRoutesTest {
 
     @Test
-    fun health_endpoint_returns_healthy_status() = testApplication {
-        application { module() }
+    fun health_endpoint_returns_healthy_status() = kazeTestApplication {
 
         val response = client.get("/health")
 
@@ -35,8 +32,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun swagger_docs_are_available_from_backend() = testApplication {
-        application { module() }
+    fun swagger_docs_are_available_from_backend() = kazeTestApplication {
 
         val response = client.get("/swagger")
 
@@ -45,8 +41,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun get_routes_support_head_requests() = testApplication {
-        application { module() }
+    fun get_routes_support_head_requests() = kazeTestApplication {
 
         val response = client.head("/health")
 
@@ -54,8 +49,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun cors_preflight_allows_configured_web_hosts() = testApplication {
-        application { module() }
+    fun cors_preflight_allows_configured_web_hosts() = kazeTestApplication {
 
         val response = client.options("/api/v1") {
             header(HttpHeaders.Origin, "http://localhost:5173")
@@ -67,8 +61,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun hotel_endpoint_returns_seeded_hotel() = testApplication {
-        application { module() }
+    fun hotel_endpoint_returns_seeded_hotel() = kazeTestApplication {
 
         val response = client.get("/api/v1/hotels/rw-kgl-marriott")
 
@@ -77,20 +70,18 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun itinerary_endpoint_returns_guest_schedule() = testApplication {
-        application { module() }
+    fun itinerary_endpoint_returns_guest_schedule() = kazeTestApplication {
 
-        val response = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary")
+        val response = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary")
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(response.bodyAsText().contains("\"title\": \"Opening keynote\""))
+        assertTrue(response.bodyAsText().contains("\"title\": \"Registration and badge pickup\""))
     }
 
     @Test
-    fun late_checkout_endpoint_accepts_submission() = testApplication {
-        application { module() }
+    fun late_checkout_endpoint_accepts_submission() = kazeTestApplication {
 
-        val response = client.post("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/late-checkout") {
+        val response = client.post("/api/v1/hotels/rw-kgl-marriott/guests/guest_ange/late-checkout") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -111,10 +102,9 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun late_checkout_validation_rejects_invalid_submission() = testApplication {
-        application { module() }
+    fun late_checkout_validation_rejects_invalid_submission() = kazeTestApplication {
 
-        val response = client.post("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/late-checkout") {
+        val response = client.post("/api/v1/hotels/rw-kgl-marriott/guests/guest_ange/late-checkout") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
@@ -134,14 +124,12 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun api_routes_require_bearer_token_when_configured() = testApplication {
-        environment {
-            config = MapApplicationConfig("kaze.security.apiToken" to "test-token")
-        }
-        application { module() }
+    fun api_routes_require_bearer_token_when_configured() = kazeTestApplication(
+        "kaze.security.apiToken" to "test-token",
+    ) {
 
-        val unauthorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary")
-        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary") {
+        val unauthorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary")
+        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary") {
             header(HttpHeaders.Authorization, "Bearer test-token")
         }
 
@@ -150,17 +138,13 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun api_routes_accept_jwt_when_required() = testApplication {
-        environment {
-            config = MapApplicationConfig(
-                "kaze.security.jwt.requireForApi" to "true",
-                "kaze.security.jwt.secret" to TEST_JWT_SECRET,
-            )
-        }
-        application { module() }
+    fun api_routes_accept_jwt_when_required() = kazeTestApplication(
+        "kaze.security.jwt.requireForApi" to "true",
+        "kaze.security.jwt.secret" to TEST_JWT_SECRET,
+    ) {
 
-        val unauthorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary")
-        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary") {
+        val unauthorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary")
+        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary") {
             header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
         }
 
@@ -169,20 +153,16 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun guest_mode_can_see_basic_public_info_when_jwt_is_required() = testApplication {
-        environment {
-            config = MapApplicationConfig(
-                "kaze.security.jwt.requireForApi" to "true",
-                "kaze.security.jwt.secret" to TEST_JWT_SECRET,
-            )
-        }
-        application { module() }
+    fun guest_mode_can_see_basic_public_info_when_jwt_is_required() = kazeTestApplication(
+        "kaze.security.jwt.requireForApi" to "true",
+        "kaze.security.jwt.secret" to TEST_JWT_SECRET,
+    ) {
 
         val apiResponse = client.get("/api/v1")
         val hotelsResponse = client.get("/api/v1/hotels")
         val hotelResponse = client.get("/api/v1/hotels/rw-kgl-marriott")
         val eventDaysResponse = client.get("/api/v1/hotels/rw-kgl-marriott/events/days")
-        val itineraryResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_aline/itinerary")
+        val itineraryResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary")
 
         assertEquals(HttpStatusCode.OK, apiResponse.status)
         assertEquals(HttpStatusCode.OK, hotelsResponse.status)
@@ -192,27 +172,23 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun auth_me_returns_jwt_claims() = testApplication {
-        environment {
-            config = MapApplicationConfig("kaze.security.jwt.secret" to TEST_JWT_SECRET)
-        }
-        application { module() }
+    fun auth_me_returns_jwt_claims() = kazeTestApplication(
+        "kaze.security.jwt.secret" to TEST_JWT_SECRET,
+    ) {
 
         val response = client.get("/api/v1/auth/me") {
             header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(response.bodyAsText().contains("\"email\": \"aline@example.com\""))
+        assertTrue(response.bodyAsText().contains("\"email\": \"ange.uwase@kaze.dev\""))
         assertTrue(response.bodyAsText().contains("CUSTOMER"))
     }
 
     @Test
-    fun auth_logout_accepts_jwt_and_returns_logout_instruction() = testApplication {
-        environment {
-            config = MapApplicationConfig("kaze.security.jwt.secret" to TEST_JWT_SECRET)
-        }
-        application { module() }
+    fun auth_logout_accepts_jwt_and_returns_logout_instruction() = kazeTestApplication(
+        "kaze.security.jwt.secret" to TEST_JWT_SECRET,
+    ) {
 
         val response = client.post("/api/v1/auth/logout") {
             header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
@@ -223,8 +199,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun google_signin_requires_client_id_configuration() = testApplication {
-        application { module() }
+    fun google_signin_requires_client_id_configuration() = kazeTestApplication {
 
         val response = client.post("/api/v1/auth/google") {
             contentType(ContentType.Application.Json)
@@ -236,8 +211,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun social_oauth_start_rejects_unconfigured_provider() = testApplication {
-        application { module() }
+    fun social_oauth_start_rejects_unconfigured_provider() = kazeTestApplication {
 
         val response = client.get("/api/v1/auth/google/start")
 
@@ -246,8 +220,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun social_oauth_start_rejects_unknown_provider() = testApplication {
-        application { module() }
+    fun social_oauth_start_rejects_unknown_provider() = kazeTestApplication {
 
         val response = client.get("/api/v1/auth/github/start")
 
@@ -256,8 +229,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun refresh_requires_refresh_token() = testApplication {
-        application { module() }
+    fun refresh_requires_refresh_token() = kazeTestApplication {
 
         val response = client.post("/api/v1/auth/refresh") {
             contentType(ContentType.Application.Json)
@@ -269,8 +241,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun assistant_query_returns_structured_kitchen_answer() = testApplication {
-        application { module() }
+    fun assistant_query_returns_structured_kitchen_answer() = kazeTestApplication {
 
         val response = client.post("/api/v1/hotels/rw-kgl-marriott/assistant/query") {
             contentType(ContentType.Application.Json)
@@ -282,8 +253,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun api_routes_are_rate_limited_per_client() = testApplication {
-        application { module() }
+    fun api_routes_are_rate_limited_per_client() = kazeTestApplication {
 
         val responses = (1..121).map {
             client.get("/api/v1") {
@@ -296,8 +266,7 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun api_responses_are_gzip_compressed_when_supported() = testApplication {
-        application { module() }
+    fun api_responses_are_gzip_compressed_when_supported() = kazeTestApplication {
 
         val response = client.get("/api/v1/hotels/rw-kgl-marriott") {
             header(HttpHeaders.AcceptEncoding, "gzip")
@@ -313,8 +282,8 @@ class ApiRoutesTest {
         return JWT.create()
             .withIssuer("kaze-api")
             .withAudience("kaze-mobile")
-            .withSubject("user_aline")
-            .withClaim("email", "aline@example.com")
+            .withSubject("user_ange_uwase")
+            .withClaim("email", "ange.uwase@kaze.dev")
             .withClaim("roles", listOf("CUSTOMER"))
             .withIssuedAt(Date.from(now))
             .withExpiresAt(Date.from(now.plusSeconds(3600)))

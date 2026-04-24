@@ -54,6 +54,27 @@ internal class StayViewModel(
     )
         private set
 
+    fun applyPresentationContext(
+        showSharedDemoAccess: Boolean,
+        guestName: String,
+    ) {
+        val accessContexts = if (showSharedDemoAccess) demoAccessContexts else emptyList()
+        val selectedAccessContext = accessContexts.firstOrNull()
+        uiState = uiState.copy(
+            hotelDisplayName = selectedAccessContext?.title ?: sampleHotel.config.displayName,
+            accessProfileLabel = selectedAccessContext?.accessProfileLabel ?: "No linked access yet",
+            accessStatusLabel = selectedAccessContext?.statusLabel ?: "Waiting for your real invitation or pass",
+            accessCard = selectedAccessContext?.accessCard,
+            accessContexts = accessContexts,
+            selectedAccessContextId = selectedAccessContext?.id,
+            stayMoments = selectedAccessContext?.moments.orEmpty(),
+            requestOptions = selectedAccessContext?.toServiceOptions().orEmpty(),
+            suggestionActivities = selectedAccessContext?.suggestions.orEmpty(),
+            guestName = guestName,
+            activeStayScreen = StayScreen.HOME,
+        )
+    }
+
     fun onTabChange(tab: StayTab) {
         uiState = uiState.copy(selectedTab = tab)
     }

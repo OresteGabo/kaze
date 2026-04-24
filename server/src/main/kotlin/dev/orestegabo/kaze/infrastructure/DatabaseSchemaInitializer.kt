@@ -77,6 +77,8 @@ private val CREATE_SCHEMA_SQL = listOf(
         id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
         email VARCHAR(320) NOT NULL UNIQUE,
         display_name VARCHAR(240),
+        username VARCHAR(80),
+        phone_number VARCHAR(32),
         password_hash TEXT,
         roles TEXT[] NOT NULL DEFAULT ARRAY['CUSTOMER']::TEXT[],
         disabled BOOLEAN NOT NULL DEFAULT false,
@@ -85,6 +87,8 @@ private val CREATE_SCHEMA_SQL = listOf(
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
     """.trimIndent(),
+    "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS username VARCHAR(80)",
+    "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(32)",
     """
     CREATE TABLE IF NOT EXISTS user_auth_providers (
         id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
@@ -334,6 +338,8 @@ private val CREATE_SCHEMA_SQL = listOf(
     """.trimIndent(),
     "CREATE INDEX IF NOT EXISTS guests_hotel_id_idx ON guests(hotel_id)",
     "CREATE INDEX IF NOT EXISTS app_users_email_idx ON app_users(lower(email))",
+    "CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_idx ON app_users(username) WHERE username IS NOT NULL",
+    "CREATE UNIQUE INDEX IF NOT EXISTS app_users_phone_number_idx ON app_users(phone_number) WHERE phone_number IS NOT NULL",
     "CREATE INDEX IF NOT EXISTS user_auth_providers_user_id_idx ON user_auth_providers(user_id)",
     "CREATE INDEX IF NOT EXISTS auth_refresh_tokens_user_id_idx ON auth_refresh_tokens(user_id)",
     "CREATE INDEX IF NOT EXISTS auth_refresh_tokens_family_id_idx ON auth_refresh_tokens(family_id)",

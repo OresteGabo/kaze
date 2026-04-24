@@ -27,6 +27,8 @@ class UseCaseArchitectureTest {
     fun observe_hotel_context_returns_required_hotel() {
         val useCase = ObserveHotelContextUseCase(
             hotelRepository = object : HotelRepository {
+                override suspend fun listHotels(): List<Hotel> = emptyList()
+
                 override suspend fun getHotel(hotelId: String): Hotel? = null
 
                 override suspend fun requireHotel(hotelId: String): Hotel = testHotel(hotelId)
@@ -53,6 +55,10 @@ class UseCaseArchitectureTest {
                 override suspend fun submitServiceRequest(request: ServiceRequestDraft): ServiceRequestReceipt {
                     error("Unused in this test")
                 }
+
+                override suspend fun getLateCheckoutHistory(guest: GuestIdentity): List<LateCheckoutDecision> = emptyList()
+
+                override suspend fun getServiceRequestHistory(guest: GuestIdentity): List<ServiceRequestReceipt> = emptyList()
             },
         )
 

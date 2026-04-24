@@ -266,7 +266,7 @@ private fun normalizeAuthPhoneNumber(phoneNumber: String): String =
     }
 
 private const val API_RATE_LIMIT_REQUESTS = 120
-private const val API_COMPRESSION_MIN_BYTES = 256L
+private const val API_COMPRESSION_MIN_BYTES = 64L
 private const val AUTH_PASSWORD_MIN_LENGTH = 8
 private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
 private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500

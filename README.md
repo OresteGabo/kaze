@@ -98,6 +98,40 @@ Server:
 ./gradlew :server:run
 ```
 
+## Local Server Environment
+
+Kaze uses two server env files:
+
+- [`.env.server.reference`](.env.server.reference): tracked reference for required variables
+- `.env.server.local`: real local values and secrets, gitignored
+
+Use `.env.server.local` for:
+- `DATABASE_URL`
+- `KAZE_JWT_SECRET`
+- OAuth client secrets
+- any other local or deployment credentials
+
+Both scripts load `.env.server.local` automatically:
+
+```sh
+./run-server.sh
+./deploy-cloudrun.sh
+```
+
+That means you do not need to manually export the same variables every time.
+
+`./run-server.sh` can also sync Cloud Run before starting your local backend when:
+
+- `SYNC_CLOUD_ON_RUN=1`
+- `PROJECT_ID` is set
+- `KAZE_JWT_SECRET` is set
+
+If you want to skip the deploy step for a local-only run:
+
+```sh
+SYNC_CLOUD_ON_RUN=0 ./run-server.sh
+```
+
 Web:
 
 ```sh

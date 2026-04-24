@@ -40,6 +40,14 @@ jobs:
       - name: Run Android, shared, and server checks
         run: ./gradlew :composeApp:compileDebugKotlinAndroid :shared:jvmTest :server:test --no-daemon
 
+      - name: Validate server distribution packaging
+        env:
+          KAZE_SERVER_ONLY: "true"
+        run: ./gradlew :server:installDist --no-daemon
+
+      - name: Validate server Docker image
+        run: docker build -t kaze-server-ci .
+
   ios:
     name: iOS compile
     runs-on: macos-latest

@@ -353,7 +353,7 @@ paths:
           required: false
           schema:
             type: string
-            default: temporary-svg-venue
+            example: map_marriott_main
       responses:
         "200":
           description: Map floors and nodes.
@@ -498,7 +498,7 @@ components:
       required: true
       schema:
         type: string
-      example: guest_aline
+      example: guest_jean_paul
     OAuthCode:
       name: code
       in: query

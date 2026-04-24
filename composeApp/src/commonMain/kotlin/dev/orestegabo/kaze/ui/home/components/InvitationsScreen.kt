@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.presentation.demo.InvitationState
+import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.ui.ai.KazeAiAssistCard
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
@@ -459,6 +460,9 @@ private fun WeddingInvitationDetailScreen(
     bottomContentPadding: Dp = 20.dp,
 ) {
     val scrollState = rememberScrollState()
+    val colors = MaterialTheme.colorScheme
+    val pass = KazeTheme.pass
+    val accents = KazeTheme.accents
 
     Box(modifier = modifier.fillMaxSize()) {
         Image(
@@ -473,10 +477,10 @@ private fun WeddingInvitationDetailScreen(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.Black.copy(alpha = 0.18f),
-                            Color(0xFF522C35).copy(alpha = 0.48f),
-                            Color(0xFF2A171B).copy(alpha = 0.92f),
-                            Color(0xFFF7ECE5),
+                            colors.scrim.copy(alpha = 0.18f),
+                            pass.cardBaseMiddle.copy(alpha = 0.48f),
+                            pass.cardBaseStart.copy(alpha = 0.92f),
+                            colors.surface,
                         ),
                     ),
                 ),
@@ -484,7 +488,7 @@ private fun WeddingInvitationDetailScreen(
         WeddingFloatingHearts(
             modifier = Modifier.matchParentSize(),
             heartCount = 18,
-            tint = Color(0xFFFFE6EC),
+            tint = pass.cardOnSurface.copy(alpha = 0.88f),
         )
         Column(
             modifier = Modifier
@@ -500,8 +504,8 @@ private fun WeddingInvitationDetailScreen(
             )
             Surface(
                 shape = RoundedCornerShape(36.dp),
-                color = Color.White.copy(alpha = 0.12f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+                color = pass.cardOnSurface.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, pass.cardOnSurface.copy(alpha = 0.18f)),
             ) {
                 Box(
                     modifier = Modifier
@@ -518,34 +522,34 @@ private fun WeddingInvitationDetailScreen(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(999.dp),
-                            color = Color.White.copy(alpha = 0.14f),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+                            color = pass.cardOnSurface.copy(alpha = 0.14f),
+                            border = BorderStroke(1.dp, pass.cardOnSurface.copy(alpha = 0.16f)),
                         ) {
                             Text(
                                 invitation.statusLabel,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = Color.White,
+                                color = pass.cardOnSurface,
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
                         Text(
                             "Together with their families",
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White.copy(alpha = 0.82f),
+                            color = pass.cardOnSurface.copy(alpha = 0.82f),
                             textAlign = TextAlign.Center,
                         )
                         Text(
                             invitation.title,
                             style = MaterialTheme.typography.displayMedium,
-                            color = Color.White,
+                            color = pass.cardOnSurface,
                             fontWeight = FontWeight.Black,
                             textAlign = TextAlign.Center,
                         )
                         Text(
                             "invite you to celebrate their wedding",
                             style = MaterialTheme.typography.headlineSmall,
-                            color = Color(0xFFFFE8EE),
+                            color = pass.cardOnSurfaceMuted,
                             textAlign = TextAlign.Center,
                         )
                     }
@@ -561,20 +565,20 @@ private fun WeddingInvitationDetailScreen(
                             MetaPill(
                                 label = "28 June 2026",
                                 leadingIcon = Icons.Default.CalendarMonth,
-                                containerColor = Color.White.copy(alpha = 0.14f),
-                                textColor = Color.White,
+                                containerColor = pass.cardOnSurface.copy(alpha = 0.14f),
+                                textColor = pass.cardOnSurface,
                             )
                             MetaPill(
                                 label = "Kigali",
                                 leadingIcon = Icons.Default.CheckCircle,
-                                containerColor = Color.White.copy(alpha = 0.14f),
-                                textColor = Color.White,
+                                containerColor = pass.cardOnSurface.copy(alpha = 0.14f),
+                                textColor = pass.cardOnSurface,
                             )
                         }
                         Text(
                             "Garden ceremony • Sunset reception",
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White.copy(alpha = 0.88f),
+                            color = pass.cardOnSurface.copy(alpha = 0.88f),
                             textAlign = TextAlign.Center,
                         )
                     }
@@ -583,8 +587,8 @@ private fun WeddingInvitationDetailScreen(
 
             Surface(
                 shape = RoundedCornerShape(34.dp),
-                color = Color(0xFFFFFBF7).copy(alpha = 0.94f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.72f)),
+                color = colors.surface.copy(alpha = 0.94f),
+                border = BorderStroke(1.dp, colors.outline.copy(alpha = 0.12f)),
                 shadowElevation = 12.dp,
             ) {
                 Column(
@@ -594,13 +598,13 @@ private fun WeddingInvitationDetailScreen(
                     Text(
                         "Your invitation",
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color(0xFFB76B79),
+                        color = accents.editorialWarm,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         "A beautiful welcome into the wedding day.",
                         style = MaterialTheme.typography.headlineMedium,
-                        color = Color(0xFF251719),
+                        color = colors.onSurface,
                         fontWeight = FontWeight.Black,
                     )
                     FlowRow(
@@ -658,11 +662,13 @@ private fun WeddingInvitationMetric(
     value: String,
     modifier: Modifier = Modifier,
 ) {
+    val colors = MaterialTheme.colorScheme
+    val accents = KazeTheme.accents
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        color = Color(0xFFF8E6E5),
-        border = BorderStroke(1.dp, Color(0xFFEAC8CC)),
+        color = colors.secondaryContainer.copy(alpha = 0.38f),
+        border = BorderStroke(1.dp, colors.outline.copy(alpha = 0.12f)),
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -671,13 +677,13 @@ private fun WeddingInvitationMetric(
             Text(
                 label,
                 style = MaterialTheme.typography.labelLarge,
-                color = Color(0xFFB76B79),
+                color = accents.editorialWarm,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
                 value,
                 style = MaterialTheme.typography.titleMedium,
-                color = Color(0xFF251719),
+                color = colors.onSurface,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
             )
@@ -687,10 +693,12 @@ private fun WeddingInvitationMetric(
 
 @Composable
 private fun WeddingInvitationQuoteCard() {
+    val colors = MaterialTheme.colorScheme
+    val accents = KazeTheme.accents
     Surface(
         shape = RoundedCornerShape(28.dp),
-        color = Color(0xFFFFF5F1),
-        border = BorderStroke(1.dp, Color(0xFFF1D8D5)),
+        color = colors.surfaceVariant.copy(alpha = 0.42f),
+        border = BorderStroke(1.dp, colors.outline.copy(alpha = 0.12f)),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -699,19 +707,19 @@ private fun WeddingInvitationQuoteCard() {
             Text(
                 "With love",
                 style = MaterialTheme.typography.labelLarge,
-                color = Color(0xFFB76B79),
+                color = accents.editorialWarm,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
                 "Save the date, dress with joy, and arrive ready to celebrate.",
                 style = MaterialTheme.typography.headlineSmall,
-                color = Color(0xFF251719),
+                color = colors.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 "Ceremony in the garden. Reception at sunset.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF251719).copy(alpha = 0.68f),
+                color = colors.onSurface.copy(alpha = 0.68f),
             )
         }
     }

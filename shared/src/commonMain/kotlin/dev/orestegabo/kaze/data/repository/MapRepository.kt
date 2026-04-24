@@ -5,7 +5,7 @@ import dev.orestegabo.kaze.domain.map.importing.HotelMapSourceManifest
 import dev.orestegabo.kaze.domain.map.importing.TenantScopedImportRequest
 
 interface MapRepository {
-    suspend fun getHotelMap(hotelId: String, mapId: String): HotelMap?
+    suspend fun getHotelMap(hotelId: String, mapId: String? = null): HotelMap?
     suspend fun saveHotelMap(map: HotelMap)
     suspend fun importHotelMap(
         manifest: HotelMapSourceManifest,

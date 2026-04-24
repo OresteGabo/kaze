@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.experience.EventDay
@@ -185,9 +187,8 @@ private fun EventDayButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val parts = day.label.split(" ", limit = 2)
-    val shortDay = parts.firstOrNull().orEmpty()
-    val shortDate = parts.getOrNull(1).orEmpty()
+    val shortDay = day.label.substringBefore(' ').ifBlank { day.label }
+    val shortDate = day.dateIso.toEventDayLabel()
     val shape = RoundedCornerShape(20.dp)
 
     Column(
@@ -206,7 +207,8 @@ private fun EventDayButton(
                 shape,
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 12.dp),
+            .heightIn(min = 92.dp)
+            .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -216,9 +218,43 @@ private fun EventDayButton(
                 else MaterialTheme.colorScheme.secondary.copy(alpha = 0.42f),
             ),
         )
-        Text(shortDay, style = MaterialTheme.typography.labelLarge, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f))
-        Text(shortDate, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+        Text(
+            shortDay,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+        Text(
+            shortDate,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
     }
+}
+
+private fun String.toEventDayLabel(): String {
+    val parts = split("-")
+    if (parts.size != 3) return this
+    val month = when (parts[1]) {
+        "01" -> "Jan"
+        "02" -> "Feb"
+        "03" -> "Mar"
+        "04" -> "Apr"
+        "05" -> "May"
+        "06" -> "Jun"
+        "07" -> "Jul"
+        "08" -> "Aug"
+        "09" -> "Sep"
+        "10" -> "Oct"
+        "11" -> "Nov"
+        "12" -> "Dec"
+        else -> parts[1]
+    }
+    return "${parts[2]} $month"
 }
 
 @Composable

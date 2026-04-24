@@ -102,6 +102,8 @@ private val LocalUiPalette = staticCompositionLocalOf {
     )
 }
 
+private val LocalResolvedDarkTheme = staticCompositionLocalOf { false }
+
 object KazeTheme {
     val hotelConfig: HotelConfig
         @Composable
@@ -122,6 +124,10 @@ object KazeTheme {
     val ui: KazeUiPalette
         @Composable
         get() = LocalUiPalette.current
+
+    val isDark: Boolean
+        @Composable
+        get() = LocalResolvedDarkTheme.current
 }
 
 enum class KazeThemeMode {
@@ -165,6 +171,7 @@ fun KazeTheme(
             cardChipText = Color(0xFFFFFBF5),
         ),
         LocalUiPalette provides hotelConfig.branding.toUiPalette(resolvedDarkTheme),
+        LocalResolvedDarkTheme provides resolvedDarkTheme,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

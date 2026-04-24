@@ -29,7 +29,7 @@ internal fun kazeTestApplication(
                     ?: "postgres"
                 ),
         )
-        add("kaze.database.schema.mode" to "create-drop")
+        add("kaze.database.schema.mode" to "create")
         add("kaze.database.seed.mode" to "dev")
         addAll(extraConfig)
     }

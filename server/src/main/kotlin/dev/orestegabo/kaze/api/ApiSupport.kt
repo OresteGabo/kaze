@@ -138,12 +138,19 @@ internal fun Application.configureHttp(authService: AuthService) {
                 request.email.isBlank() -> ValidationResult.Invalid("email is required")
                 request.password.length < AUTH_PASSWORD_MIN_LENGTH ->
                     ValidationResult.Invalid("password must be at least $AUTH_PASSWORD_MIN_LENGTH characters")
+                request.username != null && request.username.isNotBlank() &&
+                    !AUTH_USERNAME_REGEX.matches(request.username.trim().lowercase()) ->
+                    ValidationResult.Invalid("username must be 3 to 32 characters and use only letters, numbers, dots, and underscores")
+                request.phoneNumber != null && request.phoneNumber.isNotBlank() &&
+                    !AUTH_PHONE_NUMBER_REGEX.matches(normalizeAuthPhoneNumber(request.phoneNumber)) ->
+                    ValidationResult.Invalid("phoneNumber must be a valid international phone number")
                 else -> ValidationResult.Valid
             }
         }
         validate<AuthSigninRequest> { request ->
             when {
-                request.email.isBlank() -> ValidationResult.Invalid("email is required")
+                request.identifier.isNullOrBlank() && request.email.isNullOrBlank() ->
+                    ValidationResult.Invalid("identifier is required")
                 request.password.isBlank() -> ValidationResult.Invalid("password is required")
                 else -> ValidationResult.Valid
             }
@@ -248,6 +255,16 @@ private data class ApiSecurityConfig(
     val corsAllowedHosts: List<String>,
 )
 
+private fun normalizeAuthPhoneNumber(phoneNumber: String): String =
+    buildString(phoneNumber.length) {
+        phoneNumber.trim().forEachIndexed { index, char ->
+            when {
+                char.isDigit() -> append(char)
+                char == '+' && index == 0 -> append(char)
+            }
+        }
+    }
+
 private const val API_RATE_LIMIT_REQUESTS = 120
 private const val API_COMPRESSION_MIN_BYTES = 256L
 private const val AUTH_PASSWORD_MIN_LENGTH = 8
@@ -255,6 +272,8 @@ private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
 private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500
 private const val CORS_PREFLIGHT_CACHE_SECONDS = 3_600L
 private const val DOCS_CACHE_SECONDS = 300
+private val AUTH_USERNAME_REGEX = Regex("^[a-z0-9._]{3,32}$")
+private val AUTH_PHONE_NUMBER_REGEX = Regex("^\\+?[1-9][0-9]{7,14}$")
 private val API_RATE_LIMIT_WINDOW = 1.minutes
 private val DEFAULT_CORS_ALLOWED_HOSTS = listOf(
     "localhost:3000",

@@ -10,6 +10,7 @@ internal data class KazeAppUiState(
     val isOnboardingVisible: Boolean = false,
     val onboardingPage: Int = 0,
     val sessionMode: KazeSessionMode? = null,
+    val sessionUserId: String = "",
     val sessionEmail: String = "",
     val sessionDisplayName: String = "",
     val sessionUsername: String = "",

@@ -121,7 +121,10 @@ fun App() {
                 ?: uiState.sessionEmail.toDisplayNameFromEmail()
             KazeSessionMode.GUEST, null -> stayUiState.guestName
         }
-        val visibleInvitations = invitationPreviews
+        val visibleInvitations = when (uiState.sessionMode) {
+            KazeSessionMode.AUTHENTICATED -> emptyList()
+            KazeSessionMode.GUEST, null -> invitationPreviews
+        }
         val pendingInvitationCount = visibleInvitations.count { it.state == InvitationState.ACTIVE }
         val availableDestinations = when (uiState.sessionMode) {
             KazeSessionMode.GUEST -> listOf(
@@ -256,6 +259,13 @@ fun App() {
 
         LaunchedEffect(uiState.activeMapTarget) {
             mapViewModel.applyNavigationTarget(uiState.activeMapTarget)
+        }
+
+        LaunchedEffect(uiState.sessionMode, resolvedGuestName) {
+            stayViewModel.applyPresentationContext(
+                showSharedDemoAccess = uiState.sessionMode != KazeSessionMode.AUTHENTICATED,
+                guestName = resolvedGuestName,
+            )
         }
 
         Scaffold(

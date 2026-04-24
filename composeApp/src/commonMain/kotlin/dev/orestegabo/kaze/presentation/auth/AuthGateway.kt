@@ -9,6 +9,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -21,6 +22,9 @@ internal interface AuthGateway {
     suspend fun signIn(email: String, password: String): AuthSession
     suspend fun createAccount(email: String, password: String): AuthSession
     suspend fun getProfile(accessToken: String): AuthUser
+    suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary>
+    suspend fun getEvents(accessToken: String): List<AuthEventSummary>
+    suspend fun respondToInvitation(accessToken: String, invitationId: String, response: String): AuthInvitationSummary
     suspend fun updateProfile(
         accessToken: String,
         displayName: String,
@@ -56,6 +60,27 @@ internal class KazeAuthGateway(
     override suspend fun getProfile(accessToken: String): AuthUser =
         client.get("$authBaseUrl/auth/me") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body()
+
+    override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> =
+        client.get("$authBaseUrl/auth/me/invitations") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body()
+
+    override suspend fun getEvents(accessToken: String): List<AuthEventSummary> =
+        client.get("$authBaseUrl/auth/me/events") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body()
+
+    override suspend fun respondToInvitation(
+        accessToken: String,
+        invitationId: String,
+        response: String,
+    ): AuthInvitationSummary =
+        client.patch("$authBaseUrl/auth/me/invitations/$invitationId") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(AuthInvitationResponseRequest(response))
         }.body()
 
     override suspend fun updateProfile(
@@ -143,6 +168,27 @@ internal object DemoAuthGateway : AuthGateway {
             displayName = "Kaze Demo",
             username = "kaze.demo",
             phoneNumber = "+250700000000",
+        )
+
+    override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = emptyList()
+
+    override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = emptyList()
+
+    override suspend fun respondToInvitation(
+        accessToken: String,
+        invitationId: String,
+        response: String,
+    ): AuthInvitationSummary =
+        AuthInvitationSummary(
+            id = invitationId,
+            eventId = "demo-event",
+            title = "Demo invitation",
+            subtitle = "Kaze demo",
+            code = "DEMO",
+            phoneLabel = "Demo guest",
+            statusLabel = if (response.equals("accept", ignoreCase = true)) "Accepted" else "Declined",
+            state = if (response.equals("accept", ignoreCase = true)) "ACTIVE" else "ARCHIVED",
+            awaitingResponse = false,
         )
 
     override suspend fun updateProfile(

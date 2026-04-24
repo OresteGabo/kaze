@@ -93,7 +93,7 @@ private fun Route.registerPrivateApiV1Routes(
     route("/hotels/{hotelId}") {
         get("/map") {
             val hotelId = call.requiredParam("hotelId")
-            val mapId = call.queryOrDefault("mapId", "temporary-svg-venue")
+            val mapId = call.request.queryParameters["mapId"]?.takeIf { it.isNotBlank() }
             call.respond(dependencies.mapService.getHotelMap(hotelId, mapId).toDto())
         }
 

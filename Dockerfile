@@ -13,7 +13,7 @@ COPY server server
 RUN chmod +x gradlew
 RUN KAZE_SERVER_ONLY=true ./gradlew :server:installDist --no-daemon
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 

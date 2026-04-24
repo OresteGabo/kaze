@@ -3,6 +3,8 @@
 .gradle
 .idea
 .kotlin
+composeApp
+iosApp
 build
 composeApp/build
 shared/build

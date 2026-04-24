@@ -84,6 +84,7 @@ internal class KazeAppViewModel(
                 onboardingPage = 0,
                 sessionMode = persistedSessionMode,
                 sessionEmail = secureStore.get(SESSION_EMAIL_KEY).orEmpty(),
+                sessionDisplayName = secureStore.get(SESSION_DISPLAY_NAME_KEY).orEmpty(),
                 themeMode = persistedThemeMode,
                 edgeAiEnabled = persistedEdgeAiEnabled,
             )
@@ -190,7 +191,19 @@ internal class KazeAppViewModel(
         scope.launch {
             runCatching { authGateway.createAccount(normalizedEmail, password) }
                 .onSuccess { session ->
-                    startAuthenticatedSession(session, "Account created. Your Kaze session is ready.")
+                    val needsProfileCompletion = session.displayName.isNullOrBlank()
+                    startAuthenticatedSession(
+                        session = session,
+                        feedback = if (needsProfileCompletion) {
+                            "Account created. Add your name and phone to complete your profile."
+                        } else {
+                            "Account created. Your Kaze session is ready."
+                        },
+                    )
+                    if (needsProfileCompletion) {
+                        navigator.goTo(KazeDestination.SETTINGS)
+                        syncNavigationState()
+                    }
                 }
                 .onFailure { showFeedback(it.toSignupMessage()) }
         }
@@ -220,6 +233,7 @@ internal class KazeAppViewModel(
         startSession(
             mode = KazeSessionMode.GUEST,
             email = "",
+            displayName = "",
             feedback = "Guest mode is open. You can browse public Kaze information.",
         )
     }
@@ -234,6 +248,7 @@ internal class KazeAppViewModel(
         uiState = uiState.copy(
             sessionMode = null,
             sessionEmail = "",
+            sessionDisplayName = "",
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
             feedbackMessage = "",
@@ -242,6 +257,7 @@ internal class KazeAppViewModel(
             refreshTokenJob.join()
             secureStore.remove(SESSION_MODE_KEY)
             secureStore.remove(SESSION_EMAIL_KEY)
+            secureStore.remove(SESSION_DISPLAY_NAME_KEY)
             secureStore.remove(AUTH_TOKEN_KEY)
             secureStore.remove(REFRESH_TOKEN_KEY)
         }
@@ -265,6 +281,7 @@ internal class KazeAppViewModel(
         startSession(
             mode = KazeSessionMode.AUTHENTICATED,
             email = session.email,
+            displayName = session.displayName.orEmpty(),
             feedback = feedback,
             accessToken = session.accessToken,
             refreshToken = session.refreshToken,
@@ -274,6 +291,7 @@ internal class KazeAppViewModel(
     private fun startSession(
         mode: KazeSessionMode,
         email: String,
+        displayName: String,
         feedback: String,
         accessToken: String? = null,
         refreshToken: String? = null,
@@ -285,6 +303,7 @@ internal class KazeAppViewModel(
             isOnboardingVisible = false,
             sessionMode = mode,
             sessionEmail = email,
+            sessionDisplayName = displayName,
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
         )
@@ -294,6 +313,11 @@ internal class KazeAppViewModel(
                 secureStore.remove(SESSION_EMAIL_KEY)
             } else {
                 secureStore.put(SESSION_EMAIL_KEY, email)
+            }
+            if (displayName.isBlank()) {
+                secureStore.remove(SESSION_DISPLAY_NAME_KEY)
+            } else {
+                secureStore.put(SESSION_DISPLAY_NAME_KEY, displayName)
             }
             if (mode == KazeSessionMode.AUTHENTICATED) {
                 secureStore.put(AUTH_TOKEN_KEY, accessToken ?: DEMO_AUTH_TOKEN)
@@ -354,6 +378,7 @@ internal class KazeAppViewModel(
         const val EDGE_AI_ENABLED_KEY = "app.edge_ai_enabled"
         const val SESSION_MODE_KEY = "app.session_mode"
         const val SESSION_EMAIL_KEY = "app.session_email"
+        const val SESSION_DISPLAY_NAME_KEY = "app.session_display_name"
         const val AUTH_TOKEN_KEY = "auth.access_token"
         const val REFRESH_TOKEN_KEY = "auth.refresh_token"
         const val DEMO_AUTH_TOKEN = "demo-local-session"

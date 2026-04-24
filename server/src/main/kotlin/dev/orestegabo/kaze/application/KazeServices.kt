@@ -4,6 +4,7 @@ import dev.orestegabo.kaze.api.ApiNotFoundException
 import dev.orestegabo.kaze.data.repository.ExperienceRepository
 import dev.orestegabo.kaze.data.repository.HotelRepository
 import dev.orestegabo.kaze.data.repository.MapRepository
+import dev.orestegabo.kaze.data.repository.StayRepository
 import dev.orestegabo.kaze.domain.Hotel
 import dev.orestegabo.kaze.domain.Itinerary
 import dev.orestegabo.kaze.domain.experience.AmenityHighlight
@@ -20,8 +21,12 @@ import dev.orestegabo.kaze.domain.guest.ServiceRequestReceipt
 import dev.orestegabo.kaze.domain.guest.ServiceRequestType
 import dev.orestegabo.kaze.domain.map.HotelMap
 import dev.orestegabo.kaze.infrastructure.AmenityKnowledgeRepository
+import dev.orestegabo.kaze.infrastructure.DatabaseFactory
 import dev.orestegabo.kaze.infrastructure.GuestRepository
-import dev.orestegabo.kaze.infrastructure.InMemoryStayRepository
+import dev.orestegabo.kaze.infrastructure.JdbcExperienceRepository
+import dev.orestegabo.kaze.infrastructure.JdbcHotelRepository
+import dev.orestegabo.kaze.infrastructure.JdbcMapRepository
+import dev.orestegabo.kaze.infrastructure.JdbcStayRepository
 
 internal data class GuestProfile(
     val hotelId: String,
@@ -50,20 +55,16 @@ internal class HotelQueryService(
     private val hotelRepository: HotelRepository,
 ) {
     suspend fun listHotels(): List<Hotel> =
-        listOf(hotelRepository.requireHotel(DEFAULT_HOTEL_ID))
+        hotelRepository.listHotels()
 
     suspend fun getHotel(hotelId: String): Hotel =
         hotelRepository.getHotel(hotelId)
             ?: throw ApiNotFoundException("Unknown hotel id: $hotelId")
-
-    private companion object {
-        const val DEFAULT_HOTEL_ID = "rw-kgl-marriott"
-    }
 }
 
 internal class GuestStayService(
     private val guestRepository: GuestRepository,
-    private val stayRepository: InMemoryStayRepository,
+    private val stayRepository: StayRepository,
 ) {
     fun getGuest(hotelId: String, guestId: String): GuestProfile =
         guestRepository.findGuest(hotelId, guestId)
@@ -72,6 +73,7 @@ internal class GuestStayService(
     suspend fun getItinerary(hotelId: String, guestId: String): Itinerary {
         val guest = getGuest(hotelId, guestId)
         return stayRepository.getStayItinerary(guest.toIdentity())
+            ?: throw ApiNotFoundException("No itinerary found for guest id: $guestId")
     }
 
     suspend fun submitLateCheckout(
@@ -126,14 +128,14 @@ internal class GuestStayService(
         )
     }
 
-    fun getLateCheckoutHistory(hotelId: String, guestId: String): List<LateCheckoutDecision> {
-        getGuest(hotelId, guestId)
-        return stayRepository.getLateCheckoutDecisions(hotelId, guestId)
+    suspend fun getLateCheckoutHistory(hotelId: String, guestId: String): List<LateCheckoutDecision> {
+        val guest = getGuest(hotelId, guestId)
+        return stayRepository.getLateCheckoutHistory(guest.toIdentity())
     }
 
-    fun getServiceRequestHistory(hotelId: String, guestId: String): List<ServiceRequestReceipt> {
-        getGuest(hotelId, guestId)
-        return stayRepository.getServiceRequestReceipts(hotelId, guestId)
+    suspend fun getServiceRequestHistory(hotelId: String, guestId: String): List<ServiceRequestReceipt> {
+        val guest = getGuest(hotelId, guestId)
+        return stayRepository.getServiceRequestHistory(guest.toIdentity())
     }
 }
 
@@ -153,9 +155,15 @@ internal class ExperienceQueryService(
 internal class MapQueryService(
     private val mapRepository: MapRepository,
 ) {
-    suspend fun getHotelMap(hotelId: String, mapId: String): HotelMap =
+    suspend fun getHotelMap(hotelId: String, mapId: String?): HotelMap =
         mapRepository.getHotelMap(hotelId, mapId)
-            ?: throw ApiNotFoundException("Unknown map id: $mapId for hotel id: $hotelId")
+            ?: throw ApiNotFoundException(
+                if (mapId == null) {
+                    "No map found for hotel id: $hotelId"
+                } else {
+                    "Unknown map id: $mapId for hotel id: $hotelId"
+                },
+            )
 }
 
 internal class AssistantService(
@@ -240,12 +248,13 @@ internal data class ServerDependencies(
 )
 
 internal fun createServerDependencies(): ServerDependencies {
-    val guestRepository = GuestRepository()
-    val hotelRepository = dev.orestegabo.kaze.infrastructure.InMemoryHotelRepository()
-    val stayRepository = InMemoryStayRepository()
-    val experienceRepository = dev.orestegabo.kaze.infrastructure.InMemoryExperienceRepository()
-    val mapRepository = dev.orestegabo.kaze.infrastructure.InMemoryMapRepository()
-    val amenityKnowledgeRepository = AmenityKnowledgeRepository()
+    val dataSource = DatabaseFactory.dataSource
+    val guestRepository = GuestRepository(dataSource)
+    val hotelRepository = JdbcHotelRepository(dataSource)
+    val stayRepository = JdbcStayRepository(dataSource)
+    val experienceRepository = JdbcExperienceRepository(dataSource)
+    val mapRepository = JdbcMapRepository(dataSource)
+    val amenityKnowledgeRepository = AmenityKnowledgeRepository(dataSource)
 
     return ServerDependencies(
         hotelService = HotelQueryService(hotelRepository),

@@ -111,7 +111,16 @@ internal data class AuthUserDto(
     val id: String,
     val email: String,
     val displayName: String? = null,
+    val username: String? = null,
+    val phoneNumber: String? = null,
     val roles: List<String>,
+)
+
+@Serializable
+internal data class AuthProfileUpdateRequest(
+    val displayName: String? = null,
+    val username: String? = null,
+    val phoneNumber: String? = null,
 )
 
 internal fun AuthUser.toDto(): AuthUserDto =
@@ -119,5 +128,7 @@ internal fun AuthUser.toDto(): AuthUserDto =
         id = id,
         email = email,
         displayName = displayName,
+        username = username,
+        phoneNumber = phoneNumber,
         roles = roles.map { it.name }.sorted(),
     )

@@ -114,7 +114,7 @@ fun App() {
         val mapUiState = mapViewModel.uiState
         val isGuestMode = uiState.sessionMode == KazeSessionMode.GUEST
         val needsProfileCompletion = uiState.sessionMode == KazeSessionMode.AUTHENTICATED &&
-            uiState.sessionDisplayName.isBlank()
+            (uiState.sessionDisplayName.isBlank() || uiState.sessionPhoneNumber.isBlank())
         val resolvedGuestName = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> uiState.sessionDisplayName
                 .takeIf { it.isNotBlank() }
@@ -324,9 +324,6 @@ fun App() {
                                         destinations = availableDestinations,
                                     )
                                     Column(modifier = Modifier.weight(1f)) {
-                                        DemoFeedbackBanner(
-                                            message = uiState.feedbackMessage,
-                                        )
                                         when (uiState.currentDestination) {
                                             KazeDestination.HOME -> HomeScreen(
                                                 modifier = Modifier.weight(1f),
@@ -448,10 +445,13 @@ fun App() {
                                                 edgeAiEnabled = uiState.edgeAiEnabled,
                                                 sessionLabel = sessionLabel,
                                                 sessionDisplayName = uiState.sessionDisplayName,
+                                                sessionUsername = uiState.sessionUsername,
                                                 sessionEmail = uiState.sessionEmail,
+                                                sessionPhoneNumber = uiState.sessionPhoneNumber,
                                                 needsProfileCompletion = needsProfileCompletion,
                                                 onThemeModeChange = appViewModel::onThemeModeChanged,
                                                 onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
+                                                onUpdateProfile = appViewModel::updateProfile,
                                                 onLogout = appViewModel::logout,
                                                 onBack = { selectPrimaryDestination(KazeDestination.HOME) },
                                             )
@@ -460,10 +460,6 @@ fun App() {
                                 }
                             } else {
                                 Column(modifier = Modifier.fillMaxSize()) {
-                                    DemoFeedbackBanner(
-                                        message = uiState.feedbackMessage,
-                                    )
-
                                     when (uiState.currentDestination) {
                                         KazeDestination.HOME -> HomeScreen(
                                             modifier = Modifier.weight(1f),
@@ -585,10 +581,13 @@ fun App() {
                                             edgeAiEnabled = uiState.edgeAiEnabled,
                                             sessionLabel = sessionLabel,
                                             sessionDisplayName = uiState.sessionDisplayName,
+                                            sessionUsername = uiState.sessionUsername,
                                             sessionEmail = uiState.sessionEmail,
+                                            sessionPhoneNumber = uiState.sessionPhoneNumber,
                                             needsProfileCompletion = needsProfileCompletion,
                                             onThemeModeChange = appViewModel::onThemeModeChanged,
                                             onEdgeAiEnabledChange = appViewModel::onEdgeAiEnabledChanged,
+                                            onUpdateProfile = appViewModel::updateProfile,
                                             onLogout = appViewModel::logout,
                                             onBack = { selectPrimaryDestination(KazeDestination.HOME) },
                                         )
@@ -613,6 +612,12 @@ fun App() {
                         }
                     }
                 }
+                DemoFeedbackBanner(
+                    message = uiState.feedbackMessage,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = if (immersiveWeddingEvent) 14.dp else innerPadding.calculateTopPadding() + 8.dp),
+                )
                 uiState.successCelebration?.let { celebration ->
                     KazeSuccessCelebrationScreen(
                         modifier = Modifier.fillMaxSize(),

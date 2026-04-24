@@ -9,6 +9,7 @@ internal enum class SocialAuthProvider(val routeName: String, val displayName: S
 }
 
 internal data class AuthSession(
+    val userId: String,
     val accessToken: String,
     val refreshToken: String?,
     val email: String,

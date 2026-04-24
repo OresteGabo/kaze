@@ -75,6 +75,68 @@ CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
     last_used_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS events (
+    id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    place_id VARCHAR(120) REFERENCES service_places(id) ON DELETE SET NULL,
+    organizer_user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL,
+    slug VARCHAR(160) UNIQUE,
+    title VARCHAR(240) NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    lifecycle_status VARCHAR(64) NOT NULL DEFAULT 'DRAFT',
+    visibility VARCHAR(64) NOT NULL DEFAULT 'PRIVATE',
+    summary TEXT,
+    starts_at TIMESTAMPTZ,
+    ends_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS event_memberships (
+    id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    membership_role VARCHAR(64) NOT NULL,
+    membership_status VARCHAR(64) NOT NULL DEFAULT 'ACTIVE',
+    invited_by_user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (event_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS event_invitations (
+    id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    invited_user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL,
+    sent_by_user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL,
+    invite_code VARCHAR(64) NOT NULL UNIQUE,
+    invited_email VARCHAR(320),
+    invited_phone_number VARCHAR(32),
+    invitation_status VARCHAR(64) NOT NULL DEFAULT 'PENDING',
+    access_tier VARCHAR(64) NOT NULL DEFAULT 'STANDARD',
+    note TEXT,
+    expires_at TIMESTAMPTZ,
+    accepted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (invited_user_id IS NOT NULL OR invited_email IS NOT NULL OR invited_phone_number IS NOT NULL)
+);
+
+CREATE TABLE IF NOT EXISTS access_passes (
+    id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    invitation_id VARCHAR(120) REFERENCES event_invitations(id) ON DELETE SET NULL,
+    pass_code VARCHAR(64) NOT NULL UNIQUE,
+    title VARCHAR(240) NOT NULL,
+    pass_status VARCHAR(64) NOT NULL DEFAULT 'ACTIVE',
+    qr_payload TEXT,
+    valid_from TIMESTAMPTZ,
+    valid_until TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (event_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS service_places (
     id VARCHAR(120) PRIMARY KEY,
     name VARCHAR(240) NOT NULL,
@@ -258,6 +320,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS app_users_phone_number_idx ON app_users(phone_
 CREATE INDEX IF NOT EXISTS user_auth_providers_user_id_idx ON user_auth_providers(user_id);
 CREATE INDEX IF NOT EXISTS auth_refresh_tokens_user_id_idx ON auth_refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS auth_refresh_tokens_family_id_idx ON auth_refresh_tokens(family_id);
+CREATE INDEX IF NOT EXISTS events_place_id_idx ON events(place_id);
+CREATE INDEX IF NOT EXISTS events_organizer_user_id_idx ON events(organizer_user_id);
+CREATE INDEX IF NOT EXISTS event_memberships_user_id_idx ON event_memberships(user_id);
+CREATE INDEX IF NOT EXISTS event_memberships_event_id_idx ON event_memberships(event_id);
+CREATE INDEX IF NOT EXISTS event_invitations_event_id_idx ON event_invitations(event_id);
+CREATE INDEX IF NOT EXISTS event_invitations_invited_user_id_idx ON event_invitations(invited_user_id);
+CREATE INDEX IF NOT EXISTS event_invitations_invited_email_idx ON event_invitations(lower(invited_email)) WHERE invited_email IS NOT NULL;
+CREATE INDEX IF NOT EXISTS event_invitations_invited_phone_number_idx ON event_invitations(invited_phone_number) WHERE invited_phone_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS access_passes_user_id_idx ON access_passes(user_id);
+CREATE INDEX IF NOT EXISTS access_passes_event_id_idx ON access_passes(event_id);
 CREATE INDEX IF NOT EXISTS oauth_login_attempts_expires_at_idx ON oauth_login_attempts(expires_at);
 CREATE INDEX IF NOT EXISTS stays_guest_id_idx ON stays(guest_id);
 CREATE INDEX IF NOT EXISTS event_days_hotel_id_idx ON event_days(hotel_id);

@@ -81,4 +81,8 @@ internal class DemoStayRepository : StayRepository {
             status = ServiceRequestStatus.PENDING,
             note = "The hotel team has received the request.",
         )
+
+    override suspend fun getLateCheckoutHistory(guest: GuestIdentity): List<LateCheckoutDecision> = emptyList()
+
+    override suspend fun getServiceRequestHistory(guest: GuestIdentity): List<ServiceRequestReceipt> = emptyList()
 }

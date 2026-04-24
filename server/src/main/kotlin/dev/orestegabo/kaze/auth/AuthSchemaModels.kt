@@ -16,6 +16,8 @@ internal data class AppUser(
     val id: String,
     val email: String,
     val displayName: String? = null,
+    val username: String? = null,
+    val phoneNumber: String? = null,
     val passwordHash: String? = null,
     val roles: List<String> = emptyList(),
     val disabled: Boolean = false,
@@ -66,6 +68,8 @@ internal object AppUsersTable : IdTable<String>("app_users") {
     override val id = varchar("id", 120).entityId()
     val email = varchar("email", 320)
     val displayName = varchar("display_name", 240).nullable()
+    val username = varchar("username", 80).nullable()
+    val phoneNumber = varchar("phone_number", 32).nullable()
     val passwordHash = text("password_hash").nullable()
     val roles = array<String>("roles")
     val disabled = bool("disabled").default(false)

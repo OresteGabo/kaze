@@ -3,6 +3,7 @@ package dev.orestegabo.kaze.ui.home.settings
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.getPlatform
+import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.theme.KazeThemeMode
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
@@ -196,11 +198,17 @@ fun KazeAdaptiveSwitch(
 ) {
     val platformName = getPlatform().name.lowercase()
     val isIos = "ios" in platformName || "iphone" in platformName || "ipad" in platformName
+    val colors = MaterialTheme.colorScheme
+    val uiPalette = KazeTheme.ui
 
     if (isIos) {
         val trackColor by animateColorAsState(
-            if (checked) Color(0xFF34C759) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            if (checked) colors.primary.copy(alpha = 0.78f) else colors.outline.copy(alpha = 0.26f),
             label = "kazeAdaptiveSwitchTrack",
+        )
+        val thumbColor by animateColorAsState(
+            if (checked) colors.surface else colors.surface.copy(alpha = 0.98f),
+            label = "kazeAdaptiveSwitchThumbColor",
         )
         val thumbOffset by animateDpAsState(
             targetValue = if (checked) 20.dp else 0.dp,
@@ -220,7 +228,12 @@ fun KazeAdaptiveSwitch(
                     .offset(x = thumbOffset)
                     .size(20.dp)
                     .shadow(2.dp, CircleShape)
-                    .background(Color.White, CircleShape),
+                    .background(thumbColor, CircleShape)
+                    .border(
+                        width = 1.dp,
+                        color = uiPalette.floatingShellBorder.copy(alpha = if (checked) 0.16f else 0.10f),
+                        shape = CircleShape,
+                    ),
             )
         }
     } else {

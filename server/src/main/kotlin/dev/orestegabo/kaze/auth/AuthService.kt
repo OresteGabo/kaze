@@ -175,6 +175,43 @@ internal class AuthService(
             ?.let { repository.revokeRefreshToken(it.id) }
     }
 
+    fun currentUser(userId: String): AuthUserDto =
+        repository.findById(userId)?.user?.toDto()
+            ?: throw AuthProblemException(HttpStatusCode.NotFound, "user_not_found", "The signed-in user could not be found.")
+
+    fun updateProfile(userId: String, request: AuthProfileUpdateRequest): AuthUserDto {
+        val currentUser = repository.findById(userId)
+            ?: throw AuthProblemException(HttpStatusCode.NotFound, "user_not_found", "The signed-in user could not be found.")
+
+        val normalizedDisplayName = request.displayName?.trim()?.takeIf { it.isNotEmpty() }
+        val normalizedUsername = request.username?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeUsername)
+        val normalizedPhoneNumber = request.phoneNumber?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizePhoneNumber)
+
+        if (normalizedUsername != null) {
+            repository.findByUsername(normalizedUsername)
+                ?.takeIf { it.user.id != userId }
+                ?.let {
+                    throw AuthProblemException(HttpStatusCode.Conflict, "username_already_registered", "This username is already taken.")
+                }
+        }
+
+        if (normalizedPhoneNumber != null) {
+            repository.findByPhoneNumber(normalizedPhoneNumber)
+                ?.takeIf { it.user.id != userId }
+                ?.let {
+                    throw AuthProblemException(HttpStatusCode.Conflict, "phone_number_already_registered", "This phone number is already registered.")
+                }
+        }
+
+        return repository.updateProfile(
+            userId = userId,
+            displayName = normalizedDisplayName ?: currentUser.user.displayName,
+            username = normalizedUsername ?: currentUser.user.username,
+            phoneNumber = normalizedPhoneNumber ?: currentUser.user.phoneNumber,
+        )?.user?.toDto()
+            ?: throw AuthProblemException(HttpStatusCode.InternalServerError, "profile_update_failed", "Could not update the profile right now.")
+    }
+
     fun verifier(): JWTVerifier =
         JWT.require(signingAlgorithm)
             .withIssuer(jwtConfig.issuer)
@@ -253,13 +290,20 @@ internal class AuthService(
 
     private fun normalizePhoneNumber(phoneNumber: String): String {
         val trimmed = phoneNumber.trim()
-        val normalized = buildString(trimmed.length) {
+        val compact = buildString(trimmed.length) {
             trimmed.forEachIndexed { index, char ->
                 when {
                     char.isDigit() -> append(char)
                     char == '+' && index == 0 -> append(char)
                 }
             }
+        }
+        val normalized = when {
+            compact.startsWith("+") -> compact
+            compact.startsWith("250") && compact.length == 12 -> "+$compact"
+            compact.startsWith("07") && compact.length == 10 -> "+250${compact.drop(1)}"
+            compact.startsWith("7") && compact.length == 9 -> "+250$compact"
+            else -> compact
         }
         require(PHONE_NUMBER_REGEX.matches(normalized)) {
             "Phone number must be a valid international number."

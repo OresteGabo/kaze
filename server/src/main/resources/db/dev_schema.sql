@@ -75,6 +75,18 @@ CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
     last_used_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS service_places (
+    id VARCHAR(120) PRIMARY KEY,
+    name VARCHAR(240) NOT NULL,
+    kind VARCHAR(64) NOT NULL,
+    city VARCHAR(120) NOT NULL,
+    country_code VARCHAR(8) NOT NULL,
+    address_label VARCHAR(240),
+    map_id VARCHAR(120),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS events (
     id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
     place_id VARCHAR(120) REFERENCES service_places(id) ON DELETE SET NULL,
@@ -115,7 +127,9 @@ CREATE TABLE IF NOT EXISTS event_invitations (
     access_tier VARCHAR(64) NOT NULL DEFAULT 'STANDARD',
     note TEXT,
     expires_at TIMESTAMPTZ,
+    responded_at TIMESTAMPTZ,
     accepted_at TIMESTAMPTZ,
+    declined_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK (invited_user_id IS NOT NULL OR invited_email IS NOT NULL OR invited_phone_number IS NOT NULL)
@@ -135,18 +149,6 @@ CREATE TABLE IF NOT EXISTS access_passes (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (event_id, user_id)
-);
-
-CREATE TABLE IF NOT EXISTS service_places (
-    id VARCHAR(120) PRIMARY KEY,
-    name VARCHAR(240) NOT NULL,
-    kind VARCHAR(64) NOT NULL,
-    city VARCHAR(120) NOT NULL,
-    country_code VARCHAR(8) NOT NULL,
-    address_label VARCHAR(240),
-    map_id VARCHAR(120),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS hotels (
@@ -191,6 +193,7 @@ CREATE TABLE IF NOT EXISTS place_services (
 CREATE TABLE IF NOT EXISTS guests (
     id VARCHAR(120) PRIMARY KEY,
     hotel_id VARCHAR(120) NOT NULL REFERENCES hotels(id) ON DELETE CASCADE,
+    user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL,
     full_name VARCHAR(240) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -270,6 +273,7 @@ CREATE TABLE IF NOT EXISTS maps (
 CREATE TABLE IF NOT EXISTS map_floors (
     id VARCHAR(120) PRIMARY KEY,
     map_id VARCHAR(120) NOT NULL REFERENCES maps(id) ON DELETE CASCADE,
+    building_id VARCHAR(120) NOT NULL,
     label VARCHAR(160) NOT NULL,
     level_index INTEGER NOT NULL,
     width REAL NOT NULL,
@@ -314,6 +318,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
 );
 
 CREATE INDEX IF NOT EXISTS guests_hotel_id_idx ON guests(hotel_id);
+CREATE INDEX IF NOT EXISTS guests_user_id_idx ON guests(user_id);
 CREATE INDEX IF NOT EXISTS app_users_email_idx ON app_users(lower(email));
 CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_idx ON app_users(username) WHERE username IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS app_users_phone_number_idx ON app_users(phone_number) WHERE phone_number IS NOT NULL;

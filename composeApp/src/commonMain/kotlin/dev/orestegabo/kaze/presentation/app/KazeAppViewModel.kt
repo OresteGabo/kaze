@@ -259,6 +259,8 @@ internal class KazeAppViewModel(
             sessionDisplayName = "",
             sessionUsername = "",
             sessionPhoneNumber = "",
+            sessionInvitations = emptyList(),
+            sessionEvents = emptyList(),
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
             feedbackMessage = "",
@@ -307,6 +309,29 @@ internal class KazeAppViewModel(
                     showFeedback("Profile updated.")
                 }
                 .onFailure { showFeedback(it.toProfileMessage()) }
+        }
+    }
+
+    fun respondToInvitation(invitationId: String, response: String) {
+        scope.launch {
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+            if (accessToken.isNullOrBlank()) {
+                showFeedback("Sign in again to update this invitation.")
+                return@launch
+            }
+            runCatching { authGateway.respondToInvitation(accessToken, invitationId, response) }
+                .onSuccess { updated ->
+                    uiState = uiState.copy(
+                        sessionInvitations = uiState.sessionInvitations.map { invitation ->
+                            if (invitation.id == invitationId) updated else invitation
+                        },
+                    )
+                    showFeedback(
+                        if (response.equals("accept", ignoreCase = true)) "Invitation accepted."
+                        else "Invitation declined.",
+                    )
+                }
+                .onFailure { showFeedback("Could not update this invitation right now.") }
         }
     }
 
@@ -360,6 +385,8 @@ internal class KazeAppViewModel(
             sessionDisplayName = displayName,
             sessionUsername = username,
             sessionPhoneNumber = phoneNumber,
+            sessionInvitations = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionInvitations else emptyList(),
+            sessionEvents = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionEvents else emptyList(),
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
         )
@@ -402,6 +429,14 @@ internal class KazeAppViewModel(
                 secureStore.remove(REFRESH_TOKEN_KEY)
             }
         }
+        if (mode == KazeSessionMode.AUTHENTICATED && !accessToken.isNullOrBlank() && accessToken != DEMO_AUTH_TOKEN) {
+            refreshSessionContentFromServer(accessToken)
+        } else {
+            uiState = uiState.copy(
+                sessionInvitations = emptyList(),
+                sessionEvents = emptyList(),
+            )
+        }
         showFeedback(feedback)
     }
 
@@ -418,7 +453,19 @@ internal class KazeAppViewModel(
                         username = user.username.orEmpty(),
                         phoneNumber = user.phoneNumber.orEmpty(),
                     )
+                    refreshSessionContentFromServer(accessToken)
                 }
+        }
+    }
+
+    private fun refreshSessionContentFromServer(accessToken: String) {
+        scope.launch {
+            val invitations = runCatching { authGateway.getInvitations(accessToken) }.getOrDefault(emptyList())
+            val events = runCatching { authGateway.getEvents(accessToken) }.getOrDefault(emptyList())
+            uiState = uiState.copy(
+                sessionInvitations = invitations,
+                sessionEvents = events,
+            )
         }
     }
 

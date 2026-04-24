@@ -59,12 +59,14 @@ internal data class PublicVenuePreview(
 )
 
 internal data class InvitationPreview(
+    val id: String = "",
     val title: String,
     val subtitle: String,
     val code: String,
     val phoneLabel: String,
     val statusLabel: String,
     val state: InvitationState = InvitationState.ACTIVE,
+    val awaitingResponse: Boolean = false,
     val themeId: String? = null,
 )
 
@@ -603,20 +605,25 @@ internal val publicVenues = listOf(
 
 internal val invitationPreviews = listOf(
     InvitationPreview(
+        id = "demo-invite-finance",
         title = "East Africa Finance Summit",
         subtitle = "Invitation waiting for confirmation",
         code = "EAFS24",
         phoneLabel = "Matched to +250 78 123 4567",
         statusLabel = "Invitation received",
+        awaitingResponse = true,
     ),
     InvitationPreview(
+        id = "demo-invite-wedding",
         title = "Uwase x Iradukunda",
         subtitle = "Wedding access can be added to your Kaze Pass after confirmation.",
         code = "LOVE28",
         phoneLabel = "Invite prepared for guest phone",
         statusLabel = "Pending acceptance",
+        awaitingResponse = true,
     ),
     InvitationPreview(
+        id = "demo-invite-breakfast",
         title = "Kigali Founders Breakfast",
         subtitle = "Event ended on 18 Mar 2026.",
         code = "KFB18",
@@ -625,6 +632,7 @@ internal val invitationPreviews = listOf(
         state = InvitationState.PAST,
     ),
     InvitationPreview(
+        id = "demo-invite-garden",
         title = "Nyarutarama Garden Preview",
         subtitle = "Archived after the venue walkthrough was completed.",
         code = "GARDEN7",

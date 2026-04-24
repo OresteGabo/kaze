@@ -184,7 +184,10 @@ private fun KazeNavigationContainer(
                     ),
                 )
                 .border(
-                    BorderStroke(1.dp, uiPalette.floatingShellBorder.copy(alpha = 0.9f)),
+                    BorderStroke(
+                        1.dp,
+                        uiPalette.floatingShellBorder.copy(alpha = 0.9f)
+                    ),
                     RoundedCornerShape(30.dp),
                 ),
         ) {
@@ -218,6 +221,8 @@ private fun KazeNavigationItemFrame(
     content: @Composable (Color) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val uiPalette = KazeTheme.ui
+    val isDark = KazeTheme.isDark
     val containerColor by animateColorAsState(
         targetValue = if (selected) colors.surface.copy(alpha = 0.94f) else Color.Transparent,
         label = "kazeNavContainer",
@@ -232,7 +237,11 @@ private fun KazeNavigationItemFrame(
         shape = RoundedCornerShape(22.dp),
         tonalElevation = if (selected) 1.dp else 0.dp,
         shadowElevation = if (selected) 2.dp else 0.dp,
-        border = if (selected) BorderStroke(1.dp, colors.outline.copy(alpha = 0.12f)) else null,
+        border = if (selected && isDark) {
+            BorderStroke(1.dp, uiPalette.floatingShellBorder.copy(alpha = 0.9f))
+        } else {
+            null
+        },
         modifier = modifier,
     ) {
         content(contentColor)
@@ -359,7 +368,7 @@ internal fun KazeNavigationRail(
     }
 }
 
-private val kazePrimaryDestinations = listOf(
+private val kazePrimaryDestinations: List<KazeDestination> = listOf(
     KazeDestination.EVENTS,
     KazeDestination.INVITATIONS,
     KazeDestination.HOME,

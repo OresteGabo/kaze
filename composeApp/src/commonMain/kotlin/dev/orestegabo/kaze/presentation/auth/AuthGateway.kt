@@ -91,6 +91,7 @@ internal class KazeAuthGateway(
             accessToken = accessToken,
             refreshToken = refreshToken,
             email = user.email,
+            displayName = user.displayName,
         )
 }
 

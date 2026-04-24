@@ -19,6 +19,8 @@ internal data class AuthUser(
     val id: String,
     val email: String,
     val displayName: String?,
+    val username: String? = null,
+    val phoneNumber: String? = null,
     val roles: Set<AuthRole>,
 )
 
@@ -52,11 +54,14 @@ internal data class AuthSignupRequest(
     val email: String,
     val password: String,
     val displayName: String? = null,
+    val username: String? = null,
+    val phoneNumber: String? = null,
 )
 
 @Serializable
 internal data class AuthSigninRequest(
-    val email: String,
+    val identifier: String? = null,
+    val email: String? = null,
     val password: String,
 )
 

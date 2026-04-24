@@ -195,8 +195,8 @@ Use separate tables for users, provider identities, refresh tokens, and short-li
 
 Production note:
 
-- Kaze now uses the PostgreSQL schema from [dev_schema.sql](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/server/src/main/resources/db/dev_schema.sql).
-- The seed data lives in [dev_seed.sql](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/server/src/main/resources/db/dev_seed.sql).
+- Kaze now uses the PostgreSQL schema from [dev_schema.sql](server/src/main/resources/db/dev_schema.sql).
+- The seed data lives in [dev_seed.sql](server/src/main/resources/db/dev_seed.sql).
 - All primary and foreign IDs are `VARCHAR(120)` and are represented as Kotlin `String`.
 - The social provider table is `user_auth_providers`, not `auth_provider_accounts`.
 - The provider column is `provider`.

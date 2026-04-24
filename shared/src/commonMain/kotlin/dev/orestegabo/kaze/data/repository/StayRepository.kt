@@ -11,4 +11,6 @@ interface StayRepository {
     suspend fun getStayItinerary(guest: GuestIdentity): Itinerary?
     suspend fun submitLateCheckout(submission: LateCheckoutSubmission): LateCheckoutDecision
     suspend fun submitServiceRequest(request: ServiceRequestDraft): ServiceRequestReceipt
+    suspend fun getLateCheckoutHistory(guest: GuestIdentity): List<LateCheckoutDecision>
+    suspend fun getServiceRequestHistory(guest: GuestIdentity): List<ServiceRequestReceipt>
 }

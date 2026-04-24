@@ -14,6 +14,7 @@ internal data class DatabaseConfig(
     val password: String,
     val maximumPoolSize: Int,
     val schemaMode: DatabaseSchemaMode,
+    val seedMode: DatabaseSeedMode,
 )
 
 internal fun Application.loadDatabaseConfig(): DatabaseConfig =
@@ -49,6 +50,11 @@ internal fun Application.loadDatabaseConfig(): DatabaseConfig =
                 System.getenv("KAZE_DB_SCHEMA_MODE")
                     ?: System.getProperty("kaze.database.schema.mode")
                     ?: environment.config.propertyOrNull("kaze.database.schema.mode")?.getString(),
+            ),
+            seedMode = DatabaseSeedMode.fromConfig(
+                System.getenv("KAZE_DB_SEED_MODE")
+                    ?: System.getProperty("kaze.database.seed.mode")
+                    ?: environment.config.propertyOrNull("kaze.database.seed.mode")?.getString(),
             ),
         )
     }
@@ -129,6 +135,23 @@ internal enum class DatabaseSchemaMode {
                 "create-drop", "create_drop" -> CREATE_DROP
                 else -> error(
                     "Unsupported database schema mode '$value'. Use none, create, drop, or create-drop.",
+                )
+            }
+    }
+}
+
+internal enum class DatabaseSeedMode {
+    NONE,
+    DEV,
+    ;
+
+    companion object {
+        fun fromConfig(value: String?): DatabaseSeedMode =
+            when (value?.trim()?.lowercase()) {
+                null, "", "none", "off", "false" -> NONE
+                "dev", "development", "seed", "true" -> DEV
+                else -> error(
+                    "Unsupported database seed mode '$value'. Use none or dev.",
                 )
             }
     }

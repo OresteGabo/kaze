@@ -116,6 +116,8 @@ class StayViewModelTest {
             ),
             observeHotelContext = ObserveHotelContextUseCase(
                 hotelRepository = object : HotelRepository {
+                    override suspend fun listHotels(): List<Hotel> = emptyList()
+
                     override suspend fun getHotel(hotelId: String): Hotel? = null
 
                     override suspend fun requireHotel(hotelId: String): Hotel = testHotel(hotelId)
@@ -171,5 +173,9 @@ class StayViewModelTest {
                 status = ServiceRequestStatus.PENDING,
                 note = "The hotel will confirm it shortly.",
             ).also { lastServiceRequestDraft = request }
+
+        override suspend fun getLateCheckoutHistory(guest: GuestIdentity): List<LateCheckoutDecision> = emptyList()
+
+        override suspend fun getServiceRequestHistory(guest: GuestIdentity): List<ServiceRequestReceipt> = emptyList()
     }
 }

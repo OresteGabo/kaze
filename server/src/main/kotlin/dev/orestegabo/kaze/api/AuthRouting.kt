@@ -4,6 +4,7 @@ import dev.orestegabo.kaze.auth.AuthResponseDto
 import dev.orestegabo.kaze.auth.AuthProvider
 import dev.orestegabo.kaze.auth.AuthRefreshRequest
 import dev.orestegabo.kaze.auth.AuthLogoutResponseDto
+import dev.orestegabo.kaze.auth.AuthProfileUpdateRequest
 import dev.orestegabo.kaze.auth.AuthSessionClaimRequest
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.auth.AuthSigninRequest
@@ -19,6 +20,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.put
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -96,13 +98,13 @@ internal fun Route.registerAuthRoutes(
             get("/me") {
                 val principal = call.principal<JWTPrincipal>()
                     ?: throw IllegalArgumentException("Missing JWT principal")
-                call.respond(
-                    AuthUserDto(
-                        id = principal.payload.subject,
-                        email = principal.payload.getClaim("email").asString().orEmpty(),
-                        roles = principal.payload.getClaim("roles").asList(String::class.java) ?: emptyList(),
-                    ),
-                )
+                call.respond(authService.currentUser(principal.payload.subject))
+            }
+
+            put("/me") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.respond(authService.updateProfile(principal.payload.subject, call.receive<AuthProfileUpdateRequest>()))
             }
 
             post("/logout") {

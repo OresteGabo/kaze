@@ -53,6 +53,9 @@ internal interface AuthRepository {
         username: String?,
         phoneNumber: String?,
     ): StoredAuthUser?
+    fun listInvitationsForUser(userId: String): List<AuthInvitationSummaryDto>
+    fun listEventsForUser(userId: String): List<AuthEventSummaryDto>
+    fun respondToInvitation(userId: String, invitationId: String, accepted: Boolean): AuthInvitationSummaryDto?
 }
 
 internal data class StoredAuthUser(
@@ -492,6 +495,160 @@ internal class JdbcAuthRepository(
             }
         }
 
+    override fun listInvitationsForUser(userId: String): List<AuthInvitationSummaryDto> =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT
+                    i.id,
+                    e.id AS event_id,
+                    e.title,
+                    COALESCE(sp.name, e.event_type) AS venue_label,
+                    i.invite_code,
+                    COALESCE(i.invited_phone_number, i.invited_email, '') AS contact_label,
+                    i.invitation_status,
+                    i.access_tier,
+                    e.ends_at,
+                    p.pass_status
+                FROM event_invitations i
+                INNER JOIN events e ON e.id = i.event_id
+                LEFT JOIN service_places sp ON sp.id = e.place_id
+                LEFT JOIN access_passes p ON p.invitation_id = i.id AND p.user_id = i.invited_user_id
+                WHERE i.invited_user_id = ?
+                ORDER BY e.starts_at DESC, i.id DESC
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.executeQuery().use { result ->
+                    buildList {
+                        while (result.next()) {
+                            add(result.toAuthInvitationSummaryDto())
+                        }
+                    }
+                }
+            }
+        }
+
+    override fun listEventsForUser(userId: String): List<AuthEventSummaryDto> =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT DISTINCT
+                    e.id,
+                    CONCAT('event-day-', to_char(e.starts_at, 'YYYY-MM-DD')) AS day_id,
+                    trim(to_char(e.starts_at, 'Dy DD Mon')) AS day_label,
+                    to_char(e.starts_at, 'YYYY-MM-DD') AS date_iso,
+                    e.title,
+                    e.summary,
+                    e.starts_at,
+                    e.ends_at,
+                    COALESCE(sp.name, e.title) AS venue_label,
+                    organizer.display_name AS host_label
+                FROM events e
+                LEFT JOIN event_invitations i
+                    ON i.event_id = e.id
+                    AND i.invited_user_id = ?
+                LEFT JOIN event_memberships m
+                    ON m.event_id = e.id
+                    AND m.user_id = ?
+                    AND m.membership_status = 'ACTIVE'
+                LEFT JOIN service_places sp ON sp.id = e.place_id
+                LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                WHERE i.id IS NOT NULL OR m.id IS NOT NULL
+                ORDER BY e.starts_at ASC, e.id ASC
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.setString(2, userId)
+                statement.executeQuery().use { result ->
+                    buildList {
+                        while (result.next()) {
+                            add(result.toAuthEventSummaryDto())
+                        }
+                    }
+                }
+            }
+        }
+
+    override fun respondToInvitation(userId: String, invitationId: String, accepted: Boolean): AuthInvitationSummaryDto? =
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            try {
+                val updated = connection.prepareStatement(
+                    """
+                    UPDATE event_invitations
+                    SET invitation_status = ?,
+                        responded_at = now(),
+                        accepted_at = CASE WHEN ? THEN now() ELSE NULL END,
+                        declined_at = CASE WHEN ? THEN NULL ELSE now() END,
+                        updated_at = now()
+                    WHERE id = ?
+                      AND invited_user_id = ?
+                    RETURNING id
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, if (accepted) "ACCEPTED" else "DECLINED")
+                    statement.setBoolean(2, accepted)
+                    statement.setBoolean(3, accepted)
+                    statement.setString(4, invitationId)
+                    statement.setString(5, userId)
+                    statement.executeQuery().use { result ->
+                        if (result.next()) result.getString("id") else null
+                    }
+                }
+                if (updated != null) {
+                    connection.prepareStatement(
+                        """
+                        UPDATE access_passes
+                        SET pass_status = CASE
+                            WHEN ? THEN CASE WHEN pass_status = 'USED' THEN 'USED' ELSE 'ACTIVE' END
+                            ELSE CASE WHEN pass_status = 'USED' THEN 'USED' ELSE 'VOID' END
+                        END,
+                            updated_at = now()
+                        WHERE invitation_id = ?
+                        """.trimIndent(),
+                    ).use { statement ->
+                        statement.setBoolean(1, accepted)
+                        statement.setString(2, updated)
+                        statement.executeUpdate()
+                    }
+                }
+                val summary = updated?.let {
+                    connection.prepareStatement(
+                        """
+                        SELECT
+                            i.id,
+                            e.id AS event_id,
+                            e.title,
+                            COALESCE(sp.name, e.event_type) AS venue_label,
+                            i.invite_code,
+                            COALESCE(i.invited_phone_number, i.invited_email, '') AS contact_label,
+                            i.invitation_status,
+                            i.access_tier,
+                            e.ends_at,
+                            p.pass_status
+                        FROM event_invitations i
+                        INNER JOIN events e ON e.id = i.event_id
+                        LEFT JOIN service_places sp ON sp.id = e.place_id
+                        LEFT JOIN access_passes p ON p.invitation_id = i.id AND p.user_id = i.invited_user_id
+                        WHERE i.id = ? AND i.invited_user_id = ?
+                        """.trimIndent(),
+                    ).use { statement ->
+                        statement.setString(1, it)
+                        statement.setString(2, userId)
+                        statement.executeQuery().use { result ->
+                            if (result.next()) result.toAuthInvitationSummaryDto() else null
+                        }
+                    }
+                }
+                connection.commit()
+                summary
+            } catch (cause: Throwable) {
+                connection.rollback()
+                throw cause
+            }
+        }
+
     override fun linkSocialProviderToUser(
         userId: String,
         provider: String,
@@ -606,6 +763,43 @@ private fun ResultSet.toStoredRefreshToken(): StoredRefreshToken =
         userId = getString("user_id"),
         tokenHash = getString("token_hash"),
         familyId = getString("family_id"),
+    )
+
+private fun ResultSet.toAuthInvitationSummaryDto(): AuthInvitationSummaryDto {
+    val invitationStatus = getString("invitation_status")
+    val eventEndedAt = getTimestamp("ends_at")?.toInstant()
+    val passStatus = getString("pass_status")
+    val state = when {
+        invitationStatus in setOf("DECLINED", "EXPIRED", "CANCELLED") -> "ARCHIVED"
+        passStatus in setOf("USED", "VOID") -> "PAST"
+        eventEndedAt != null && eventEndedAt.isBefore(Instant.now()) -> "PAST"
+        else -> "ACTIVE"
+    }
+    return AuthInvitationSummaryDto(
+        id = getString("id"),
+        eventId = getString("event_id"),
+        title = getString("title"),
+        subtitle = getString("venue_label"),
+        code = getString("invite_code"),
+        phoneLabel = getString("contact_label"),
+        statusLabel = "${invitationStatus.replace('_', ' ').lowercase().replaceFirstChar(Char::titlecase)} • ${getString("access_tier").replace('_', ' ')}",
+        state = state,
+        awaitingResponse = invitationStatus == "PENDING",
+    )
+}
+
+private fun ResultSet.toAuthEventSummaryDto(): AuthEventSummaryDto =
+    AuthEventSummaryDto(
+        id = getString("id"),
+        dayId = getString("day_id"),
+        dayLabel = getString("day_label"),
+        dateIso = getString("date_iso"),
+        title = getString("title"),
+        description = getString("summary").orEmpty(),
+        startIso = getTimestamp("starts_at").toInstant().toString(),
+        endIso = getTimestamp("ends_at").toInstant().toString(),
+        venueLabel = getString("venue_label"),
+        hostLabel = getString("host_label"),
     )
 
 private fun AppUser.toStoredAuthUser(): StoredAuthUser =

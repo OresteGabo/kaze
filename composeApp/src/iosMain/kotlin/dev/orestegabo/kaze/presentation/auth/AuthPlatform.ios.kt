@@ -25,8 +25,9 @@ internal actual fun createPlatformAuthHttpClient(json: Json): HttpClient =
 
 internal actual fun defaultAuthApiBaseUrl(): String =
     (NSBundle.mainBundle.objectForInfoDictionaryKey("KAZE_API_BASE_URL") as? String)
-        ?.takeIf { it.isNotBlank() }
-        ?: "https://kaze-api-338266348516.europe-west1.run.app/api/v1"
+        ?.trim()
+        ?.takeIf(::isUsableApiBaseUrl)
+        ?: DEFAULT_AUTH_API_BASE_URL
 
 internal actual fun defaultDeviceLabel(): String =
     UIDevice.currentDevice.name
@@ -48,3 +49,12 @@ private class IosExternalUrlLauncher : ExternalUrlLauncher {
 
 private const val AUTH_CONNECT_TIMEOUT_MS = 5_000L
 private const val AUTH_REQUEST_TIMEOUT_MS = 8_000L
+private const val DEFAULT_AUTH_API_BASE_URL = "https://kaze-api-338266348516.europe-west1.run.app/api/v1"
+
+private fun isUsableApiBaseUrl(value: String): Boolean {
+    if (value.isBlank()) return false
+    if ("\$(" in value) return false
+    if (value.contains("localhost", ignoreCase = true)) return false
+    if (value.contains("127.0.0.1")) return false
+    return value.startsWith("https://") || value.startsWith("http://")
+}

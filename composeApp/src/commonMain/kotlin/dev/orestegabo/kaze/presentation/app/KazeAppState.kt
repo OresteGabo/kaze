@@ -1,5 +1,7 @@
 package dev.orestegabo.kaze.presentation.app
 
+import dev.orestegabo.kaze.presentation.auth.AuthEventSummary
+import dev.orestegabo.kaze.presentation.auth.AuthInvitationSummary
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.navigation.MapNavigationTarget
 import dev.orestegabo.kaze.theme.KazeThemeMode
@@ -15,6 +17,8 @@ internal data class KazeAppUiState(
     val sessionDisplayName: String = "",
     val sessionUsername: String = "",
     val sessionPhoneNumber: String = "",
+    val sessionInvitations: List<AuthInvitationSummary> = emptyList(),
+    val sessionEvents: List<AuthEventSummary> = emptyList(),
     val themeMode: KazeThemeMode = KazeThemeMode.SYSTEM,
     val edgeAiEnabled: Boolean = true,
     val currentDestination: KazeDestination = KazeDestination.HOME,

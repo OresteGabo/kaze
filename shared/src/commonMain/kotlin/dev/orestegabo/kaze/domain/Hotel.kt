@@ -62,6 +62,8 @@ data class HotelBuilding(
 
 enum class HotelMarket {
     LUXURY_HOTEL,
+    BUSINESS_HOTEL,
+    LUXURY_LODGE,
     RESORT,
     CONFERENCE_VENUE,
     BOUTIQUE_HOTEL,

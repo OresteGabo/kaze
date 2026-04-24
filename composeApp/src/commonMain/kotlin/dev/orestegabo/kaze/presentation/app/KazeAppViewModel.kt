@@ -12,6 +12,7 @@ import dev.orestegabo.kaze.presentation.auth.DemoAuthGateway
 import dev.orestegabo.kaze.presentation.auth.ExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.NoopExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.SocialAuthProvider
+import dev.orestegabo.kaze.presentation.auth.toProfileMessage
 import dev.orestegabo.kaze.presentation.auth.toAuthMessage
 import dev.orestegabo.kaze.presentation.auth.toSignupMessage
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
@@ -85,9 +86,14 @@ internal class KazeAppViewModel(
                 sessionMode = persistedSessionMode,
                 sessionEmail = secureStore.get(SESSION_EMAIL_KEY).orEmpty(),
                 sessionDisplayName = secureStore.get(SESSION_DISPLAY_NAME_KEY).orEmpty(),
+                sessionUsername = secureStore.get(SESSION_USERNAME_KEY).orEmpty(),
+                sessionPhoneNumber = secureStore.get(SESSION_PHONE_NUMBER_KEY).orEmpty(),
                 themeMode = persistedThemeMode,
                 edgeAiEnabled = persistedEdgeAiEnabled,
             )
+            if (persistedSessionMode == KazeSessionMode.AUTHENTICATED) {
+                refreshProfileFromServer()
+            }
             startupTimeoutJob?.cancel()
         }
     }
@@ -249,6 +255,8 @@ internal class KazeAppViewModel(
             sessionMode = null,
             sessionEmail = "",
             sessionDisplayName = "",
+            sessionUsername = "",
+            sessionPhoneNumber = "",
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
             feedbackMessage = "",
@@ -258,8 +266,43 @@ internal class KazeAppViewModel(
             secureStore.remove(SESSION_MODE_KEY)
             secureStore.remove(SESSION_EMAIL_KEY)
             secureStore.remove(SESSION_DISPLAY_NAME_KEY)
+            secureStore.remove(SESSION_USERNAME_KEY)
+            secureStore.remove(SESSION_PHONE_NUMBER_KEY)
             secureStore.remove(AUTH_TOKEN_KEY)
             secureStore.remove(REFRESH_TOKEN_KEY)
+        }
+    }
+
+    fun updateProfile(displayName: String, username: String, phoneNumber: String) {
+        val normalizedDisplayName = displayName.trim()
+        if (normalizedDisplayName.isBlank()) {
+            showFeedback("Add your full name before saving.")
+            return
+        }
+        scope.launch {
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+            if (accessToken.isNullOrBlank()) {
+                showFeedback("Sign in again to update your profile.")
+                return@launch
+            }
+            runCatching {
+                authGateway.updateProfile(
+                    accessToken = accessToken,
+                    displayName = normalizedDisplayName,
+                    username = username.trim().takeIf { it.isNotBlank() },
+                    phoneNumber = phoneNumber.trim().takeIf { it.isNotBlank() },
+                )
+            }
+                .onSuccess { user ->
+                    applyProfileState(
+                        email = user.email,
+                        displayName = user.displayName.orEmpty(),
+                        username = user.username.orEmpty(),
+                        phoneNumber = user.phoneNumber.orEmpty(),
+                    )
+                    showFeedback("Profile updated.")
+                }
+                .onFailure { showFeedback(it.toProfileMessage()) }
         }
     }
 
@@ -282,6 +325,8 @@ internal class KazeAppViewModel(
             mode = KazeSessionMode.AUTHENTICATED,
             email = session.email,
             displayName = session.displayName.orEmpty(),
+            username = session.username.orEmpty(),
+            phoneNumber = session.phoneNumber.orEmpty(),
             feedback = feedback,
             accessToken = session.accessToken,
             refreshToken = session.refreshToken,
@@ -292,6 +337,8 @@ internal class KazeAppViewModel(
         mode: KazeSessionMode,
         email: String,
         displayName: String,
+        username: String = "",
+        phoneNumber: String = "",
         feedback: String,
         accessToken: String? = null,
         refreshToken: String? = null,
@@ -304,6 +351,8 @@ internal class KazeAppViewModel(
             sessionMode = mode,
             sessionEmail = email,
             sessionDisplayName = displayName,
+            sessionUsername = username,
+            sessionPhoneNumber = phoneNumber,
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
         )
@@ -319,6 +368,16 @@ internal class KazeAppViewModel(
             } else {
                 secureStore.put(SESSION_DISPLAY_NAME_KEY, displayName)
             }
+            if (username.isBlank()) {
+                secureStore.remove(SESSION_USERNAME_KEY)
+            } else {
+                secureStore.put(SESSION_USERNAME_KEY, username)
+            }
+            if (phoneNumber.isBlank()) {
+                secureStore.remove(SESSION_PHONE_NUMBER_KEY)
+            } else {
+                secureStore.put(SESSION_PHONE_NUMBER_KEY, phoneNumber)
+            }
             if (mode == KazeSessionMode.AUTHENTICATED) {
                 secureStore.put(AUTH_TOKEN_KEY, accessToken ?: DEMO_AUTH_TOKEN)
                 if (refreshToken.isNullOrBlank()) {
@@ -332,6 +391,58 @@ internal class KazeAppViewModel(
             }
         }
         showFeedback(feedback)
+    }
+
+    private fun refreshProfileFromServer() {
+        scope.launch {
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+            if (accessToken.isNullOrBlank() || accessToken == DEMO_AUTH_TOKEN) return@launch
+            runCatching { authGateway.getProfile(accessToken) }
+                .onSuccess { user ->
+                    applyProfileState(
+                        email = user.email,
+                        displayName = user.displayName.orEmpty(),
+                        username = user.username.orEmpty(),
+                        phoneNumber = user.phoneNumber.orEmpty(),
+                    )
+                }
+        }
+    }
+
+    private fun applyProfileState(
+        email: String,
+        displayName: String,
+        username: String,
+        phoneNumber: String,
+    ) {
+        uiState = uiState.copy(
+            sessionEmail = email,
+            sessionDisplayName = displayName,
+            sessionUsername = username,
+            sessionPhoneNumber = phoneNumber,
+        )
+        scope.launch {
+            if (email.isBlank()) {
+                secureStore.remove(SESSION_EMAIL_KEY)
+            } else {
+                secureStore.put(SESSION_EMAIL_KEY, email)
+            }
+            if (displayName.isBlank()) {
+                secureStore.remove(SESSION_DISPLAY_NAME_KEY)
+            } else {
+                secureStore.put(SESSION_DISPLAY_NAME_KEY, displayName)
+            }
+            if (username.isBlank()) {
+                secureStore.remove(SESSION_USERNAME_KEY)
+            } else {
+                secureStore.put(SESSION_USERNAME_KEY, username)
+            }
+            if (phoneNumber.isBlank()) {
+                secureStore.remove(SESSION_PHONE_NUMBER_KEY)
+            } else {
+                secureStore.put(SESSION_PHONE_NUMBER_KEY, phoneNumber)
+            }
+        }
     }
 
     fun openMapRoute(route: String, floorId: String, floorLabel: String) {
@@ -379,6 +490,8 @@ internal class KazeAppViewModel(
         const val SESSION_MODE_KEY = "app.session_mode"
         const val SESSION_EMAIL_KEY = "app.session_email"
         const val SESSION_DISPLAY_NAME_KEY = "app.session_display_name"
+        const val SESSION_USERNAME_KEY = "app.session_username"
+        const val SESSION_PHONE_NUMBER_KEY = "app.session_phone_number"
         const val AUTH_TOKEN_KEY = "auth.access_token"
         const val REFRESH_TOKEN_KEY = "auth.refresh_token"
         const val DEMO_AUTH_TOKEN = "demo-local-session"

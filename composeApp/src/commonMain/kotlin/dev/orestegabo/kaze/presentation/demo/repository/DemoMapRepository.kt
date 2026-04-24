@@ -9,8 +9,8 @@ import dev.orestegabo.kaze.domain.map.importing.TenantScopedImportRequest
 internal class DemoMapRepository : MapRepository {
     private var currentMap: HotelMap = sampleMarriottConventionMap
 
-    override suspend fun getHotelMap(hotelId: String, mapId: String): HotelMap? =
-        currentMap.takeIf { it.hotelId == hotelId && it.mapId == mapId }
+    override suspend fun getHotelMap(hotelId: String, mapId: String?): HotelMap? =
+        currentMap.takeIf { it.hotelId == hotelId && (mapId == null || it.mapId == mapId) }
 
     override suspend fun saveHotelMap(map: HotelMap) {
         currentMap = map

@@ -17,6 +17,20 @@ jobs:
   android-shared-server:
     name: Android, Shared, Server
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: kaze
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kaze"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
@@ -38,6 +52,8 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Run Android, shared, and server checks
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaze?sslmode=disable
         run: ./gradlew :composeApp:compileDebugKotlinAndroid :shared:jvmTest :server:test --no-daemon
 
       - name: Validate server distribution packaging

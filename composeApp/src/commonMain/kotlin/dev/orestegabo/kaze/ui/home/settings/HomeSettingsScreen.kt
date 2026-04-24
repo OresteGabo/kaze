@@ -1,12 +1,20 @@
 package dev.orestegabo.kaze.ui.home.settings
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,6 +30,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -140,7 +151,7 @@ internal fun HomeSettingsScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                         modifier = Modifier.weight(1f),
                     )
-                    Switch(
+                    KazeAdaptiveSwitch(
                         checked = edgeAiEnabled,
                         onCheckedChange = onEdgeAiEnabledChange,
                     )
@@ -175,5 +186,48 @@ private fun currentWalletPassProvider(): String {
         "android" in platformName -> "Google Wallet"
         "ios" in platformName || "iphone" in platformName || "ipad" in platformName -> "Apple Wallet"
         else -> "Device wallet"
+    }
+}
+@Composable
+fun KazeAdaptiveSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val platformName = getPlatform().name.lowercase()
+    val isIos = "ios" in platformName || "iphone" in platformName || "ipad" in platformName
+
+    if (isIos) {
+        val trackColor by animateColorAsState(
+            if (checked) Color(0xFF34C759) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            label = "kazeAdaptiveSwitchTrack",
+        )
+        val thumbOffset by animateDpAsState(
+            targetValue = if (checked) 20.dp else 0.dp,
+            label = "kazeAdaptiveSwitchThumb",
+        )
+
+        Box(
+            modifier = modifier
+                .size(width = 46.dp, height = 26.dp)
+                .clip(CircleShape)
+                .background(trackColor)
+                .clickable { onCheckedChange(!checked) }
+                .padding(3.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .offset(x = thumbOffset)
+                    .size(20.dp)
+                    .shadow(2.dp, CircleShape)
+                    .background(Color.White, CircleShape),
+            )
+        }
+    } else {
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = modifier,
+        )
     }
 }

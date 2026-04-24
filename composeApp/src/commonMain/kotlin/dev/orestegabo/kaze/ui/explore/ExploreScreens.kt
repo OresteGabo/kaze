@@ -46,6 +46,7 @@ import dev.orestegabo.kaze.ui.components.HighlightPanel
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.components.SectionIntroCard
+import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
 
 @Composable
 internal fun ExploreScreen(
@@ -78,6 +79,20 @@ internal fun ExploreScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            if (highlights.isEmpty()) {
+                KazeEmptyStateScreen(
+                    modifier = Modifier.fillMaxWidth(),
+                    title = "Nothing to explore yet",
+                    subtitle = "Event services, venue moments, and useful add-ons will appear here when Kaze has something worth browsing.",
+                    actionLabel = null,
+                    eyebrow = "Explore",
+                    tags = listOf("Services", "Vendors", "Moments"),
+                    icon = Icons.Default.Explore,
+                    onAction = null,
+                )
+                return@Column
+            }
+
             if (isExpanded) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

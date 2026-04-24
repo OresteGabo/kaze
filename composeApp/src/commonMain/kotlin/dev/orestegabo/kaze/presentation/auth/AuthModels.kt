@@ -74,3 +74,35 @@ internal data class AuthUser(
     val phoneNumber: String? = null,
     val roles: List<String> = emptyList(),
 )
+
+@Serializable
+internal data class AuthInvitationSummary(
+    val id: String,
+    val eventId: String,
+    val title: String,
+    val subtitle: String,
+    val code: String,
+    val phoneLabel: String,
+    val statusLabel: String,
+    val state: String,
+    val awaitingResponse: Boolean,
+)
+
+@Serializable
+internal data class AuthEventSummary(
+    val id: String,
+    val dayId: String,
+    val dayLabel: String,
+    val dateIso: String,
+    val title: String,
+    val description: String,
+    val startIso: String,
+    val endIso: String,
+    val venueLabel: String,
+    val hostLabel: String? = null,
+)
+
+@Serializable
+internal data class AuthInvitationResponseRequest(
+    val response: String,
+)

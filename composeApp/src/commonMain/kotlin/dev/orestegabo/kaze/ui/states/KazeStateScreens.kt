@@ -9,9 +9,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,6 +67,7 @@ import dev.orestegabo.kaze.platform.isDeviceOnline
 import dev.orestegabo.kaze.ui.chrome.KazeAmbientBackground
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
+import dev.orestegabo.kaze.ui.components.MetaPill
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.empty_state_action
 import kaze.composeapp.generated.resources.empty_state_subtitle
@@ -105,34 +108,96 @@ internal fun KazeEmptyStateScreen(
     modifier: Modifier = Modifier,
     title: String = stringResource(Res.string.empty_state_title),
     subtitle: String = stringResource(Res.string.empty_state_subtitle),
-    actionLabel: String = stringResource(Res.string.empty_state_action),
-    onAction: () -> Unit,
+    actionLabel: String? = stringResource(Res.string.empty_state_action),
+    eyebrow: String? = null,
+    tags: List<String> = emptyList(),
+    icon: ImageVector = Icons.Outlined.BookmarkBorder,
+    onAction: (() -> Unit)? = null,
 ) {
-    Box(
+    Column(
         modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(32.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.1f),
+                    )
+                )
+            )
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                RoundedCornerShape(32.dp),
+            )
+            .padding(28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        KazeAmbientBackground(modifier = Modifier.matchParentSize())
-        Column(
+        Box(
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+            contentAlignment = Alignment.Center,
         ) {
-            PlaceholderIllustration(
-                icon = Icons.Outlined.BookmarkBorder,
+            androidx.compose.material3.Icon(
+                imageVector = icon,
                 contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
             )
-            StateCopy(
-                title = title,
-                subtitle = subtitle,
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (eyebrow != null) {
+            Text(
+                text = eyebrow.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
             )
-            KazePrimaryButton(
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
+
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+        )
+
+        if (tags.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 24.dp),
+            ) {
+                tags.forEach { tag ->
+                    MetaPill(
+                        label = tag,
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                    )
+                }
+            }
+        }
+
+        if (actionLabel != null && onAction != null) {
+            KazeSecondaryButton(
                 label = actionLabel,
                 onClick = onAction,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(0.8f),
             )
         }
     }
@@ -403,6 +468,9 @@ private fun PlaceholderIllustration(
             repeatMode = RepeatMode.Reverse,
         ),
     )
+    val primaryTint = MaterialTheme.colorScheme.primary
+    val secondaryTint = MaterialTheme.colorScheme.secondary
+    val outlineTint = MaterialTheme.colorScheme.outline
 
     Box(
         modifier = Modifier
@@ -413,14 +481,50 @@ private fun PlaceholderIllustration(
         Surface(
             modifier = Modifier.matchParentSize(),
             shape = RoundedCornerShape(48.dp),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.46f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f)),
-        ) {}
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.38f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.26f)),
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawCircle(
+                    color = primaryTint.copy(alpha = 0.10f),
+                    radius = size.minDimension * 0.18f,
+                    center = Offset(size.width * 0.26f, size.height * 0.26f),
+                )
+                drawCircle(
+                    color = secondaryTint.copy(alpha = 0.08f),
+                    radius = size.minDimension * 0.14f,
+                    center = Offset(size.width * 0.78f, size.height * 0.74f),
+                )
+                drawLine(
+                    color = outlineTint.copy(alpha = 0.18f),
+                    start = Offset(size.width * 0.18f, size.height * 0.78f),
+                    end = Offset(size.width * 0.82f, size.height * 0.78f),
+                    strokeWidth = 4f,
+                    cap = StrokeCap.Round,
+                )
+            }
+        }
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             modifier = Modifier.size(58.dp),
             tint = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+private fun EmptyStateTagChip(label: String) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
         )
     }
 }

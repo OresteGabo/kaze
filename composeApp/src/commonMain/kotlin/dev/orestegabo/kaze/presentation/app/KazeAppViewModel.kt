@@ -13,6 +13,7 @@ import dev.orestegabo.kaze.presentation.auth.ExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.NoopExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.SocialAuthProvider
 import dev.orestegabo.kaze.presentation.auth.toAuthMessage
+import dev.orestegabo.kaze.presentation.auth.toSignupMessage
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.navigation.KazeNavigator
 import dev.orestegabo.kaze.presentation.navigation.MapNavigationTarget
@@ -191,7 +192,7 @@ internal class KazeAppViewModel(
                 .onSuccess { session ->
                     startAuthenticatedSession(session, "Account created. Your Kaze session is ready.")
                 }
-                .onFailure { showFeedback(it.toAuthMessage()) }
+                .onFailure { showFeedback(it.toSignupMessage()) }
         }
     }
 

@@ -107,14 +107,14 @@ internal val kazeOnboardingPages = listOf(
         ),
     ),
     OnboardingPage(
-        eyebrow = "Services and business",
-        title = "Link services to the event",
-        body = "Offer photography, video, styling, transport, printing, and other event services directly where guests and organizers already are.",
-        footer = "Kaze is strongest when passes, venues, and event-linked services work together.",
+        eyebrow = "Direct access",
+        title = "Reach venues more directly",
+        body = "Find venues, invitations, passes, and event-linked services in one place, without the usual back-and-forth.",
+        footer = "Kaze helps guests, organizers, and venues connect more clearly, with fewer unnecessary layers.",
         highlights = listOf(
-            OnboardingFeature(Icons.Default.RoomService, "Book event add-ons"),
-            OnboardingFeature(Icons.Default.Storefront, "Partner services"),
-            OnboardingFeature(Icons.Default.Payments, "Local payments"),
+            OnboardingFeature(Icons.Default.Storefront, "Direct venue access"),
+            OnboardingFeature(Icons.Default.Payments, "Clearer pricing"),
+            OnboardingFeature(Icons.Default.RoomService, "Less back-and-forth"),
         ),
     ),
 )

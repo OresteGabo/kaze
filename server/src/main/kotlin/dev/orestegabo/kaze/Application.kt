@@ -7,6 +7,7 @@ import dev.orestegabo.kaze.auth.loadJwtConfig
 import dev.orestegabo.kaze.application.ServerDependencies
 import dev.orestegabo.kaze.di.serverModule
 import dev.orestegabo.kaze.infrastructure.initializeDatabaseFactory
+import dev.orestegabo.kaze.infrastructure.initializeDatabaseSeed
 import dev.orestegabo.kaze.infrastructure.initializeDatabaseSchema
 import dev.orestegabo.kaze.infrastructure.loadDatabaseConfig
 import io.ktor.server.application.Application
@@ -28,6 +29,7 @@ fun Application.module() {
     val jwtConfig = loadJwtConfig()
     initializeDatabaseFactory(databaseConfig)
     initializeDatabaseSchema(databaseConfig)
+    initializeDatabaseSeed(databaseConfig)
     install(Koin) {
         slf4jLogger()
         modules(serverModule(databaseConfig, jwtConfig))

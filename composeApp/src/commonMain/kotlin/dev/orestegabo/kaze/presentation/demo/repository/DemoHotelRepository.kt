@@ -5,6 +5,8 @@ import dev.orestegabo.kaze.domain.Hotel
 import dev.orestegabo.kaze.presentation.demo.sampleHotel
 
 internal class DemoHotelRepository : HotelRepository {
+    override suspend fun listHotels(): List<Hotel> = listOf(sampleHotel)
+
     override suspend fun getHotel(hotelId: String): Hotel? =
         if (hotelId == sampleHotel.id) sampleHotel else null
 

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.Card
@@ -189,6 +190,9 @@ internal fun InvitationsScreen(
                 title = stringResource(Res.string.empty_invitations_title),
                 subtitle = stringResource(Res.string.empty_invitations_subtitle),
                 actionLabel = stringResource(Res.string.empty_invitations_action),
+                eyebrow = "Invitations",
+                tags = listOf("RSVP", "Passes", "Guest updates"),
+                icon = Icons.Default.MarkEmailUnread,
                 onAction = { isCreatingInvitation = true },
             )
         } else {
@@ -200,7 +204,10 @@ internal fun InvitationsScreen(
                 )
             }
             if (activeInvitations.isEmpty()) {
-                EmptyInvitationsCard("No active invitations right now.")
+                EmptyInvitationsCard(
+                    title = "No active invitations",
+                    subtitle = "New invitations, pending RSVPs, and fresh passes will appear here.",
+                )
             }
             if (pastInvitations.isNotEmpty()) {
                 SectionLabel("Past and archived")
@@ -210,6 +217,13 @@ internal fun InvitationsScreen(
                         onClick = { onSelectedInvitationChange(invitation) },
                     )
                 }
+            } else if (visibleInvitations.isNotEmpty()) {
+                SectionLabel("Past and archived")
+                EmptyInvitationsCard(
+                    title = "Nothing archived yet",
+                    subtitle = "Older invitations will settle here once an event is over.",
+                    icon = Icons.Default.History,
+                )
             }
         }
     }
@@ -1473,24 +1487,52 @@ private fun InvitationDetailRow(
 
 @Composable
 private fun EmptyInvitationsCard(
-    message: String = "No invitations yet.",
+    title: String = "No invitations yet",
+    subtitle: String? = null,
+    icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Default.MarkEmailUnread,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(22.dp),
-            contentAlignment = Alignment.CenterStart,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
-            )
+            Surface(
+                modifier = Modifier.size(42.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                subtitle?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                    )
+                }
+            }
         }
     }
 }

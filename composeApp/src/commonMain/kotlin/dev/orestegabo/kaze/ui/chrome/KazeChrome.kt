@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -237,12 +238,60 @@ private fun KazeNavigationItemFrame(
         shape = RoundedCornerShape(22.dp),
         tonalElevation = if (selected) 1.dp else 0.dp,
         shadowElevation = if (selected) 2.dp else 0.dp,
-        border = if (selected && isDark) {
-            BorderStroke(1.dp, uiPalette.floatingShellBorder.copy(alpha = 0.9f))
-        } else {
-            null
-        },
-        modifier = modifier,
+        border = null,
+        modifier = modifier.then(
+            if (selected && isDark) {
+                Modifier.drawWithContent {
+                    drawContent()
+                    val strokeWidth = 1.5.dp.toPx()
+                    val inset = strokeWidth / 2f
+                    val radius = 22.dp.toPx() - inset
+                    val topStopY = size.height * 0.30f
+                    val leftX = inset
+                    val rightX = size.width - inset
+                    val bottomY = size.height - inset
+                    val sideStrokePath = Path().apply {
+                        moveTo(leftX, topStopY)
+                        lineTo(leftX, bottomY - radius)
+                        quadraticTo(leftX, bottomY, leftX + radius, bottomY)
+                        moveTo(rightX - radius, bottomY)
+                        quadraticTo(rightX, bottomY, rightX, bottomY - radius)
+                        lineTo(rightX, topStopY)
+                    }
+                    val sideStrokeBrush = Brush.verticalGradient(
+                        colors = listOf(
+                            uiPalette.floatingShellBorder.copy(alpha = 0f),
+                            uiPalette.floatingShellBorder.copy(alpha = 0.45f),
+                            uiPalette.floatingShellBorder.copy(alpha = 0.92f),
+                        ),
+                        startY = topStopY,
+                        endY = bottomY,
+                    )
+                    drawPath(
+                        path = sideStrokePath,
+                        brush = sideStrokeBrush,
+                        style = Stroke(width = strokeWidth),
+                    )
+                    drawLine(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                uiPalette.floatingShellBorder.copy(alpha = 0.72f),
+                                uiPalette.floatingShellBorder.copy(alpha = 0.96f),
+                                uiPalette.floatingShellBorder.copy(alpha = 0.72f),
+                            ),
+                            startX = leftX + radius * 0.72f,
+                            endX = rightX - radius * 0.72f,
+                        ),
+                        start = Offset(leftX + radius * 0.72f, bottomY),
+                        end = Offset(rightX - radius * 0.72f, bottomY),
+                        strokeWidth = strokeWidth,
+                        cap = StrokeCap.Round,
+                    )
+                }
+            } else {
+                Modifier
+            },
+        ),
     ) {
         content(contentColor)
     }

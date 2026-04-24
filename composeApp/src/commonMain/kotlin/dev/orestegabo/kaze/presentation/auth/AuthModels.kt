@@ -13,6 +13,8 @@ internal data class AuthSession(
     val refreshToken: String?,
     val email: String,
     val displayName: String? = null,
+    val username: String? = null,
+    val phoneNumber: String? = null,
 )
 
 @Serializable
@@ -49,6 +51,13 @@ internal data class AuthSignupRequest(
 )
 
 @Serializable
+internal data class AuthProfileUpdateRequest(
+    val displayName: String? = null,
+    val username: String? = null,
+    val phoneNumber: String? = null,
+)
+
+@Serializable
 internal data class AuthResponse(
     val accessToken: String,
     val refreshToken: String? = null,
@@ -60,5 +69,7 @@ internal data class AuthUser(
     val id: String,
     val email: String,
     val displayName: String? = null,
+    val username: String? = null,
+    val phoneNumber: String? = null,
     val roles: List<String> = emptyList(),
 )

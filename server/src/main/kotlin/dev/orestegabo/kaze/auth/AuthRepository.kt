@@ -47,6 +47,12 @@ internal interface AuthRepository {
     fun revokeRefreshToken(tokenId: String, replacedByTokenId: String? = null)
     fun revokeRefreshTokenFamily(familyId: String)
     fun findById(userId: String): StoredAuthUser?
+    fun updateProfile(
+        userId: String,
+        displayName: String?,
+        username: String?,
+        phoneNumber: String?,
+    ): StoredAuthUser?
 }
 
 internal data class StoredAuthUser(
@@ -452,6 +458,34 @@ internal class JdbcAuthRepository(
                 """.trimIndent(),
             ).use { statement ->
                 statement.setString(1, userId)
+                statement.executeQuery().use { result ->
+                    result.singleUserOrNull()
+                }
+            }
+        }
+
+    override fun updateProfile(
+        userId: String,
+        displayName: String?,
+        username: String?,
+        phoneNumber: String?,
+    ): StoredAuthUser? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                UPDATE app_users
+                SET display_name = ?,
+                    username = ?,
+                    phone_number = ?,
+                    updated_at = now()
+                WHERE id = ?
+                RETURNING id, email, display_name, username, phone_number, password_hash, roles
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, displayName?.trim()?.takeIf { it.isNotEmpty() })
+                statement.setString(2, username?.trim()?.lowercase()?.takeIf { it.isNotEmpty() })
+                statement.setString(3, phoneNumber?.trim()?.takeIf { it.isNotEmpty() })
+                statement.setString(4, userId)
                 statement.executeQuery().use { result ->
                     result.singleUserOrNull()
                 }

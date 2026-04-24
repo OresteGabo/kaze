@@ -1,17 +1,22 @@
 package dev.orestegabo.kaze.auth
 
 import java.sql.ResultSet
+import java.sql.Timestamp
 import java.time.Instant
 import javax.sql.DataSource
 
 internal interface AuthRepository {
     fun findByEmail(email: String): StoredAuthUser?
+    fun findByUsername(username: String): StoredAuthUser?
+    fun findByPhoneNumber(phoneNumber: String): StoredAuthUser?
     fun findByProvider(provider: AuthProvider, providerSubject: String): StoredAuthUser?
     fun findUserBySocialProvider(provider: String, subject: String): AppUser?
     fun createPasswordUser(
         email: String,
         passwordHash: String,
         displayName: String?,
+        username: String?,
+        phoneNumber: String?,
         roles: Set<AuthRole> = setOf(AuthRole.CUSTOMER),
     ): StoredAuthUser
 
@@ -57,7 +62,7 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT id, email, display_name, password_hash, roles
+                SELECT id, email, display_name, username, phone_number, password_hash, roles
                 FROM app_users
                 WHERE lower(email) = lower(?)
                 """.trimIndent(),
@@ -69,11 +74,43 @@ internal class JdbcAuthRepository(
             }
         }
 
+    override fun findByUsername(username: String): StoredAuthUser? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT id, email, display_name, username, phone_number, password_hash, roles
+                FROM app_users
+                WHERE username = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, username.trim().lowercase())
+                statement.executeQuery().use { result ->
+                    result.singleUserOrNull()
+                }
+            }
+        }
+
+    override fun findByPhoneNumber(phoneNumber: String): StoredAuthUser? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT id, email, display_name, username, phone_number, password_hash, roles
+                FROM app_users
+                WHERE phone_number = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, phoneNumber.trim())
+                statement.executeQuery().use { result ->
+                    result.singleUserOrNull()
+                }
+            }
+        }
+
     override fun findByProvider(provider: AuthProvider, providerSubject: String): StoredAuthUser? =
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT u.id, u.email, u.display_name, u.password_hash, u.roles
+                SELECT u.id, u.email, u.display_name, u.username, u.phone_number, u.password_hash, u.roles
                 FROM app_users u
                 INNER JOIN user_auth_providers p ON p.user_id = u.id
                 WHERE p.provider = ? AND p.provider_subject = ?
@@ -91,7 +128,7 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT u.id, u.email, u.display_name, u.password_hash, u.roles, u.disabled, u.last_login_at
+                SELECT u.id, u.email, u.display_name, u.username, u.phone_number, u.password_hash, u.roles, u.disabled, u.last_login_at
                 FROM app_users u
                 INNER JOIN user_auth_providers p ON p.user_id = u.id
                 WHERE p.provider = ? AND p.provider_subject = ?
@@ -109,6 +146,8 @@ internal class JdbcAuthRepository(
         email: String,
         passwordHash: String,
         displayName: String?,
+        username: String?,
+        phoneNumber: String?,
         roles: Set<AuthRole>,
     ): StoredAuthUser =
         dataSource.connection.use { connection ->
@@ -118,6 +157,8 @@ internal class JdbcAuthRepository(
                     email = email,
                     passwordHash = passwordHash,
                     displayName = displayName,
+                    username = username,
+                    phoneNumber = phoneNumber,
                     roles = roles,
                     connection = connection,
                 )
@@ -149,6 +190,8 @@ internal class JdbcAuthRepository(
                         email = identity.email,
                         passwordHash = null,
                         displayName = identity.displayName,
+                        username = null,
+                        phoneNumber = null,
                         roles = setOf(AuthRole.CUSTOMER),
                         connection = connection,
                     )
@@ -174,20 +217,24 @@ internal class JdbcAuthRepository(
         email: String,
         passwordHash: String?,
         displayName: String?,
+        username: String?,
+        phoneNumber: String?,
         roles: Set<AuthRole>,
         connection: java.sql.Connection,
     ): StoredAuthUser =
         connection.prepareStatement(
             """
-            INSERT INTO app_users (email, display_name, password_hash, roles)
-            VALUES (?, ?, ?, ?::TEXT[])
-            RETURNING id, email, display_name, password_hash, roles
+            INSERT INTO app_users (email, display_name, username, phone_number, password_hash, roles)
+            VALUES (?, ?, ?, ?, ?, ?::TEXT[])
+            RETURNING id, email, display_name, username, phone_number, password_hash, roles
             """.trimIndent(),
         ).use { statement ->
             statement.setString(1, email.trim().lowercase())
             statement.setString(2, displayName?.trim()?.takeIf { it.isNotEmpty() })
-            statement.setString(3, passwordHash)
-            statement.setString(4, roles.joinToString(prefix = "{", postfix = "}") { it.name })
+            statement.setString(3, username?.trim()?.lowercase()?.takeIf { it.isNotEmpty() })
+            statement.setString(4, phoneNumber?.trim()?.takeIf { it.isNotEmpty() })
+            statement.setString(5, passwordHash)
+            statement.setString(6, roles.joinToString(prefix = "{", postfix = "}") { it.name })
             statement.executeQuery().use { result ->
                 check(result.next()) { "User insert did not return a row" }
                 result.toStoredAuthUser()
@@ -211,7 +258,7 @@ internal class JdbcAuthRepository(
                 statement.setString(6, secureHash(attempt.nonce))
                 statement.setString(7, attempt.nonce)
                 statement.setString(8, attempt.appRedirectUri)
-                statement.setObject(9, expiresAt)
+                statement.setTimestamp(9, Timestamp.from(expiresAt))
                 statement.executeUpdate()
             }
         }
@@ -275,7 +322,7 @@ internal class JdbcAuthRepository(
             ).use { statement ->
                 statement.setString(1, userId)
                 statement.setString(2, tokenHash)
-                statement.setObject(3, expiresAt)
+                statement.setTimestamp(3, Timestamp.from(expiresAt))
                 statement.executeUpdate()
             }
         }
@@ -337,7 +384,7 @@ internal class JdbcAuthRepository(
                 statement.setString(3, familyId)
                 statement.setString(4, deviceId?.trim()?.takeIf { it.isNotEmpty() })
                 statement.setString(5, deviceLabel?.trim()?.takeIf { it.isNotEmpty() })
-                statement.setObject(6, expiresAt)
+                statement.setTimestamp(6, Timestamp.from(expiresAt))
                 statement.executeQuery().use { result ->
                     check(result.next()) { "Refresh token insert did not return a row" }
                     result.toStoredRefreshToken()
@@ -399,7 +446,7 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT id, email, display_name, password_hash, roles
+                SELECT id, email, display_name, username, phone_number, password_hash, roles
                 FROM app_users
                 WHERE id = ?
                 """.trimIndent(),
@@ -480,6 +527,8 @@ private fun ResultSet.toStoredAuthUser(): StoredAuthUser =
             id = getString("id"),
             email = getString("email"),
             displayName = getString("display_name"),
+            username = getString("username"),
+            phoneNumber = getString("phone_number"),
             roles = getArray("roles")
                 ?.array
                 ?.let { it as Array<*> }
@@ -495,6 +544,8 @@ private fun ResultSet.toAppUser(): AppUser =
         id = getString("id"),
         email = getString("email"),
         displayName = getString("display_name"),
+        username = getString("username"),
+        phoneNumber = getString("phone_number"),
         passwordHash = getString("password_hash"),
         roles = getArray("roles")
             ?.array
@@ -529,6 +580,8 @@ private fun AppUser.toStoredAuthUser(): StoredAuthUser =
             id = id,
             email = email,
             displayName = displayName,
+            username = username,
+            phoneNumber = phoneNumber,
             roles = roles.mapNotNull { role -> runCatching { AuthRole.valueOf(role) }.getOrNull() }.toSet()
                 .ifEmpty { setOf(AuthRole.CUSTOMER) },
         ),

@@ -113,6 +113,10 @@ fun App() {
         val exploreUiState = exploreViewModel.uiState
         val mapUiState = mapViewModel.uiState
         val isGuestMode = uiState.sessionMode == KazeSessionMode.GUEST
+        val resolvedGuestName = when (uiState.sessionMode) {
+            KazeSessionMode.AUTHENTICATED -> uiState.sessionEmail.toDisplayNameFromEmail()
+            KazeSessionMode.GUEST, null -> stayUiState.guestName
+        }
         val visibleInvitations = invitationPreviews
         val pendingInvitationCount = visibleInvitations.count { it.state == InvitationState.ACTIVE }
         val availableDestinations = when (uiState.sessionMode) {
@@ -323,7 +327,7 @@ fun App() {
                                             KazeDestination.HOME -> HomeScreen(
                                                 modifier = Modifier.weight(1f),
                                                 hotelDisplayName = stayUiState.hotelDisplayName,
-                                                guestName = stayUiState.guestName,
+                                                guestName = resolvedGuestName,
                                                 accessProfileLabel = stayUiState.accessProfileLabel,
                                                 accessStatusLabel = stayUiState.accessStatusLabel,
                                                 accessCard = stayUiState.accessCard,
@@ -353,7 +357,7 @@ fun App() {
                                             KazeDestination.STAY -> StayHomeScreen(
                                                 modifier = Modifier.weight(1f),
                                                 hotelDisplayName = stayUiState.hotelDisplayName,
-                                                guestName = stayUiState.guestName,
+                                                guestName = resolvedGuestName,
                                                 accessProfileLabel = stayUiState.accessProfileLabel,
                                                 accessStatusLabel = stayUiState.accessStatusLabel,
                                                 accessCard = stayUiState.accessCard,
@@ -457,7 +461,7 @@ fun App() {
                                         KazeDestination.HOME -> HomeScreen(
                                             modifier = Modifier.weight(1f),
                                             hotelDisplayName = stayUiState.hotelDisplayName,
-                                            guestName = stayUiState.guestName,
+                                            guestName = resolvedGuestName,
                                             accessProfileLabel = stayUiState.accessProfileLabel,
                                             accessStatusLabel = stayUiState.accessStatusLabel,
                                             accessCard = stayUiState.accessCard,
@@ -487,7 +491,7 @@ fun App() {
                                         KazeDestination.STAY -> StayHomeScreen(
                                             modifier = Modifier.weight(1f),
                                             hotelDisplayName = stayUiState.hotelDisplayName,
-                                            guestName = stayUiState.guestName,
+                                            guestName = resolvedGuestName,
                                             accessProfileLabel = stayUiState.accessProfileLabel,
                                             accessStatusLabel = stayUiState.accessStatusLabel,
                                             accessCard = stayUiState.accessCard,
@@ -624,4 +628,18 @@ fun App() {
             }
         }
     }
+}
+
+private fun String.toDisplayNameFromEmail(): String {
+    val localPart = substringBefore('@').trim()
+    if (localPart.isBlank()) return "Guest"
+    return localPart
+        .split('.', '_', '-')
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { part ->
+            part.replaceFirstChar { char ->
+                if (char.isLowerCase()) char.titlecase() else char.toString()
+            }
+        }
+        .ifBlank { "Guest" }
 }

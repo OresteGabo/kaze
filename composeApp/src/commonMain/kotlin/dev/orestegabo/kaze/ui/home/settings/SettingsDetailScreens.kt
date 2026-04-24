@@ -2,6 +2,8 @@ package dev.orestegabo.kaze.ui.home.settings
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -25,17 +27,30 @@ import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
+import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.airtel_logo
@@ -47,13 +62,27 @@ import kaze.composeapp.generated.resources.spenn_logo
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
+private enum class EditableProfileField {
+    NAME,
+    USERNAME,
+    PHONE,
+}
+
+private data class FieldValidation(
+    val isError: Boolean,
+    val message: String,
+)
+
 @Composable
 internal fun SettingsDetailScreen(
     page: SettingsDetailPage,
     sessionDisplayName: String,
+    sessionUsername: String,
     sessionEmail: String,
+    sessionPhoneNumber: String,
     needsProfileCompletion: Boolean,
     bottomContentPadding: Dp,
+    onUpdateProfile: (String, String, String) -> Unit,
     onBack: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -78,8 +107,11 @@ internal fun SettingsDetailScreen(
         if (page == SettingsDetailPage.ACCOUNT) {
             PersonalDataSnapshotCard(
                 displayName = sessionDisplayName,
+                username = sessionUsername,
                 email = sessionEmail,
+                phoneNumber = sessionPhoneNumber,
                 needsProfileCompletion = needsProfileCompletion,
+                onUpdateProfile = onUpdateProfile,
             )
         }
         if (page == SettingsDetailPage.PRIVACY_CONTROLS) {
@@ -607,13 +639,59 @@ private fun DataCollectionRow(
 @Composable
 private fun PersonalDataSnapshotCard(
     displayName: String,
+    username: String,
     email: String,
+    phoneNumber: String,
     needsProfileCompletion: Boolean,
+    onUpdateProfile: (String, String, String) -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+    var editingField by rememberSaveable { mutableStateOf<EditableProfileField?>(null) }
+    var pendingSave by rememberSaveable { mutableStateOf(false) }
+    var draftName by rememberSaveable { mutableStateOf(displayName) }
+    var draftUsername by rememberSaveable { mutableStateOf(username) }
+    var draftPhone by rememberSaveable { mutableStateOf(phoneNumber) }
+    val nameFocusRequester = FocusRequester()
+    val usernameFocusRequester = FocusRequester()
+    val phoneFocusRequester = FocusRequester()
+
+    LaunchedEffect(displayName, username, phoneNumber, editingField) {
+        if (editingField == null) {
+            draftName = displayName
+            draftUsername = username
+            draftPhone = phoneNumber
+        }
+    }
+
     val resolvedName = displayName.takeIf { it.isNotBlank() } ?: "Add your full name"
     val resolvedEmail = email.takeIf { it.isNotBlank() } ?: "Add your email"
-    val resolvedPhone = if (needsProfileCompletion) "Add your phone number" else "Phone not added yet"
+    val resolvedPhone = phoneNumber.takeIf { it.isNotBlank() } ?: "Add your phone number"
     val profileStatus = if (needsProfileCompletion) "Needs completion" else "Basic profile active"
+    val profileMatchesDraft = displayName == draftName.trim() &&
+        username == draftUsername.trim().lowercase() &&
+        phoneNumber == draftPhone.trim()
+    val nameValidation = validateDisplayNameInput(draftName)
+    val usernameValidation = validateUsernameInput(draftUsername)
+    val phoneValidation = validatePhoneNumberInput(draftPhone)
+
+    if (editingField != null && pendingSave && profileMatchesDraft) {
+        editingField = null
+        pendingSave = false
+    }
+
+    LaunchedEffect(editingField) {
+        if (editingField == null) {
+            focusManager.clearFocus(force = true)
+        } else {
+            when (editingField) {
+                EditableProfileField.NAME -> nameFocusRequester.requestFocus()
+                EditableProfileField.USERNAME -> usernameFocusRequester.requestFocus()
+                EditableProfileField.PHONE -> phoneFocusRequester.requestFocus()
+                null -> Unit
+            }
+        }
+    }
+
     Surface(
         shape = RoundedCornerShape(26.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
@@ -638,11 +716,106 @@ private fun PersonalDataSnapshotCard(
                 )
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                PersonalDataRow(label = "Full name", value = resolvedName, action = "Edit", icon = Icons.Default.Edit)
-                PersonalDataRow(label = "Linked email", value = resolvedEmail, action = "Verified", icon = Icons.Default.Email)
-                PersonalDataRow(label = "Linked phone", value = resolvedPhone, action = "Add", icon = Icons.Default.Phone)
-                PersonalDataRow(label = "Active profile", value = profileStatus, action = "Manage", icon = Icons.Default.AccountCircle)
-                PersonalDataRow(label = "Data export", value = "Download a copy of your personal data", action = "Request", icon = Icons.Default.Download)
+                PersonalDataRow(
+                    label = "Full name",
+                    value = resolvedName,
+                    action = if (editingField == EditableProfileField.NAME) "Save" else "Edit",
+                    icon = Icons.Default.Edit,
+                    isEditing = editingField == EditableProfileField.NAME,
+                    editValue = draftName,
+                    onEditValueChange = { draftName = it },
+                    focusRequester = nameFocusRequester,
+                    editLabel = "Full name",
+                    onClick = {
+                        if (editingField == EditableProfileField.NAME) {
+                            if (nameValidation.isError) return@PersonalDataRow
+                            pendingSave = true
+                            onUpdateProfile(draftName, draftUsername, draftPhone)
+                        } else {
+                            editingField = EditableProfileField.NAME
+                            pendingSave = false
+                        }
+                    },
+                    onCancel = {
+                        editingField = null
+                        pendingSave = false
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done,
+                    ),
+                    supportingText = nameValidation.message,
+                    isError = nameValidation.isError,
+                )
+                PersonalDataRow(
+                    label = "Linked email",
+                    value = resolvedEmail,
+                    action = "Verified",
+                    icon = Icons.Default.Email,
+                )
+                PersonalDataRow(
+                    label = "Username",
+                    value = username.takeIf { it.isNotBlank() } ?: "Add a username",
+                    action = if (editingField == EditableProfileField.USERNAME) "Save" else if (username.isBlank()) "Add" else "Edit",
+                    icon = Icons.Default.AccountCircle,
+                    isEditing = editingField == EditableProfileField.USERNAME,
+                    editValue = draftUsername,
+                    onEditValueChange = { draftUsername = it },
+                    focusRequester = usernameFocusRequester,
+                    editLabel = "Username",
+                    onClick = {
+                        if (editingField == EditableProfileField.USERNAME) {
+                            if (usernameValidation.isError) return@PersonalDataRow
+                            pendingSave = true
+                            onUpdateProfile(draftName, draftUsername, draftPhone)
+                        } else {
+                            editingField = EditableProfileField.USERNAME
+                            pendingSave = false
+                        }
+                    },
+                    onCancel = {
+                        editingField = null
+                        pendingSave = false
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Ascii,
+                        imeAction = ImeAction.Done,
+                    ),
+                    supportingText = usernameValidation.message,
+                    isError = usernameValidation.isError,
+                )
+                PersonalDataRow(
+                    label = "Linked phone",
+                    value = resolvedPhone,
+                    action = if (editingField == EditableProfileField.PHONE) "Save" else if (phoneNumber.isBlank()) "Add" else "Edit",
+                    icon = Icons.Default.Phone,
+                    isEditing = editingField == EditableProfileField.PHONE,
+                    editValue = draftPhone,
+                    onEditValueChange = { draftPhone = it },
+                    focusRequester = phoneFocusRequester,
+                    editLabel = "Phone number",
+                    onClick = {
+                        if (editingField == EditableProfileField.PHONE) {
+                            if (phoneValidation.isError) return@PersonalDataRow
+                            pendingSave = true
+                            onUpdateProfile(draftName, draftUsername, draftPhone)
+                        } else {
+                            editingField = EditableProfileField.PHONE
+                            pendingSave = false
+                        }
+                    },
+                    onCancel = {
+                        editingField = null
+                        pendingSave = false
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Done,
+                    ),
+                    supportingText = phoneValidation.message,
+                    isError = phoneValidation.isError,
+                )
+                ProfileStatusRow(profileStatus = profileStatus)
             }
         }
     }
@@ -654,11 +827,115 @@ private fun PersonalDataRow(
     value: String,
     action: String,
     icon: ImageVector,
+    isEditing: Boolean = false,
+    editValue: String = "",
+    onEditValueChange: (String) -> Unit = {},
+    focusRequester: FocusRequester? = null,
+    editLabel: String = label,
+    onClick: (() -> Unit)? = null,
+    onCancel: (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    supportingText: String? = null,
+    isError: Boolean = false,
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(if (isEditing) 10.dp else 0.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !isEditing && onClick != null) { onClick?.invoke() },
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = KazeTheme.accents.editorialWarm.copy(alpha = 0.16f),
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = KazeTheme.accents.editorialWarm,
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                    )
+                    if (!isEditing) {
+                        Text(
+                            value,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+                if (!isEditing) {
+                    MetaPill(action)
+                }
+            }
+
+            if (isEditing) {
+                OutlinedTextField(
+                    value = editValue,
+                    onValueChange = onEditValueChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .let { base ->
+                            if (focusRequester != null) base.focusRequester(focusRequester) else base
+                        },
+                    label = { Text(editLabel) },
+                    colors = OutlinedTextFieldDefaults.colors(),
+                    keyboardOptions = keyboardOptions,
+                    supportingText = supportingText?.let { message ->
+                        {
+                            Text(
+                                message,
+                                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                            )
+                        }
+                    },
+                    isError = isError,
+                    singleLine = true,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    onCancel?.let { cancel ->
+                        KazeGhostButton(label = "Cancel", onClick = cancel)
+                    }
+                    onClick?.let { save ->
+                        KazePrimaryButton(label = action, onClick = save)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileStatusRow(profileStatus: String) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
     ) {
         Row(
             modifier = Modifier
@@ -669,10 +946,10 @@ private fun PersonalDataRow(
         ) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = KazeTheme.accents.editorialWarm.copy(alpha = 0.16f),
+                color = KazeTheme.accents.editorialWarm.copy(alpha = 0.14f),
             ) {
                 Icon(
-                    imageVector = icon,
+                    imageVector = Icons.Default.Download,
                     contentDescription = null,
                     tint = KazeTheme.accents.editorialWarm,
                     modifier = Modifier.padding(8.dp),
@@ -683,19 +960,73 @@ private fun PersonalDataRow(
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    label,
+                    "Profile status",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
                 )
                 Text(
-                    value,
+                    profileStatus,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            MetaPill(action)
+            MetaPill("Ready")
         }
+    }
+}
+
+private fun validateDisplayNameInput(input: String): FieldValidation {
+    val trimmed = input.trim()
+    return when {
+        trimmed.isBlank() -> FieldValidation(true, "Full name is required.")
+        trimmed.length < 3 -> FieldValidation(true, "Name looks incomplete.")
+        else -> FieldValidation(false, "Looks good.")
+    }
+}
+
+private fun validateUsernameInput(input: String): FieldValidation {
+    val trimmed = input.trim()
+    if (trimmed.isBlank()) return FieldValidation(false, "Optional.")
+    val normalized = trimmed.lowercase()
+    return when {
+        normalized.length < 3 -> FieldValidation(true, "Username is too short.")
+        normalized.length > 32 -> FieldValidation(true, "Username is too long.")
+        !normalized.matches(Regex("^[a-z0-9._]+$")) -> {
+            FieldValidation(true, "Use only letters, numbers, dots, and underscores.")
+        }
+        else -> FieldValidation(false, "Username format looks good.")
+    }
+}
+
+private fun validatePhoneNumberInput(input: String): FieldValidation {
+    val trimmed = input.trim()
+    if (trimmed.isBlank()) return FieldValidation(false, "Optional. Use +2507..., 07..., or 7...")
+
+    val compact = buildString(trimmed.length) {
+        trimmed.forEachIndexed { index, char ->
+            when {
+                char.isDigit() -> append(char)
+                char == '+' && index == 0 -> append(char)
+            }
+        }
+    }
+
+    val digitCount = compact.count { it.isDigit() }
+    val isRwandaLocal = compact.startsWith("07") || compact.startsWith("7")
+    val isRwandaIntl = compact.startsWith("+250") || compact.startsWith("250")
+
+    return when {
+        isRwandaLocal && digitCount < 9 -> FieldValidation(true, "Phone number looks incomplete.")
+        compact.startsWith("07") && digitCount != 10 -> FieldValidation(true, "Use all 10 digits for 07... format.")
+        compact.startsWith("7") && digitCount != 9 -> FieldValidation(true, "Use all 9 digits for 7... format.")
+        isRwandaIntl && digitCount < 12 -> FieldValidation(true, "Phone number looks incomplete.")
+        compact.startsWith("+250") && digitCount != 12 -> FieldValidation(true, "Use +250 followed by 9 digits.")
+        compact.startsWith("250") && digitCount != 12 -> FieldValidation(true, "Use 250 followed by 9 digits.")
+        digitCount < 8 -> FieldValidation(true, "Phone number looks incomplete.")
+        digitCount > 15 -> FieldValidation(true, "Phone number is too long.")
+        !compact.matches(Regex("^\\+?[0-9]+$")) -> FieldValidation(true, "Phone number format is invalid.")
+        else -> FieldValidation(false, "Phone number format looks good.")
     }
 }
 

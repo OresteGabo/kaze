@@ -4,6 +4,7 @@ import dev.orestegabo.kaze.auth.AuthResponseDto
 import dev.orestegabo.kaze.auth.AuthProvider
 import dev.orestegabo.kaze.auth.AuthRefreshRequest
 import dev.orestegabo.kaze.auth.AuthLogoutResponseDto
+import dev.orestegabo.kaze.auth.AuthInvitationResponseRequest
 import dev.orestegabo.kaze.auth.AuthProfileUpdateRequest
 import dev.orestegabo.kaze.auth.AuthSessionClaimRequest
 import dev.orestegabo.kaze.auth.AuthService
@@ -23,6 +24,7 @@ import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.put
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 
@@ -99,6 +101,26 @@ internal fun Route.registerAuthRoutes(
                 val principal = call.principal<JWTPrincipal>()
                     ?: throw IllegalArgumentException("Missing JWT principal")
                 call.respond(authService.currentUser(principal.payload.subject))
+            }
+
+            get("/me/invitations") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.respond(authService.currentUserInvitations(principal.payload.subject))
+            }
+
+            get("/me/events") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.respond(authService.currentUserEvents(principal.payload.subject))
+            }
+
+            patch("/me/invitations/{invitationId}") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: throw IllegalArgumentException("Missing JWT principal")
+                val invitationId = call.parameters["invitationId"]
+                    ?: throw IllegalArgumentException("Missing invitation id")
+                call.respond(authService.respondToInvitation(principal.payload.subject, invitationId, call.receive<AuthInvitationResponseRequest>()))
             }
 
             put("/me") {

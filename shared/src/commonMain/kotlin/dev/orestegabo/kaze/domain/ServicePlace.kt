@@ -45,6 +45,15 @@ enum class PlaceServiceCategory {
     AGENDA,
     SUPPORT,
     ADD_ON,
+    TRANSPORT,
+    MEETING_SPACE,
+    MEDIA,
+    WEDDING,
+    DINING,
+    CONFERENCE,
+    MEETING,
+    RETREAT,
+    STAY_GROUP,
 }
 
 sealed interface PlaceServicePricing {

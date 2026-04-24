@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
@@ -84,14 +85,14 @@ internal fun EventScheduleScreen(
         contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
+        /*item {
             SectionIntroCard(
                 eyebrow = "What's On",
                 title = "East Africa Finance Summit",
                 subtitle = "A clean schedule view with day switching, venue references, and direct map transitions.",
                 icon = Icons.Default.CalendarMonth,
             )
-        }
+        }*/
 
         if (edgeAiEnabled && selectedDay != null) {
             item {
@@ -112,6 +113,9 @@ internal fun EventScheduleScreen(
                     title = stringResource(Res.string.empty_events_title),
                     subtitle = stringResource(Res.string.empty_events_subtitle),
                     actionLabel = stringResource(Res.string.empty_events_action),
+                    eyebrow = "Event space",
+                    tags = listOf("Agenda", "Rooms", "Pass"),
+                    icon = Icons.Default.CalendarMonth,
                     onAction = onEmptyAction,
                 )
             }
@@ -137,6 +141,9 @@ internal fun EventScheduleScreen(
                     title = stringResource(Res.string.empty_event_day_title),
                     subtitle = stringResource(Res.string.empty_event_day_subtitle),
                     actionLabel = stringResource(Res.string.empty_events_action),
+                    eyebrow = "Quiet day",
+                    tags = listOf("Check another day", "Organizer updates"),
+                    icon = Icons.Default.EventBusy,
                     onAction = onEmptyAction,
                 )
             }

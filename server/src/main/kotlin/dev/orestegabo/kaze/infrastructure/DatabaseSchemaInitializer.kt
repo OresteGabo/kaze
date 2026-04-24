@@ -26,6 +26,19 @@ internal fun Application.initializeDatabaseSchema(config: DatabaseConfig) {
     }
 }
 
+internal fun Application.initializeDatabaseSeed(config: DatabaseConfig) {
+    when (config.seedMode) {
+        DatabaseSeedMode.NONE -> {
+            environment.log.info("Kaze database seeding is disabled")
+        }
+        DatabaseSeedMode.DEV -> {
+            val statements = loadSqlStatements("/db/dev_seed.sql")
+            runSchemaStatements(config, statements)
+            environment.log.info("Kaze development seed loaded")
+        }
+    }
+}
+
 private fun Application.runSchemaStatements(
     config: DatabaseConfig,
     statements: List<String>,
@@ -44,6 +57,22 @@ private fun Application.runSchemaStatements(
             throw cause
         }
     }
+}
+
+private fun loadSqlStatements(resourcePath: String): List<String> {
+    val resourceText = object {}.javaClass.getResource(resourcePath)?.readText()
+        ?: error("Missing SQL resource at $resourcePath")
+    return resourceText
+        .lineSequence()
+        .filterNot { line -> line.trimStart().startsWith("--") }
+        .joinToString("\n")
+        .split(Regex(";\\s*(?:\\r?\\n|$)"))
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .filterNot { statement ->
+            val normalized = statement.lowercase()
+            normalized == "begin" || normalized == "commit"
+        }
 }
 
 private val DROP_SCHEMA_SQL = listOf(

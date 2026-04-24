@@ -37,6 +37,8 @@ import dev.orestegabo.kaze.presentation.explore.ExploreActionResult
 import dev.orestegabo.kaze.presentation.explore.ExploreViewModel
 import dev.orestegabo.kaze.presentation.map.MapViewModel
 import dev.orestegabo.kaze.presentation.navigation.KazeNavigator
+import dev.orestegabo.kaze.domain.experience.EventDay
+import dev.orestegabo.kaze.domain.experience.ScheduledExperience
 import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.presentation.stay.StayActionResult
 import dev.orestegabo.kaze.presentation.stay.StayViewModel
@@ -121,11 +123,46 @@ fun App() {
                 ?: uiState.sessionEmail.toDisplayNameFromEmail()
             KazeSessionMode.GUEST, null -> stayUiState.guestName
         }
+        val authenticatedInvitations = uiState.sessionInvitations.map { it.toInvitationPreview() }
         val visibleInvitations = when (uiState.sessionMode) {
-            KazeSessionMode.AUTHENTICATED -> emptyList()
+            KazeSessionMode.AUTHENTICATED -> authenticatedInvitations
             KazeSessionMode.GUEST, null -> invitationPreviews
         }
-        val pendingInvitationCount = visibleInvitations.count { it.state == InvitationState.ACTIVE }
+        val authenticatedEventDays = uiState.sessionEvents
+            .distinctBy { it.dayId }
+            .map { event ->
+                EventDay(
+                    id = event.dayId,
+                    label = event.dayLabel,
+                    dateIso = event.dateIso,
+                )
+            }
+        var selectedAuthenticatedDayId by remember(uiState.sessionUserId) {
+            mutableStateOf(authenticatedEventDays.firstOrNull()?.id)
+        }
+        LaunchedEffect(authenticatedEventDays.map { it.id }) {
+            if (selectedAuthenticatedDayId == null || authenticatedEventDays.none { it.id == selectedAuthenticatedDayId }) {
+                selectedAuthenticatedDayId = authenticatedEventDays.firstOrNull()?.id
+            }
+        }
+        val authenticatedSelectedDay = authenticatedEventDays.firstOrNull { it.id == selectedAuthenticatedDayId }
+            ?: authenticatedEventDays.firstOrNull()
+        val authenticatedSessions = uiState.sessionEvents
+            .filter { it.dayId == authenticatedSelectedDay?.id }
+            .map { it.toScheduledExperience() }
+        val eventsDays = when (uiState.sessionMode) {
+            KazeSessionMode.AUTHENTICATED -> authenticatedEventDays
+            KazeSessionMode.GUEST, null -> eventsUiState.days
+        }
+        val eventsSelectedDay = when (uiState.sessionMode) {
+            KazeSessionMode.AUTHENTICATED -> authenticatedSelectedDay
+            KazeSessionMode.GUEST, null -> eventsUiState.selectedDay
+        }
+        val eventsSessions = when (uiState.sessionMode) {
+            KazeSessionMode.AUTHENTICATED -> authenticatedSessions
+            KazeSessionMode.GUEST, null -> eventsUiState.sessions
+        }
+        val pendingInvitationCount = visibleInvitations.count { it.awaitingResponse }
         val availableDestinations = when (uiState.sessionMode) {
             KazeSessionMode.GUEST -> listOf(
                 KazeDestination.EVENTS,
@@ -393,11 +430,29 @@ fun App() {
 
                                             KazeDestination.EVENTS -> EventScheduleScreen(
                                                 modifier = Modifier.weight(1f),
-                                                days = eventsUiState.days,
-                                                selectedDay = eventsUiState.selectedDay,
-                                                sessions = eventsUiState.sessions,
-                                                onDaySelected = eventsViewModel::onDaySelected,
-                                                onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                                days = eventsDays,
+                                                selectedDay = eventsSelectedDay,
+                                                sessions = eventsSessions,
+                                                onDaySelected = { day ->
+                                                    if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                                                        selectedAuthenticatedDayId = day.id
+                                                    } else {
+                                                        eventsViewModel.onDaySelected(day)
+                                                    }
+                                                },
+                                                onSessionAction = {
+                                                    if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                                                        handleEventResult(
+                                                            dev.orestegabo.kaze.presentation.events.EventsActionResult.NavigateToMap(
+                                                                route = "Arrival route to ${it.venueLabel}",
+                                                                floorId = if (it.venueLabel.contains("Ballroom", ignoreCase = true)) "l9" else "l1",
+                                                                floorLabel = it.venueLabel,
+                                                            ),
+                                                        )
+                                                    } else {
+                                                        handleEventResult(eventsViewModel.onSessionAction(it))
+                                                    }
+                                                },
                                                 onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
                                                 eventInvitation = selectedEventInvitation,
                                                 onVenueAction = {
@@ -421,6 +476,9 @@ fun App() {
                                                 selectedInvitation = selectedInvitation,
                                                 onSelectedInvitationChange = { selectedInvitation = it },
                                                 onOpenEvent = ::openEventFromInvitation,
+                                                onRespondToInvitation = { invitationId, response ->
+                                                    appViewModel.respondToInvitation(invitationId, response)
+                                                },
                                                 edgeAiEnabled = uiState.edgeAiEnabled,
                                                 onAiAction = { feature ->
                                                     appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
@@ -529,11 +587,29 @@ fun App() {
 
                                         KazeDestination.EVENTS -> EventScheduleScreen(
                                             modifier = Modifier.weight(1f),
-                                            days = eventsUiState.days,
-                                            selectedDay = eventsUiState.selectedDay,
-                                            sessions = eventsUiState.sessions,
-                                            onDaySelected = eventsViewModel::onDaySelected,
-                                            onSessionAction = { handleEventResult(eventsViewModel.onSessionAction(it)) },
+                                            days = eventsDays,
+                                            selectedDay = eventsSelectedDay,
+                                            sessions = eventsSessions,
+                                            onDaySelected = { day ->
+                                                if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                                                    selectedAuthenticatedDayId = day.id
+                                                } else {
+                                                    eventsViewModel.onDaySelected(day)
+                                                }
+                                            },
+                                            onSessionAction = {
+                                                if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                                                    handleEventResult(
+                                                        dev.orestegabo.kaze.presentation.events.EventsActionResult.NavigateToMap(
+                                                            route = "Arrival route to ${it.venueLabel}",
+                                                            floorId = if (it.venueLabel.contains("Ballroom", ignoreCase = true)) "l9" else "l1",
+                                                            floorLabel = it.venueLabel,
+                                                        ),
+                                                    )
+                                                } else {
+                                                    handleEventResult(eventsViewModel.onSessionAction(it))
+                                                }
+                                            },
                                             onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
                                             eventInvitation = selectedEventInvitation,
                                             onVenueAction = {
@@ -557,6 +633,9 @@ fun App() {
                                             selectedInvitation = selectedInvitation,
                                             onSelectedInvitationChange = { selectedInvitation = it },
                                             onOpenEvent = ::openEventFromInvitation,
+                                            onRespondToInvitation = { invitationId, response ->
+                                                appViewModel.respondToInvitation(invitationId, response)
+                                            },
                                             edgeAiEnabled = uiState.edgeAiEnabled,
                                             onAiAction = { feature ->
                                                 appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
@@ -654,6 +733,34 @@ fun App() {
         }
     }
 }
+
+private fun dev.orestegabo.kaze.presentation.auth.AuthInvitationSummary.toInvitationPreview(): InvitationPreview =
+    InvitationPreview(
+        id = id,
+        title = title,
+        subtitle = subtitle,
+        code = code,
+        phoneLabel = phoneLabel,
+        statusLabel = statusLabel,
+        state = when (state) {
+            "PAST" -> InvitationState.PAST
+            "ARCHIVED" -> InvitationState.ARCHIVED
+            else -> InvitationState.ACTIVE
+        },
+        awaitingResponse = awaitingResponse,
+    )
+
+private fun dev.orestegabo.kaze.presentation.auth.AuthEventSummary.toScheduledExperience(): ScheduledExperience =
+    ScheduledExperience(
+        id = id,
+        dayId = dayId,
+        title = title,
+        description = description,
+        startIso = startIso,
+        endIso = endIso,
+        venueLabel = venueLabel,
+        hostLabel = hostLabel,
+    )
 
 private fun String.toDisplayNameFromEmail(): String {
     val localPart = substringBefore('@').trim()

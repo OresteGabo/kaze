@@ -212,6 +212,22 @@ internal class AuthService(
             ?: throw AuthProblemException(HttpStatusCode.InternalServerError, "profile_update_failed", "Could not update the profile right now.")
     }
 
+    fun currentUserInvitations(userId: String): List<AuthInvitationSummaryDto> =
+        repository.listInvitationsForUser(userId)
+
+    fun currentUserEvents(userId: String): List<AuthEventSummaryDto> =
+        repository.listEventsForUser(userId)
+
+    fun respondToInvitation(userId: String, invitationId: String, request: AuthInvitationResponseRequest): AuthInvitationSummaryDto {
+        val accepted = when (request.response.trim().uppercase()) {
+            "ACCEPT", "ACCEPTED" -> true
+            "DECLINE", "DECLINED", "REJECT", "REJECTED" -> false
+            else -> throw AuthProblemException(HttpStatusCode.BadRequest, "invalid_invitation_response", "Invitation response must be accept or decline.")
+        }
+        return repository.respondToInvitation(userId, invitationId, accepted)
+            ?: throw AuthProblemException(HttpStatusCode.NotFound, "invitation_not_found", "That invitation could not be updated.")
+    }
+
     fun verifier(): JWTVerifier =
         JWT.require(signingAlgorithm)
             .withIssuer(jwtConfig.issuer)

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -41,6 +42,7 @@ import dev.orestegabo.kaze.getPlatform
 import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.theme.KazeThemeMode
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
+import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 
 @Composable
@@ -49,6 +51,9 @@ internal fun HomeSettingsScreen(
     themeMode: KazeThemeMode,
     edgeAiEnabled: Boolean,
     sessionLabel: String,
+    sessionDisplayName: String,
+    sessionEmail: String,
+    needsProfileCompletion: Boolean,
     onThemeModeChange: (KazeThemeMode) -> Unit,
     onEdgeAiEnabledChange: (Boolean) -> Unit,
     onLogout: () -> Unit,
@@ -63,6 +68,9 @@ internal fun HomeSettingsScreen(
     selectedSettingsPage?.let { page ->
         SettingsDetailScreen(
             page = page,
+            sessionDisplayName = sessionDisplayName,
+            sessionEmail = sessionEmail,
+            needsProfileCompletion = needsProfileCompletion,
             bottomContentPadding = bottomContentPadding,
             onBack = { selectedSettingsPage = null },
         )
@@ -114,6 +122,27 @@ internal fun HomeSettingsScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
             )
+        }
+
+        if (needsProfileCompletion) {
+            SettingsCard(
+                title = "Complete your profile",
+                subtitle = "Add your real name and phone so invitations, passes, and support feel more personal.",
+                icon = Icons.Default.Badge,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "You can keep using Kaze now, but finishing your basic profile will make your account feel complete.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                    )
+                    KazePrimaryButton(
+                        label = "Complete profile",
+                        onClick = { selectedSettingsPage = SettingsDetailPage.ACCOUNT },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         }
 
         SettingsCard(

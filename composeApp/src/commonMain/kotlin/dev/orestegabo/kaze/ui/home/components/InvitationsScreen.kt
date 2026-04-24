@@ -88,6 +88,7 @@ internal fun InvitationsScreen(
     selectedInvitation: InvitationPreview?,
     onSelectedInvitationChange: (InvitationPreview?) -> Unit,
     onOpenEvent: (InvitationPreview) -> Unit,
+    onRespondToInvitation: (String, String) -> Unit,
     edgeAiEnabled: Boolean,
     onAiAction: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -105,6 +106,7 @@ internal fun InvitationsScreen(
             invitation = selectedInvitation,
             onBack = { onSelectedInvitationChange(null) },
             onOpenEvent = { onOpenEvent(selectedInvitation) },
+            onRespondToInvitation = onRespondToInvitation,
             edgeAiEnabled = edgeAiEnabled,
             onAiAction = onAiAction,
             modifier = modifier,
@@ -235,6 +237,7 @@ private fun InvitationDetailScreen(
     invitation: InvitationPreview,
     onBack: () -> Unit,
     onOpenEvent: () -> Unit,
+    onRespondToInvitation: (String, String) -> Unit,
     edgeAiEnabled: Boolean,
     onAiAction: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -251,6 +254,7 @@ private fun InvitationDetailScreen(
             isActive = isActive,
             onBack = onBack,
             onOpenEvent = onOpenEvent,
+            onRespondToInvitation = onRespondToInvitation,
             edgeAiEnabled = edgeAiEnabled,
             onAiAction = onAiAction,
             modifier = modifier,
@@ -432,6 +436,25 @@ private fun InvitationDetailScreen(
                             )
                         }
                     }
+                    if (invitation.awaitingResponse) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            KazeSecondaryButton(
+                                label = "Decline",
+                                onClick = { onRespondToInvitation(invitation.id, "decline") },
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = Icons.Default.Edit,
+                            )
+                            KazePrimaryButton(
+                                label = "Accept",
+                                onClick = { onRespondToInvitation(invitation.id, "accept") },
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = Icons.Default.CheckCircle,
+                            )
+                        }
+                    }
                 }
             }
 
@@ -454,6 +477,7 @@ private fun WeddingInvitationDetailScreen(
     isActive: Boolean,
     onBack: () -> Unit,
     onOpenEvent: () -> Unit,
+    onRespondToInvitation: (String, String) -> Unit,
     edgeAiEnabled: Boolean,
     onAiAction: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -639,6 +663,25 @@ private fun WeddingInvitationDetailScreen(
                             modifier = Modifier.weight(1f),
                             leadingIcon = Icons.Default.Edit,
                         )
+                    }
+                    if (invitation.awaitingResponse) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            KazeSecondaryButton(
+                                label = "Decline",
+                                onClick = { onRespondToInvitation(invitation.id, "decline") },
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = Icons.Default.Edit,
+                            )
+                            KazePrimaryButton(
+                                label = "Accept",
+                                onClick = { onRespondToInvitation(invitation.id, "accept") },
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = Icons.Default.CheckCircle,
+                            )
+                        }
                     }
                 }
             }

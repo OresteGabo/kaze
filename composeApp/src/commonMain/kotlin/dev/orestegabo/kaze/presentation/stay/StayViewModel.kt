@@ -36,19 +36,19 @@ internal class StayViewModel(
     private val stayRepository: StayRepository,
     private val submitLateCheckoutUseCase: SubmitLateCheckoutUseCase,
 ) : ViewModel() {
-    private val initialAccessContext = demoAccessContexts.first()
+    private val initialAccessContext = demoAccessContexts.firstOrNull()
 
     var uiState by mutableStateOf(
         StayUiState(
-            hotelDisplayName = initialAccessContext.title,
-            accessProfileLabel = initialAccessContext.accessProfileLabel,
-            accessStatusLabel = initialAccessContext.statusLabel,
-            accessCard = initialAccessContext.accessCard,
+            hotelDisplayName = initialAccessContext?.title ?: sampleHotel.config.displayName,
+            accessProfileLabel = initialAccessContext?.accessProfileLabel ?: "No active access yet",
+            accessStatusLabel = initialAccessContext?.statusLabel ?: "Waiting for invites",
+            accessCard = initialAccessContext?.accessCard,
             accessContexts = demoAccessContexts,
-            selectedAccessContextId = initialAccessContext.id,
-            stayMoments = initialAccessContext.moments,
-            requestOptions = initialAccessContext.toServiceOptions(),
-            suggestionActivities = initialAccessContext.suggestions,
+            selectedAccessContextId = initialAccessContext?.id,
+            stayMoments = initialAccessContext?.moments.orEmpty(),
+            requestOptions = initialAccessContext?.toServiceOptions().orEmpty(),
+            suggestionActivities = initialAccessContext?.suggestions.orEmpty(),
             guestName = "Aline",
         ),
     )

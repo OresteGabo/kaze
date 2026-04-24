@@ -240,7 +240,7 @@ private fun KazeNavigationItemFrame(
         shadowElevation = if (selected) 2.dp else 0.dp,
         border = null,
         modifier = modifier.then(
-            if (selected && isDark) {
+            if (selected) {
                 Modifier.drawWithContent {
                     drawContent()
                     val strokeWidth = 1.5.dp.toPx()
@@ -260,9 +260,9 @@ private fun KazeNavigationItemFrame(
                     }
                     val sideStrokeBrush = Brush.verticalGradient(
                         colors = listOf(
-                            uiPalette.floatingShellBorder.copy(alpha = 0f),
-                            uiPalette.floatingShellBorder.copy(alpha = 0.45f),
-                            uiPalette.floatingShellBorder.copy(alpha = 0.92f),
+                            if (isDark) uiPalette.floatingShellBorder.copy(alpha = 0f) else colors.outline.copy(alpha = 0f),
+                            if (isDark) uiPalette.floatingShellBorder.copy(alpha = 0.45f) else colors.primary.copy(alpha = 0.18f),
+                            if (isDark) uiPalette.floatingShellBorder.copy(alpha = 0.92f) else colors.primary.copy(alpha = 0.34f),
                         ),
                         startY = topStopY,
                         endY = bottomY,
@@ -275,9 +275,9 @@ private fun KazeNavigationItemFrame(
                     drawLine(
                         brush = Brush.horizontalGradient(
                             colors = listOf(
-                                uiPalette.floatingShellBorder.copy(alpha = 0.72f),
-                                uiPalette.floatingShellBorder.copy(alpha = 0.96f),
-                                uiPalette.floatingShellBorder.copy(alpha = 0.72f),
+                                if (isDark) uiPalette.floatingShellBorder.copy(alpha = 0.72f) else colors.primary.copy(alpha = 0.24f),
+                                if (isDark) uiPalette.floatingShellBorder.copy(alpha = 0.96f) else colors.primary.copy(alpha = 0.40f),
+                                if (isDark) uiPalette.floatingShellBorder.copy(alpha = 0.72f) else colors.primary.copy(alpha = 0.24f),
                             ),
                             startX = leftX + radius * 0.72f,
                             endX = rightX - radius * 0.72f,
@@ -311,6 +311,12 @@ private fun KazeBottomNavItem(
         modifier = modifier,
     ) { contentColor ->
         val isHome = destination == KazeDestination.HOME
+        val selectedIconContainerColor =
+            if (selected) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+            } else {
+                Color.Transparent
+            }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -324,9 +330,7 @@ private fun KazeBottomNavItem(
                         .width(46.dp)
                         .height(46.dp)
                         .clip(CircleShape)
-                        .background(
-                            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent,
-                        ),
+                        .background(selectedIconContainerColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(
@@ -342,9 +346,7 @@ private fun KazeBottomNavItem(
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(
-                                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent,
-                            )
+                            .background(selectedIconContainerColor)
                             .size(42.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -438,6 +440,12 @@ private fun KazeSideNavItem(
         modifier = Modifier.fillMaxWidth(),
     ) { contentColor ->
         val isHome = destination == KazeDestination.HOME
+        val selectedIconContainerColor =
+            if (selected) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+            } else {
+                Color.Transparent
+            }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -449,9 +457,7 @@ private fun KazeSideNavItem(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(
-                            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent,
-                        )
+                        .background(selectedIconContainerColor)
                         .size(42.dp),
                     contentAlignment = Alignment.Center,
                 ) {

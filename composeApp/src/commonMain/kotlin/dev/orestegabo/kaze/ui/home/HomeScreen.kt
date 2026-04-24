@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +32,7 @@ import dev.orestegabo.kaze.presentation.demo.StayMoment
 import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
 import dev.orestegabo.kaze.presentation.demo.StayScreen
 import dev.orestegabo.kaze.ui.home.components.*
+import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
 import dev.orestegabo.kaze.ui.stay.LateCheckoutScreen
 import dev.orestegabo.kaze.ui.stay.ServiceRequestScreen
 
@@ -116,19 +119,32 @@ internal fun HomeScreen(
             HomeTopBar()
 
             if (!isGuestMode) {
-                HomeStayDashboard(
-                    hotelDisplayName = hotelDisplayName,
-                    guestName = guestName,
-                    accessProfileLabel = accessProfileLabel,
-                    accessStatusLabel = accessStatusLabel,
-                    accessCard = accessCard,
-                    accessContexts = accessContexts,
-                    selectedAccessContextId = selectedAccessContextId,
-                    stayMoments = stayMoments,
-                    activeRequestCount = submittedServiceRequests.size + if (lateCheckoutRequest != null) 1 else 0,
-                    onAccessContextSelected = onAccessContextSelected,
-                    onPrimaryAction = onPrimaryAction,
-                )
+                if (accessContexts.isEmpty() && accessCard == null && invitations.isEmpty()) {
+                    KazeEmptyStateScreen(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = "Nothing here yet",
+                        subtitle = "Your pass, invitations, and event access will appear once you join something in Kaze.",
+                        actionLabel = "Open invites",
+                        eyebrow = "Home",
+                        tags = listOf("Pass", "Invites", "Access"),
+                        icon = Icons.Outlined.BookmarkBorder,
+                        onAction = onSeeAllInvitations,
+                    )
+                } else {
+                    HomeStayDashboard(
+                        hotelDisplayName = hotelDisplayName,
+                        guestName = guestName,
+                        accessProfileLabel = accessProfileLabel,
+                        accessStatusLabel = accessStatusLabel,
+                        accessCard = accessCard,
+                        accessContexts = accessContexts,
+                        selectedAccessContextId = selectedAccessContextId,
+                        stayMoments = stayMoments,
+                        activeRequestCount = submittedServiceRequests.size + if (lateCheckoutRequest != null) 1 else 0,
+                        onAccessContextSelected = onAccessContextSelected,
+                        onPrimaryAction = onPrimaryAction,
+                    )
+                }
             } else {
                 GuestHomeShowcase(
                     invitations = invitations,

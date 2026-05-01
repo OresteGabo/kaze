@@ -21,6 +21,17 @@ internal fun Application.validateProductionSafety(
     require(databaseConfig.schemaMode != DatabaseSchemaMode.DROP && databaseConfig.schemaMode != DatabaseSchemaMode.CREATE_DROP) {
         "Refusing to start production with destructive KAZE_DB_SCHEMA_MODE=${databaseConfig.schemaMode.name.lowercase()}."
     }
+    val corsHosts = (
+        environment.config.propertyOrNull("kaze.security.cors.allowedHosts")?.getString()
+            ?: System.getenv("KAZE_CORS_ALLOWED_HOSTS")
+        )
+        ?.split(",")
+        ?.map { it.trim().lowercase() }
+        ?.filter { it.isNotEmpty() }
+        .orEmpty()
+    require(corsHosts.isNotEmpty() && corsHosts.none { it.startsWith("localhost") || it.startsWith("127.0.0.1") }) {
+        "Refusing to start production without explicit non-local KAZE_CORS_ALLOWED_HOSTS."
+    }
 }
 
 internal fun isProductionEnvironment(): Boolean {

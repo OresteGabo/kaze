@@ -157,7 +157,8 @@ internal fun Application.configureHttp(authService: AuthService) {
         }
         validate<SocialSigninRequest> { request ->
             when {
-                request.idToken.isBlank() -> ValidationResult.Invalid("idToken is required")
+                request.idToken.isNullOrBlank() && request.accessToken.isNullOrBlank() ->
+                    ValidationResult.Invalid("idToken or accessToken is required")
                 else -> ValidationResult.Valid
             }
         }

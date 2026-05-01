@@ -26,7 +26,9 @@ import dev.orestegabo.kaze.infrastructure.GuestRepository
 import dev.orestegabo.kaze.infrastructure.JdbcExperienceRepository
 import dev.orestegabo.kaze.infrastructure.JdbcHotelRepository
 import dev.orestegabo.kaze.infrastructure.JdbcMapRepository
+import dev.orestegabo.kaze.infrastructure.JdbcReservationRepository
 import dev.orestegabo.kaze.infrastructure.JdbcStayRepository
+import java.time.Instant
 
 internal data class GuestProfile(
     val hotelId: String,
@@ -51,15 +53,68 @@ internal data class AssistantAnswer(
     val confidence: String,
 )
 
+internal data class ReservationDraftSubmission(
+    val organizerUserId: String,
+    val placeId: String,
+    val serviceId: String?,
+    val eventName: String,
+    val preferredDateLabel: String,
+    val guestCount: Int,
+    val packageLabel: String,
+    val addOns: List<String>,
+    val paymentMethod: String,
+    val note: String?,
+)
+
+internal data class VenueReservation(
+    val id: String,
+    val reservationCode: String,
+    val eventId: String,
+    val placeId: String,
+    val placeName: String,
+    val serviceId: String?,
+    val status: String,
+    val eventName: String,
+    val preferredDateLabel: String,
+    val guestCount: Int,
+    val packageLabel: String,
+    val addOns: List<String>,
+    val paymentMethod: String,
+    val createdAt: Instant,
+)
+
+internal class ReservationService(
+    private val reservationRepository: JdbcReservationRepository,
+) {
+    suspend fun submitReservation(draft: ReservationDraftSubmission): VenueReservation {
+        require(draft.organizerUserId.isNotBlank()) { "A signed-in user is required to save a reservation." }
+        require(draft.placeId.isNotBlank()) { "placeId is required" }
+        require(draft.eventName.isNotBlank()) { "eventName is required" }
+        require(draft.preferredDateLabel.isNotBlank()) { "preferredDateLabel is required" }
+        require(draft.guestCount in 1..50_000) { "guestCount must be between 1 and 50000" }
+        require(draft.packageLabel.isNotBlank()) { "packageLabel is required" }
+        require(draft.paymentMethod.isNotBlank()) { "paymentMethod is required" }
+
+        return reservationRepository.create(draft.copy(addOns = draft.addOns.filter { it.isNotBlank() }))
+    }
+}
+
 internal class HotelQueryService(
     private val hotelRepository: HotelRepository,
 ) {
+    private val hotelListCache = TtlCache<String, List<Hotel>>()
+    private val hotelCache = TtlCache<String, Hotel>()
+
     suspend fun listHotels(): List<Hotel> =
-        hotelRepository.listHotels()
+        hotelListCache.getOrPut("all") {
+            hotelRepository.listHotels()
+        }
 
     suspend fun getHotel(hotelId: String): Hotel =
-        hotelRepository.getHotel(hotelId)
-            ?: throw ApiNotFoundException("Unknown hotel id: $hotelId")
+        hotelCache.getOrPut(hotelId) {
+            hotelRepository.getHotel(hotelId)
+                ?: throw ApiNotFoundException("Unknown hotel id: $hotelId")
+        }
 }
 
 internal class GuestStayService(
@@ -142,44 +197,66 @@ internal class GuestStayService(
 internal class ExperienceQueryService(
     private val experienceRepository: ExperienceRepository,
 ) {
+    private val eventDaysCache = TtlCache<String, List<EventDay>>()
+    private val scheduleCache = TtlCache<String, List<ScheduledExperience>>()
+    private val highlightsCache = TtlCache<String, List<AmenityHighlight>>()
+
     suspend fun getEventDays(hotelId: String): List<EventDay> =
-        experienceRepository.getEventDays(hotelId)
+        eventDaysCache.getOrPut(hotelId) {
+            experienceRepository.getEventDays(hotelId)
+        }
 
     suspend fun getSchedule(hotelId: String, dayId: String): List<ScheduledExperience> =
-        experienceRepository.getEventSchedule(hotelId, dayId)
+        scheduleCache.getOrPut("$hotelId:$dayId") {
+            experienceRepository.getEventSchedule(hotelId, dayId)
+        }
 
     suspend fun getHighlights(hotelId: String): List<AmenityHighlight> =
-        experienceRepository.getAmenityHighlights(hotelId)
+        highlightsCache.getOrPut(hotelId) {
+            experienceRepository.getAmenityHighlights(hotelId)
+        }
 }
 
 internal class MapQueryService(
     private val mapRepository: MapRepository,
 ) {
+    private val mapCache = TtlCache<String, HotelMap>()
+
     suspend fun getHotelMap(hotelId: String, mapId: String?): HotelMap =
-        mapRepository.getHotelMap(hotelId, mapId)
-            ?: throw ApiNotFoundException(
-                if (mapId == null) {
-                    "No map found for hotel id: $hotelId"
-                } else {
-                    "Unknown map id: $mapId for hotel id: $hotelId"
-                },
-            )
+        mapCache.getOrPut("$hotelId:${mapId.orEmpty()}") {
+            mapRepository.getHotelMap(hotelId, mapId)
+                ?: throw ApiNotFoundException(
+                    if (mapId == null) {
+                        "No map found for hotel id: $hotelId"
+                    } else {
+                        "Unknown map id: $mapId for hotel id: $hotelId"
+                    },
+                )
+        }
 }
 
 internal class AssistantService(
     private val amenityKnowledgeRepository: AmenityKnowledgeRepository,
 ) {
+    private val amenityCache = TtlCache<String, List<AmenityStatus>>()
+
     fun listAmenityStatuses(hotelId: String): List<AmenityStatus> =
         amenityKnowledgeRepository.listAmenities(hotelId)
 
-    fun answer(hotelId: String, question: String): AssistantAnswer {
+    suspend fun listAmenityStatusesCached(hotelId: String): List<AmenityStatus> =
+        amenityCache.getOrPut(hotelId) {
+            amenityKnowledgeRepository.listAmenities(hotelId)
+        }
+
+    suspend fun answer(hotelId: String, question: String): AssistantAnswer {
         val normalized = question.trim().lowercase()
         require(normalized.isNotBlank()) { "Question must not be blank" }
 
-        val kitchenStatus = amenityKnowledgeRepository.findAmenity(hotelId, "kitchen")
-        val restaurantStatus = amenityKnowledgeRepository.findAmenity(hotelId, "restaurant")
-        val spaStatus = amenityKnowledgeRepository.findAmenity(hotelId, "spa")
-        val poolStatus = amenityKnowledgeRepository.findAmenity(hotelId, "pool")
+        val amenities = listAmenityStatusesCached(hotelId)
+        val kitchenStatus = amenities.findAmenity("kitchen")
+        val restaurantStatus = amenities.findAmenity("restaurant")
+        val spaStatus = amenities.findAmenity("spa")
+        val poolStatus = amenities.findAmenity("pool")
 
         return when {
             normalized.contains("kitchen") || normalized.contains("food") || normalized.contains("room service") ->
@@ -239,12 +316,22 @@ internal class AssistantService(
     }
 }
 
+private fun List<AmenityStatus>.findAmenity(key: String): AmenityStatus? {
+    val normalizedKey = key.trim().lowercase()
+    return firstOrNull { amenity ->
+        amenity.id.lowercase().contains(normalizedKey) ||
+            amenity.title.lowercase().contains(normalizedKey) ||
+            amenity.locationLabel.lowercase().contains(normalizedKey)
+    }
+}
+
 internal data class ServerDependencies(
     val hotelService: HotelQueryService,
     val guestStayService: GuestStayService,
     val experienceService: ExperienceQueryService,
     val mapService: MapQueryService,
     val assistantService: AssistantService,
+    val reservationService: ReservationService,
 )
 
 internal fun createServerDependencies(): ServerDependencies {
@@ -255,6 +342,7 @@ internal fun createServerDependencies(): ServerDependencies {
     val experienceRepository = JdbcExperienceRepository(dataSource)
     val mapRepository = JdbcMapRepository(dataSource)
     val amenityKnowledgeRepository = AmenityKnowledgeRepository(dataSource)
+    val reservationRepository = JdbcReservationRepository(dataSource)
 
     return ServerDependencies(
         hotelService = HotelQueryService(hotelRepository),
@@ -262,6 +350,7 @@ internal fun createServerDependencies(): ServerDependencies {
         experienceService = ExperienceQueryService(experienceRepository),
         mapService = MapQueryService(mapRepository),
         assistantService = AssistantService(amenityKnowledgeRepository),
+        reservationService = ReservationService(reservationRepository),
     )
 }
 

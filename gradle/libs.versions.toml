@@ -24,6 +24,7 @@ java-jwt = "4.5.0"
 jwks-rsa = "0.23.0"
 jbcrypt = "0.4"
 exposed = "0.53.0"
+facebook-android = "18.2.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -70,6 +71,7 @@ ktor-clientSerializationKotlinxJson = { module = "io.ktor:ktor-serialization-kot
 ktor-clientAndroid = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 ktor-clientDarwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-clientJs = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
+facebook-login = { module = "com.facebook.android:facebook-login", version.ref = "facebook-android" }
 ktor-serverAutoHeadResponse = { module = "io.ktor:ktor-server-auto-head-response-jvm", version.ref = "ktor" }
 ktor-serverCachingHeaders = { module = "io.ktor:ktor-server-caching-headers-jvm", version.ref = "ktor" }
 ktor-serverCallLogging = { module = "io.ktor:ktor-server-call-logging-jvm", version.ref = "ktor" }

@@ -17,10 +17,17 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
+import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
 
 internal interface AuthGateway {
     suspend fun signIn(email: String, password: String): AuthSession
     suspend fun createAccount(email: String, password: String): AuthSession
+    suspend fun signInWithCredential(
+        provider: SocialAuthProvider,
+        credential: String,
+        credentialType: SocialAuthCredentialType,
+        displayName: String? = null,
+    ): AuthSession
     suspend fun getProfile(accessToken: String): AuthUser
     suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary>
     suspend fun getEvents(accessToken: String): List<AuthEventSummary>
@@ -30,6 +37,11 @@ internal interface AuthGateway {
         displayName: String,
         username: String?,
         phoneNumber: String?,
+        privacyConsent: KazePrivacyConsent? = null,
+    ): AuthUser
+    suspend fun updatePrivacyConsent(
+        accessToken: String,
+        privacyConsent: KazePrivacyConsent,
     ): AuthUser
     suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse
     suspend fun claimSession(loginToken: String): AuthSession
@@ -55,6 +67,23 @@ internal class KazeAuthGateway(
         client.post("$authBaseUrl/auth/signup") {
             contentType(ContentType.Application.Json)
             setBody(AuthSignupRequest(email = email, password = password))
+        }.body<AuthResponse>().toSession()
+
+    override suspend fun signInWithCredential(
+        provider: SocialAuthProvider,
+        credential: String,
+        credentialType: SocialAuthCredentialType,
+        displayName: String?,
+    ): AuthSession =
+        client.post("$authBaseUrl/auth/${provider.routeName}") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                SocialSigninRequest(
+                    idToken = credential.takeIf { credentialType == SocialAuthCredentialType.ID_TOKEN },
+                    accessToken = credential.takeIf { credentialType == SocialAuthCredentialType.ACCESS_TOKEN },
+                    displayName = displayName,
+                ),
+            )
         }.body<AuthResponse>().toSession()
 
     override suspend fun getProfile(accessToken: String): AuthUser =
@@ -88,6 +117,7 @@ internal class KazeAuthGateway(
         displayName: String,
         username: String?,
         phoneNumber: String?,
+        privacyConsent: KazePrivacyConsent?,
     ): AuthUser =
         client.put("$authBaseUrl/auth/me") {
             contentType(ContentType.Application.Json)
@@ -97,6 +127,21 @@ internal class KazeAuthGateway(
                     displayName = displayName,
                     username = username,
                     phoneNumber = phoneNumber,
+                    privacyConsent = privacyConsent?.toAuthPrivacyConsent(),
+                ),
+            )
+        }.body()
+
+    override suspend fun updatePrivacyConsent(
+        accessToken: String,
+        privacyConsent: KazePrivacyConsent,
+    ): AuthUser =
+        client.put("$authBaseUrl/auth/me") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(
+                AuthProfileUpdateRequest(
+                    privacyConsent = privacyConsent.toAuthPrivacyConsent(),
                 ),
             )
         }.body()
@@ -151,68 +196,52 @@ internal class KazeAuthGateway(
             displayName = user.displayName,
             username = user.username,
             phoneNumber = user.phoneNumber,
+            privacyConsent = user.privacyConsent,
         )
 }
 
-internal object DemoAuthGateway : AuthGateway {
-    override suspend fun signIn(email: String, password: String): AuthSession =
-        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = null, email = email.trim().lowercase())
+internal object NoopAuthGateway : AuthGateway {
+    override suspend fun signIn(email: String, password: String): AuthSession = unavailable()
 
-    override suspend fun createAccount(email: String, password: String): AuthSession =
-        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = null, email = email.trim().lowercase())
+    override suspend fun createAccount(email: String, password: String): AuthSession = unavailable()
 
-    override suspend fun getProfile(accessToken: String): AuthUser =
-        AuthUser(
-            id = "demo-user",
-            email = "demo@kaze.local",
-            displayName = "Kaze Demo",
-            username = "kaze.demo",
-            phoneNumber = "+250700000000",
-        )
+    override suspend fun signInWithCredential(
+        provider: SocialAuthProvider,
+        credential: String,
+        credentialType: SocialAuthCredentialType,
+        displayName: String?,
+    ): AuthSession = unavailable()
 
-    override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = emptyList()
+    override suspend fun getProfile(accessToken: String): AuthUser = unavailable()
 
-    override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = emptyList()
+    override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = unavailable()
+
+    override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = unavailable()
 
     override suspend fun respondToInvitation(
         accessToken: String,
         invitationId: String,
         response: String,
-    ): AuthInvitationSummary =
-        AuthInvitationSummary(
-            id = invitationId,
-            eventId = "demo-event",
-            title = "Demo invitation",
-            subtitle = "Kaze demo",
-            code = "DEMO",
-            phoneLabel = "Demo guest",
-            statusLabel = if (response.equals("accept", ignoreCase = true)) "Accepted" else "Declined",
-            state = if (response.equals("accept", ignoreCase = true)) "ACTIVE" else "ARCHIVED",
-            awaitingResponse = false,
-        )
+    ): AuthInvitationSummary = unavailable()
 
     override suspend fun updateProfile(
         accessToken: String,
         displayName: String,
         username: String?,
         phoneNumber: String?,
-    ): AuthUser =
-        AuthUser(
-            id = "demo-user",
-            email = "demo@kaze.local",
-            displayName = displayName,
-            username = username,
-            phoneNumber = phoneNumber,
-        )
+        privacyConsent: KazePrivacyConsent?,
+    ): AuthUser = unavailable()
 
-    override suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse =
-        AuthStartResponse(authorizationUrl = "", state = "")
+    override suspend fun updatePrivacyConsent(
+        accessToken: String,
+        privacyConsent: KazePrivacyConsent,
+    ): AuthUser = unavailable()
 
-    override suspend fun claimSession(loginToken: String): AuthSession =
-        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = null, email = "demo@kaze.local")
+    override suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse = unavailable()
 
-    override suspend fun refresh(refreshToken: String): AuthSession =
-        AuthSession(userId = "demo-user", accessToken = "demo-local-session", refreshToken = refreshToken, email = "demo@kaze.local")
+    override suspend fun claimSession(loginToken: String): AuthSession = unavailable()
+
+    override suspend fun refresh(refreshToken: String): AuthSession = unavailable()
 
     override suspend fun logout(accessToken: String?, refreshToken: String?) = Unit
 }
@@ -223,6 +252,14 @@ internal object NoopExternalUrlLauncher : ExternalUrlLauncher {
 
 internal interface ExternalUrlLauncher {
     fun open(url: String): Boolean
+}
+
+internal interface NativeSocialAuthLauncher {
+    suspend fun signIn(provider: SocialAuthProvider): NativeSocialAuthResult?
+}
+
+internal object NoopNativeSocialAuthLauncher : NativeSocialAuthLauncher {
+    override suspend fun signIn(provider: SocialAuthProvider): NativeSocialAuthResult? = null
 }
 
 internal fun createAuthHttpClient(): HttpClient {
@@ -240,6 +277,27 @@ internal expect fun defaultAuthApiBaseUrl(): String
 internal expect fun defaultDeviceLabel(): String
 
 internal expect fun createExternalUrlLauncher(): ExternalUrlLauncher
+
+internal expect fun createNativeSocialAuthLauncher(): NativeSocialAuthLauncher
+
+private fun KazePrivacyConsent.toAuthPrivacyConsent(): AuthPrivacyConsent =
+    AuthPrivacyConsent(
+        mapAndVenueActivityEnabled = mapAndVenueActivityEnabled,
+        diagnosticsEnabled = diagnosticsEnabled,
+        notificationsEnabled = notificationsEnabled,
+        analyticsEnabled = analyticsEnabled,
+    )
+
+private fun AuthPrivacyConsent.toKazePrivacyConsent(): KazePrivacyConsent =
+    KazePrivacyConsent(
+        mapAndVenueActivityEnabled = mapAndVenueActivityEnabled,
+        diagnosticsEnabled = diagnosticsEnabled,
+        notificationsEnabled = notificationsEnabled,
+        analyticsEnabled = analyticsEnabled,
+    )
+
+private fun unavailable(): Nothing =
+    error("AuthGateway is not configured for this environment.")
 
 internal fun Throwable.toAuthMessage(): String =
     when (this) {

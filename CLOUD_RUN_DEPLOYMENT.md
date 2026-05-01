@@ -10,6 +10,14 @@ This backend is ready to deploy to Google Cloud Run.
 
 Cloud Run can build directly from source, and because this repo now has a `Dockerfile`, Cloud Run will use that file when you run `gcloud run deploy --source .`.
 
+This project now uses a slightly more explicit deploy flow in `deploy-cloudrun.sh`:
+
+1. build the container image with Cloud Build
+2. stream the Cloud Build logs live
+3. deploy the built image to Cloud Run
+
+That flow is easier to understand than the default `gcloud run deploy --source .` spinner, which often just repeats "Building Container" without much detail.
+
 ## Recommended region
 
 Use `europe-west1`.
@@ -54,6 +62,20 @@ export GOOGLE_OAUTH_REDIRECT_URI="https://api.kazerwanda.com/api/v1/auth/google/
 
 /bin/sh ./deploy-cloudrun.sh
 ```
+
+Optional deploy variables:
+
+- `BUILD_REGION` to control Cloud Build region, default `global`
+- `ARTIFACT_REPOSITORY` to control the Artifact Registry Docker repository name, default `kaze-images`
+- `IMAGE_REPOSITORY` to override the pushed image repository
+- `IMAGE_TAG` to override the generated timestamp tag
+- `IMAGE_URI` to override the full image path directly
+
+By default, the deploy script now pushes to Artifact Registry using a repository like:
+
+- `europe-west1-docker.pkg.dev/PROJECT_ID/kaze-images/kaze-api:TIMESTAMP`
+
+This is usually more reliable than relying on `gcr.io/...` create-on-push behavior.
 
 After deployment, Cloud Run gives you a public `run.app` URL.
 

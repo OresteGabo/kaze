@@ -379,7 +379,7 @@ private fun PaymentMethodsCard() {
                 )
             }
             PaymentCashNotice()
-            // TODO Replace static payment method status with user account and provider verification data.
+            // TODO [PENDING] Replace static payment method status with user account and provider verification data.
         }
     }
 }

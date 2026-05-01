@@ -122,6 +122,10 @@ private val CREATE_SCHEMA_SQL = listOf(
     """.trimIndent(),
     "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS username VARCHAR(80)",
     "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(32)",
+    "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS map_and_venue_activity_enabled BOOLEAN NOT NULL DEFAULT true",
+    "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS diagnostics_enabled BOOLEAN NOT NULL DEFAULT true",
+    "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NULL DEFAULT true",
+    "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS analytics_enabled BOOLEAN NOT NULL DEFAULT false",
     """
     CREATE TABLE IF NOT EXISTS user_auth_providers (
         id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,

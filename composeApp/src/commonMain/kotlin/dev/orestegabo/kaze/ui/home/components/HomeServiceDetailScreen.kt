@@ -810,7 +810,8 @@ private fun ServiceResultDetailsPage(
             }
         }
 
-        // TODO Add richer venue pages from the backend: real photos, availability calendar, verified location, cancellation rules, reviews, and provider contacts.
+        // TODO [PENDING] Add richer venue pages from the backend: real photos, availability
+        // calendar, verified location, cancellation rules, reviews, and provider contacts.
         KazePrimaryButton(
             label = "Request to reserve",
             onClick = onReserve,

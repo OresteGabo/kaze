@@ -65,7 +65,9 @@ internal class AuthService(
                 message = "Google sign-in needs KAZE_GOOGLE_CLIENT_IDS or kaze.security.oauth.googleClientIds.",
             )
         }
-        val identity = tokenVerifier.verifyGoogle(request.idToken, jwtConfig.googleClientIds.first(), nonce = null)
+        val idToken = request.idToken?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw AuthProblemException(HttpStatusCode.BadRequest, "missing_id_token", "Google sign-in requires an id token.")
+        val identity = tokenVerifier.verifyGoogle(idToken, jwtConfig.googleClientIds.first(), nonce = null)
             .withRequestedDisplayName(request.displayName)
         return repository.upsertExternalUser(identity).user.toAuthResponse()
     }
@@ -78,7 +80,30 @@ internal class AuthService(
                 message = "Apple sign-in needs KAZE_APPLE_CLIENT_IDS or kaze.security.oauth.appleClientIds.",
             )
         }
-        val identity = tokenVerifier.verifyApple(request.idToken, jwtConfig.appleClientIds.first(), nonce = null)
+        val idToken = request.idToken?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw AuthProblemException(HttpStatusCode.BadRequest, "missing_id_token", "Apple sign-in requires an id token.")
+        val identity = tokenVerifier.verifyApple(idToken, jwtConfig.appleClientIds.first(), nonce = null)
+            .withRequestedDisplayName(request.displayName)
+        return repository.upsertExternalUser(identity).user.toAuthResponse()
+    }
+
+    suspend fun signinWithFacebook(request: SocialSigninRequest): AuthResponseDto {
+        val provider = requireSocialProviders().require(AuthProvider.FACEBOOK) as? FacebookOAuthProvider
+            ?: throw AuthProblemException(
+                status = HttpStatusCode.BadRequest,
+                code = "facebook_auth_not_configured",
+                message = "Facebook sign-in is not configured.",
+            )
+        if (!provider.isConfigured()) {
+            throw AuthProblemException(
+                status = HttpStatusCode.BadRequest,
+                code = "facebook_auth_not_configured",
+                message = "Facebook sign-in needs FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, and FACEBOOK_REDIRECT_URI.",
+            )
+        }
+        val accessToken = request.accessToken?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw AuthProblemException(HttpStatusCode.BadRequest, "missing_access_token", "Facebook sign-in requires an access token.")
+        val identity = provider.verifyAccessToken(accessToken)
             .withRequestedDisplayName(request.displayName)
         return repository.upsertExternalUser(identity).user.toAuthResponse()
     }
@@ -208,6 +233,7 @@ internal class AuthService(
             displayName = normalizedDisplayName ?: currentUser.user.displayName,
             username = normalizedUsername ?: currentUser.user.username,
             phoneNumber = normalizedPhoneNumber ?: currentUser.user.phoneNumber,
+            privacyConsent = request.privacyConsent?.toDomain() ?: currentUser.user.privacyConsent,
         )?.user?.toDto()
             ?: throw AuthProblemException(HttpStatusCode.InternalServerError, "profile_update_failed", "Could not update the profile right now.")
     }

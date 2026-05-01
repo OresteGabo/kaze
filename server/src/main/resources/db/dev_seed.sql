@@ -11,6 +11,7 @@ TRUNCATE TABLE
     access_passes,
     event_invitations,
     event_memberships,
+    venue_reservations,
     events,
     auth_one_time_login_tokens,
     auth_refresh_tokens,
@@ -221,6 +222,11 @@ INSERT INTO events (id, place_id, organizer_user_id, slug, title, event_type, li
     ('event_musanze_retreat_2025', 'rw-musanze-gorillas-nest', 'user_claudine_m', 'musanze-leadership-retreat-2025', 'Musanze Leadership Retreat 2025', 'RETREAT', 'COMPLETED', 'PRIVATE', 'A premium offsite for operators and founders combining working sessions with hosted dinners near Volcanoes National Park.', '2025-11-14 14:00:00+00', '2025-11-16 12:30:00+00'),
     ('event_garden_wedding_2025', 'rw-kgl-serena', 'user_david_k', 'ingabire-family-garden-wedding-2025', 'Ingabire Family Garden Wedding', 'WEDDING', 'COMPLETED', 'PRIVATE', 'A past family wedding weekend hosted between the Serena garden and a downtown dinner reception.', '2025-08-09 13:00:00+00', '2025-08-10 23:00:00+00'),
     ('event_kcc_trade_dinner_2025', 'rw-kgl-convention-centre', 'user_grace_u', 'trade-partners-dinner-2025', 'Trade Partners Dinner 2025', 'BUSINESS_EVENT', 'COMPLETED', 'PRIVATE', 'A hosted Kigali dinner for sponsors, partners, and selected delegates after a regional trade forum.', '2025-10-03 18:30:00+00', '2025-10-03 22:30:00+00');
+
+INSERT INTO venue_reservations (id, reservation_code, requester_user_id, place_id, service_id, event_id, event_name, preferred_date_label, guest_count, package_label, add_ons, payment_method, note, status, created_at, updated_at) VALUES
+    ('reservation_product_night', 'KAZE-PRODUCT1', 'user_ange_uwase', 'rw-kgl-marriott', 'svc_marriott_boardroom', 'event_product_night', 'Kigali Product Night', '25 Apr 2026 evening', 120, 'Evening launch package', ARRAY['Conference photography','Delegate arrival and wayfinding']::TEXT[], 'Pay deposit after venue confirmation', 'Need a quiet registration point and sponsor table near the room entrance.', 'PENDING_CONFIRMATION', '2026-04-22 09:15:00+00', '2026-04-22 09:15:00+00'),
+    ('reservation_umucyo_wedding', 'KAZE-UMUCYO1', 'user_david_k', 'rw-rebero-umucyo-gardens', 'svc_umucyo_garden', 'event_umucyo_wedding', 'Umutoni & Karemera Wedding Weekend', '26 Apr 2026 afternoon', 450, 'Garden ceremony and reception', ARRAY['Photo and film package','Wedding Guest Shuttle']::TEXT[], 'Venue invoice', 'Family arrival should separate elders, vendors, and general guests.', 'CONFIRMED', '2026-04-18 12:30:00+00', '2026-04-20 08:45:00+00'),
+    ('reservation_women_trade', 'KAZE-WITA261', 'user_grace_u', 'rw-kigali-intare-arena', 'svc_intare_mainhall', 'event_women_in_trade', 'Women In Trade Africa 2026', '8 May 2026 full day', 1200, 'Main hall conference package', ARRAY['Hybrid streaming production','Delegate arrival and wayfinding']::TEXT[], 'Pay deposit after venue confirmation', 'Need speaker green room, media table, and two registration flows.', 'PENDING_CONFIRMATION', '2026-04-24 10:05:00+00', '2026-04-24 10:05:00+00');
 
 INSERT INTO event_memberships (id, event_id, user_id, membership_role, membership_status, invited_by_user_id) VALUES
     ('membership_001', 'event_fintech_forum_2026', 'user_patrick_b', 'ORGANIZER', 'ACTIVE', NULL),

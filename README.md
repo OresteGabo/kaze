@@ -111,6 +111,16 @@ Use `.env.server.local` for:
 - OAuth client secrets
 - any other local or deployment credentials
 
+Apple sign-in server variables also belong in `.env.server.local`:
+- `APPLE_SERVICE_ID`
+- `APPLE_TEAM_ID`
+- `APPLE_KEY_ID`
+- `APPLE_PRIVATE_KEY_PEM`
+- `APPLE_REDIRECT_URI`
+- `KAZE_APPLE_CLIENT_IDS`
+
+Only put these in an Android Studio Run Configuration if you are launching the Ktor server directly from Android Studio. They do not belong in the mobile app environment itself.
+
 Both scripts load `.env.server.local` automatically:
 
 ```sh

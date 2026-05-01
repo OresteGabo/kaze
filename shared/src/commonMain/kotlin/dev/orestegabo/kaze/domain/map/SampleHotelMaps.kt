@@ -13,8 +13,8 @@ val sampleMarriottConventionMap = hotelMap(
         width = 1200f,
         height = 1200f,
     ) {
-        // TODO: Replace these temporary venue coordinates and labels with real hotel spaces
-        // once branded hotel SVG plans are ready.
+        // TODO [PENDING]: Replace these temporary venue coordinates and labels with real hotel
+        // spaces once branded hotel SVG plans are ready.
         node(id = "auditorium-1", label = "Auditorium, Room 1", kind = MapNodeKind.BALLROOM, x = 252f, y = 924f)
         node(id = "lightning-room", label = "Room 5, Lightning talks", kind = MapNodeKind.ROOM, x = 444f, y = 192f)
         node(id = "room-2", label = "Room 2", kind = MapNodeKind.ROOM, x = 360f, y = 420f)
@@ -31,8 +31,8 @@ val sampleMarriottConventionMap = hotelMap(
         width = 1200f,
         height = 1200f,
     ) {
-        // TODO: Replace these temporary venue coordinates and labels with real hotel spaces
-        // once branded hotel SVG plans are ready.
+        // TODO [PENDING]: Replace these temporary venue coordinates and labels with real hotel
+        // spaces once branded hotel SVG plans are ready.
         node(id = "room-11b", label = "Room 11b", kind = MapNodeKind.ROOM, x = 360f, y = 396f)
         node(id = "room-11a", label = "Room 11a", kind = MapNodeKind.ROOM, x = 360f, y = 444f)
         node(id = "room-12b", label = "Room 12b", kind = MapNodeKind.ROOM, x = 540f, y = 396f)

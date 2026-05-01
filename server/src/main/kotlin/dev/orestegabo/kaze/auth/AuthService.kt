@@ -244,6 +244,9 @@ internal class AuthService(
     fun currentUserEvents(userId: String): List<AuthEventSummaryDto> =
         repository.listEventsForUser(userId)
 
+    fun currentUserActiveStay(userId: String): AuthActiveStayDto? =
+        repository.findActiveStayForUser(userId)
+
     fun respondToInvitation(userId: String, invitationId: String, request: AuthInvitationResponseRequest): AuthInvitationSummaryDto {
         val accepted = when (request.response.trim().uppercase()) {
             "ACCEPT", "ACCEPTED" -> true

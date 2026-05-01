@@ -2,6 +2,8 @@ package dev.orestegabo.kaze.infrastructure
 
 import dev.orestegabo.kaze.application.AmenityStatus
 import dev.orestegabo.kaze.application.GuestProfile
+import dev.orestegabo.kaze.application.ReservationDraftSubmission
+import dev.orestegabo.kaze.application.VenueReservation
 import dev.orestegabo.kaze.data.repository.ExperienceRepository
 import dev.orestegabo.kaze.data.repository.HotelRepository
 import dev.orestegabo.kaze.data.repository.MapRepository
@@ -768,6 +770,152 @@ internal class JdbcStayRepository(
             }
         }
     }
+}
+
+internal class JdbcReservationRepository(
+    private val dataSource: DataSource,
+) {
+    suspend fun create(draft: ReservationDraftSubmission): VenueReservation =
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            try {
+                val placeName = requirePlaceName(connection, draft.placeId)
+                if (draft.serviceId != null) {
+                    requireServiceBelongsToPlace(connection, draft.serviceId, draft.placeId)
+                }
+
+                val eventId = "event_${UUID.randomUUID().toString().replace("-", "")}"
+                val reservationId = "reservation_${UUID.randomUUID().toString().replace("-", "")}"
+                val reservationCode = buildReservationCode()
+                val createdAt = Instant.now()
+                val summary = buildString {
+                    append("Reservation request for ")
+                    append(draft.guestCount)
+                    append(" guests at ")
+                    append(placeName)
+                    if (draft.packageLabel.isNotBlank()) {
+                        append(" using ")
+                        append(draft.packageLabel)
+                    }
+                    append(".")
+                }
+
+                connection.prepareStatement(
+                    """
+                    INSERT INTO events (id, place_id, organizer_user_id, slug, title, event_type, lifecycle_status, visibility, summary)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, eventId)
+                    statement.setString(2, draft.placeId)
+                    statement.setString(3, draft.organizerUserId)
+                    statement.setString(4, eventId)
+                    statement.setString(5, draft.eventName)
+                    statement.setString(6, "RESERVATION")
+                    statement.setString(7, "DRAFT")
+                    statement.setString(8, "PRIVATE")
+                    statement.setString(9, summary)
+                    statement.executeUpdate()
+                }
+
+                connection.prepareStatement(
+                    """
+                    INSERT INTO event_memberships (event_id, user_id, membership_role, membership_status)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT (event_id, user_id) DO NOTHING
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, eventId)
+                    statement.setString(2, draft.organizerUserId)
+                    statement.setString(3, "ORGANIZER")
+                    statement.setString(4, "ACTIVE")
+                    statement.executeUpdate()
+                }
+
+                connection.prepareStatement(
+                    """
+                    INSERT INTO venue_reservations (
+                        id, reservation_code, requester_user_id, place_id, service_id, event_id, event_name,
+                        preferred_date_label, guest_count, package_label, add_ons, payment_method, note, status, created_at, updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, reservationId)
+                    statement.setString(2, reservationCode)
+                    statement.setString(3, draft.organizerUserId)
+                    statement.setString(4, draft.placeId)
+                    statement.setNullableString(5, draft.serviceId)
+                    statement.setString(6, eventId)
+                    statement.setString(7, draft.eventName)
+                    statement.setString(8, draft.preferredDateLabel)
+                    statement.setInt(9, draft.guestCount)
+                    statement.setString(10, draft.packageLabel)
+                    statement.setArray(11, connection.createArrayOf("text", draft.addOns.toTypedArray()))
+                    statement.setString(12, draft.paymentMethod)
+                    statement.setNullableString(13, draft.note?.takeIf { it.isNotBlank() })
+                    statement.setString(14, "PENDING_CONFIRMATION")
+                    statement.setTimestamp(15, java.sql.Timestamp.from(createdAt))
+                    statement.setTimestamp(16, java.sql.Timestamp.from(createdAt))
+                    statement.executeUpdate()
+                }
+
+                connection.commit()
+                VenueReservation(
+                    id = reservationId,
+                    reservationCode = reservationCode,
+                    eventId = eventId,
+                    placeId = draft.placeId,
+                    placeName = placeName,
+                    serviceId = draft.serviceId,
+                    status = "PENDING_CONFIRMATION",
+                    eventName = draft.eventName,
+                    preferredDateLabel = draft.preferredDateLabel,
+                    guestCount = draft.guestCount,
+                    packageLabel = draft.packageLabel,
+                    addOns = draft.addOns,
+                    paymentMethod = draft.paymentMethod,
+                    createdAt = createdAt,
+                )
+            } catch (throwable: Throwable) {
+                connection.rollback()
+                throw throwable
+            } finally {
+                connection.autoCommit = true
+            }
+        }
+
+    private fun requirePlaceName(connection: Connection, placeId: String): String =
+        connection.prepareStatement(
+            """
+            SELECT name
+            FROM service_places
+            WHERE id = ?
+            """.trimIndent(),
+        ).use { statement ->
+            statement.setString(1, placeId)
+            statement.executeQuery().use { result ->
+                if (result.next()) result.getString("name") else error("Unknown place id: $placeId")
+            }
+        }
+
+    private fun requireServiceBelongsToPlace(connection: Connection, serviceId: String, placeId: String) {
+        val exists = connection.prepareStatement(
+            """
+            SELECT 1
+            FROM place_services
+            WHERE id = ? AND place_id = ?
+            """.trimIndent(),
+        ).use { statement ->
+            statement.setString(1, serviceId)
+            statement.setString(2, placeId)
+            statement.executeQuery().use { result -> result.next() }
+        }
+        require(exists) { "Unknown service id for place." }
+    }
+
+    private fun buildReservationCode(): String =
+        "KAZE-${UUID.randomUUID().toString().replace("-", "").take(8).uppercase()}"
 }
 
 internal class AmenityKnowledgeRepository(

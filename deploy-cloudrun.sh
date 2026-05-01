@@ -15,12 +15,18 @@ fi
 SERVICE_NAME="${SERVICE_NAME:-kaze-api}"
 REGION="${REGION:-europe-west1}"
 PROJECT_ID="${PROJECT_ID:-}"
+BUILD_REGION="${BUILD_REGION:-global}"
+ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY:-kaze-images}"
 
 if [ -z "$PROJECT_ID" ]; then
   echo "Missing PROJECT_ID"
   echo "Set PROJECT_ID in $LOCAL_ENV_FILE or export it before running ./deploy-cloudrun.sh."
   exit 1
 fi
+
+IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REPOSITORY/$SERVICE_NAME}"
+IMAGE_TAG="${IMAGE_TAG:-$(date -u +"%Y%m%d-%H%M%S")}"
+IMAGE_URI="${IMAGE_URI:-$IMAGE_REPOSITORY:$IMAGE_TAG}"
 
 if [ -z "${DATABASE_URL:-}" ]; then
   echo "Missing DATABASE_URL"
@@ -39,6 +45,76 @@ trap 'rm -f "$ENV_FILE"' EXIT
 
 yaml_quote() {
   printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+stream_build_logs() {
+  if [ "${RAW_BUILD_LOGS:-0}" = "1" ]; then
+    gcloud builds log "$BUILD_ID" \
+      --region "$BUILD_REGION" \
+      --stream
+    return
+  fi
+
+  gcloud builds log "$BUILD_ID" \
+    --region "$BUILD_REGION" \
+    --stream | awk '
+      /^gcloud builds log --stream only displays logs from Cloud Storage\./ { next }
+      /^gcloud beta builds log --stream$/ { next }
+      /^Waiting for build to complete\./ { next }
+      /^-+ REMOTE BUILD OUTPUT -+$/ { next }
+      /^Fetching storage object:/ { next }
+      /^Copying gs:\/\// { next }
+      /^Operation completed over / { next }
+      /^Already have image \(with digest\):/ { next }
+      /^Sending build context to Docker daemon/ { next }
+      /^[0-9a-f]+: (Pulling fs layer|Waiting|Verifying Checksum|Download complete|Pull complete|Preparing)$/ { next }
+      /^Removing intermediate container / { next }
+      /^ ---> [0-9a-f]+$/ { next }
+      /^Status: Downloaded newer image for / { next }
+      /^Digest: sha256:/ { next }
+      /^Welcome to Gradle / { next }
+      /^Here are the highlights of this release:$/ { next }
+      /^ - / { next }
+      /^For more details see https:\/\/docs\.gradle\.org\// { next }
+      /^To honour the JVM settings for this build / { next }
+      /^Daemon will be stopped at the end of the build$/ { next }
+      /^Calculating task graph as no cached configuration is available/ { next }
+      /^Type-safe project accessors is an incubating feature\.$/ { next }
+      /^\[Incubating\] Problems report is available at:/ { next }
+      /^Configuration cache entry stored\.$/ { next }
+      /^WARNING: The option setting '\''android\./ { next }
+      /^The current default is '\''(true|false)'\''\.$/ { next }
+      /^It will be removed in version 10\.0 of the Android Gradle plugin\.$/ { next }
+      /^WARNING: The property android\.dependency\.excludeLibraryComponentsFromConstraints/ { next }
+      /^To suppress this warning, add android\.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle\.properties$/ { next }
+      /^w: file:\/\/\/workspace\/shared\/build\.gradle\.kts:40:1: / { next }
+      /^w: ⚠️ The '\''org\.jetbrains\.kotlin\.multiplatform'\'' plugin deprecated compatibility/ { next }
+      /^The '\''org\.jetbrains\.kotlin\.multiplatform'\'' plugin is not compatible/ { next }
+      /^Solution: Please use the '\''com\.android\.kotlin\.multiplatform\.library'\'' plugin instead of '\''com\.android\.library'\''\.$/ { next }
+      /^See https:\/\/kotl\.in\/gradle\/agp-new-kmp for more details\.$/ { next }
+      /^Step [0-9]+\/[0-9]+ : / {
+        print "";
+        print $0;
+        next;
+      }
+      /^(FETCHSOURCE|BUILD|PUSH|DONE|ERROR)$/ {
+        print "";
+        print "== " $0 " ==";
+        next;
+      }
+      /^BUILD SUCCESSFUL in / {
+        print "";
+        print $0;
+        next;
+      }
+      /^Successfully built / { print $0; next }
+      /^Successfully tagged / { print $0; next }
+      /^[a-z0-9]+: Pushed$/ { next }
+      /^[0-9]{8}-[0-9]{6}: digest: sha256:/ { print $0; next }
+      /^Created \[https:\/\/cloudbuild.googleapis.com\// { next }
+      /^Logs are available at \[/ { next }
+      { print }
+    '
 }
 
 cat > "$ENV_FILE" <<EOF
@@ -65,10 +141,51 @@ FACEBOOK_REDIRECT_URI: "$(yaml_quote "${FACEBOOK_REDIRECT_URI:-}")"
 KAZE_CORS_ALLOWED_HOSTS: "$(yaml_quote "${KAZE_CORS_ALLOWED_HOSTS:-api.kazerwanda.com,www.kazerwanda.com,kazerwanda.com}")"
 EOF
 
+echo "==> Selecting Google Cloud project: $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
+echo "==> Ensuring Artifact Registry repository exists"
+if gcloud artifacts repositories describe "$ARTIFACT_REPOSITORY" \
+  --location "$REGION" >/dev/null 2>&1; then
+  echo "    Using existing repository: $ARTIFACT_REPOSITORY"
+else
+  echo "    Creating repository: $ARTIFACT_REPOSITORY"
+  gcloud artifacts repositories create "$ARTIFACT_REPOSITORY" \
+    --location "$REGION" \
+    --repository-format docker \
+    --description "Container images for $SERVICE_NAME"
+fi
+
+echo "==> Building container image"
+echo "    Image: $IMAGE_URI"
+BUILD_ID="$(gcloud builds submit . \
+  --tag "$IMAGE_URI" \
+  --region "$BUILD_REGION" \
+  --async \
+  --format='value(id)')"
+
+if [ -z "$BUILD_ID" ]; then
+  echo "Could not determine Cloud Build ID."
+  exit 1
+fi
+
+echo "    Build ID: $BUILD_ID"
+echo "    Console: https://console.cloud.google.com/cloud-build/builds/$BUILD_ID?project=$PROJECT_ID"
+echo "==> Streaming Cloud Build logs"
+stream_build_logs
+
+BUILD_STATUS="$(gcloud builds describe "$BUILD_ID" \
+  --region "$BUILD_REGION" \
+  --format='value(status)')"
+
+if [ "$BUILD_STATUS" != "SUCCESS" ]; then
+  echo "Cloud Build finished with status: $BUILD_STATUS"
+  exit 1
+fi
+
+echo "==> Deploying image to Cloud Run"
 gcloud run deploy "$SERVICE_NAME" \
-  --source . \
+  --image "$IMAGE_URI" \
   --region "$REGION" \
   --platform managed \
   --allow-unauthenticated \

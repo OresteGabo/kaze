@@ -208,6 +208,25 @@ internal class FacebookOAuthProvider(
         )
     }
 
+    suspend fun verifyAccessToken(accessToken: String): ExternalIdentity {
+        validateFacebookAccessToken(accessToken)
+        val profile = fetchFacebookProfile(accessToken)
+        val email = profile.email?.let(::normalizeEmailOrNull)
+            ?: throw AuthProblemException(
+                status = io.ktor.http.HttpStatusCode.Unauthorized,
+                code = "identity_email_missing",
+                message = "Facebook did not return an email. Ask the user to authorize email access or use another login method.",
+            )
+        return ExternalIdentity(
+            provider = AuthProvider.FACEBOOK,
+            providerSubject = profile.id,
+            email = email,
+            emailVerified = true,
+            displayName = profile.name,
+            avatarUrl = profile.picture?.data?.url,
+        )
+    }
+
     private suspend fun validateFacebookAccessToken(accessToken: String) {
         val appAccessToken = "${config.clientId}|${config.clientSecret}"
         val response = httpClient.get("https://graph.facebook.com/debug_token") {

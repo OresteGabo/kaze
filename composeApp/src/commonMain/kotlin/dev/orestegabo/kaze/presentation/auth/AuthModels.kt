@@ -143,6 +143,14 @@ internal data class AuthActiveStayResponse(
 )
 
 @Serializable
+internal data class AuthSessionBootstrap(
+    val user: AuthUser,
+    val invitations: List<AuthInvitationSummary> = emptyList(),
+    val events: List<AuthEventSummary> = emptyList(),
+    val activeStay: AuthActiveStay? = null,
+)
+
+@Serializable
 internal data class AuthInvitationResponseRequest(
     val response: String,
 )
@@ -184,3 +192,15 @@ internal data class SocialSigninRequest(
     val accessToken: String? = null,
     val displayName: String? = null,
 )
+
+@Serializable
+internal data class AuthApiProblem(
+    val code: String,
+    val message: String,
+)
+
+internal data class AuthGatewayProblemException(
+    val statusCode: Int,
+    val problemCode: String? = null,
+    override val message: String,
+) : RuntimeException(message)

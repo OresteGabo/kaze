@@ -81,7 +81,7 @@ internal fun Application.loadJwtConfig(): JwtConfig =
             accessTokenTtlSeconds = configString("kaze.security.jwt.accessTokenTtlSeconds", DEFAULT_ACCESS_TOKEN_TTL_SECONDS.toString(), "KAZE_JWT_ACCESS_TOKEN_TTL_SECONDS").toLong(),
             refreshTokenTtlSeconds = configString("kaze.security.jwt.refreshTokenTtlSeconds", DEFAULT_REFRESH_TOKEN_TTL_SECONDS.toString(), "KAZE_JWT_REFRESH_TOKEN_TTL_SECONDS").toLong(),
             oneTimeLoginTokenTtlSeconds = configString("kaze.security.jwt.oneTimeLoginTokenTtlSeconds", DEFAULT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS.toString(), "KAZE_JWT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS").toLong(),
-            requireJwtForApi = configString("kaze.security.jwt.requireForApi", "false", "KAZE_JWT_REQUIRE_FOR_API").toBooleanStrictOrNull() ?: false,
+            requireJwtForApi = configString("kaze.security.jwt.requireForApi", "true", "KAZE_JWT_REQUIRE_FOR_API").toBooleanStrictOrNull() ?: true,
             googleClientIds = configCsv("kaze.security.oauth.googleClientIds", "KAZE_GOOGLE_CLIENT_IDS")
                 .ifEmpty { googleConfig.clientId.takeIf { it.isNotBlank() }?.let(::setOf) ?: emptySet() },
             appleClientIds = configCsv("kaze.security.oauth.appleClientIds", "KAZE_APPLE_CLIENT_IDS")
@@ -125,7 +125,7 @@ private fun Application.configCsv(path: String, envVar: String? = null): Set<Str
         ?.toSet()
         ?: emptySet()
 
-private const val DEFAULT_DEV_JWT_SECRET = "change-this-dev-only-kaze-jwt-secret-at-least-32-chars"
+internal const val DEFAULT_DEV_JWT_SECRET = "change-this-dev-only-kaze-jwt-secret-at-least-32-chars"
 private val DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 12.hours.inWholeSeconds
 private val DEFAULT_REFRESH_TOKEN_TTL_SECONDS = 60.days.inWholeSeconds
 private const val DEFAULT_ONE_TIME_LOGIN_TOKEN_TTL_SECONDS = 120L

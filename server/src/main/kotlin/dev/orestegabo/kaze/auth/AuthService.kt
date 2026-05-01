@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.HttpStatusCode
 import org.mindrot.jbcrypt.BCrypt
+import java.sql.SQLException
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -25,23 +26,32 @@ internal class AuthService(
         val username = request.username?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeUsername)
         val phoneNumber = request.phoneNumber?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizePhoneNumber)
         validatePassword(request.password)
-        if (repository.findByEmail(email) != null) {
+        val conflicts = repository.findSignupConflicts(
+            email = email,
+            username = username,
+            phoneNumber = phoneNumber,
+        )
+        if (conflicts.emailExists) {
             throw AuthProblemException(HttpStatusCode.Conflict, "email_already_registered", "This email is already registered.")
         }
-        if (username != null && repository.findByUsername(username) != null) {
+        if (conflicts.usernameExists) {
             throw AuthProblemException(HttpStatusCode.Conflict, "username_already_registered", "This username is already taken.")
         }
-        if (phoneNumber != null && repository.findByPhoneNumber(phoneNumber) != null) {
+        if (conflicts.phoneNumberExists) {
             throw AuthProblemException(HttpStatusCode.Conflict, "phone_number_already_registered", "This phone number is already registered.")
         }
 
-        val user = repository.createPasswordUser(
-            email = email,
-            passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt(BCRYPT_COST)),
-            displayName = request.displayName?.trim()?.takeIf { it.isNotEmpty() } ?: username,
-            username = username,
-            phoneNumber = phoneNumber,
-        ).user
+        val user = try {
+            repository.createPasswordUser(
+                email = email,
+                passwordHash = BCrypt.hashpw(request.password, BCrypt.gensalt(BCRYPT_COST)),
+                displayName = request.displayName?.trim()?.takeIf { it.isNotEmpty() } ?: username,
+                username = username,
+                phoneNumber = phoneNumber,
+            ).user
+        } catch (cause: Throwable) {
+            throw cause.toSignupProblem() ?: cause
+        }
         return user.toAuthResponse()
     }
 
@@ -203,6 +213,14 @@ internal class AuthService(
     fun currentUser(userId: String): AuthUserDto =
         repository.findById(userId)?.user?.toDto()
             ?: throw AuthProblemException(HttpStatusCode.NotFound, "user_not_found", "The signed-in user could not be found.")
+
+    fun currentUserSession(userId: String): AuthSessionBootstrapDto =
+        AuthSessionBootstrapDto(
+            user = currentUser(userId),
+            invitations = currentUserInvitations(userId),
+            events = currentUserEvents(userId),
+            activeStay = currentUserActiveStay(userId),
+        )
 
     fun updateProfile(userId: String, request: AuthProfileUpdateRequest): AuthUserDto {
         val currentUser = repository.findById(userId)
@@ -393,9 +411,34 @@ private fun appendQueryParams(baseUrl: String, params: Map<String, String>): Str
     }
 }
 
+private fun Throwable.toSignupProblem(): AuthProblemException? {
+    val sqlException = generateSequence(this) { it.cause }
+        .filterIsInstance<SQLException>()
+        .firstOrNull { it.sqlState == UNIQUE_VIOLATION_SQL_STATE }
+        ?: return null
+    val detail = buildString {
+        append(sqlException.message.orEmpty())
+        sqlException.nextException?.message?.let {
+            append(' ')
+            append(it)
+        }
+    }.lowercase()
+    return when {
+        "app_users_email_key" in detail || "email" in detail ->
+            AuthProblemException(HttpStatusCode.Conflict, "email_already_registered", "This email is already registered.")
+        "app_users_username_idx" in detail || "username" in detail ->
+            AuthProblemException(HttpStatusCode.Conflict, "username_already_registered", "This username is already taken.")
+        "app_users_phone_number_idx" in detail || "phone_number" in detail || "phone number" in detail ->
+            AuthProblemException(HttpStatusCode.Conflict, "phone_number_already_registered", "This phone number is already registered.")
+        else ->
+            AuthProblemException(HttpStatusCode.Conflict, "account_already_registered", "This account already exists.")
+    }
+}
+
 private const val MIN_PASSWORD_LENGTH = 8
 private const val BCRYPT_COST = 12
 private const val OAUTH_ATTEMPT_TTL_SECONDS = 600L
+private const val UNIQUE_VIOLATION_SQL_STATE = "23505"
 private val EMAIL_REGEX = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 private val USERNAME_REGEX = Regex("^[a-z0-9._]{3,32}$")
 private val PHONE_NUMBER_REGEX = Regex("^\\+?[1-9][0-9]{7,14}$")

@@ -1,13 +1,17 @@
 package dev.orestegabo.kaze.api
 
 import dev.orestegabo.kaze.auth.AuthService
+import dev.orestegabo.kaze.application.ReservationDraftSubmission
 import dev.orestegabo.kaze.application.ServerDependencies
 import dev.orestegabo.kaze.application.isProductionEnvironment
 import io.ktor.http.HttpHeaders
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.AuthenticationStrategy
+import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.request.receive
@@ -103,6 +107,28 @@ private fun Route.registerPublicApiV1Routes(
 private fun Route.registerPrivateApiV1Routes(
     dependencies: ServerDependencies,
 ) {
+    post("/reservations") {
+        call.noStore()
+        val userId = call.authenticatedUserId()
+        val request = call.receive<ReservationDraftSubmissionRequest>()
+        call.respond(
+            dependencies.reservationService.submitReservation(
+                ReservationDraftSubmission(
+                    organizerUserId = userId,
+                    placeId = request.placeId,
+                    serviceId = request.serviceId?.takeIf { it.isNotBlank() },
+                    eventName = request.eventName.trim(),
+                    preferredDateLabel = request.preferredDateLabel.trim(),
+                    guestCount = request.guestCount,
+                    packageLabel = request.packageLabel.trim(),
+                    addOns = request.addOns.map { it.trim() }.filter { it.isNotBlank() },
+                    paymentMethod = request.paymentMethod.trim(),
+                    note = request.note?.trim()?.takeIf { it.isNotBlank() },
+                ),
+            ).toDto(),
+        )
+    }
+
     route("/hotels/{hotelId}") {
         get("/map") {
             call.noStore()
@@ -201,6 +227,11 @@ private fun io.ktor.server.application.ApplicationCall.requiredQuery(name: Strin
 
 private fun io.ktor.server.application.ApplicationCall.queryOrDefault(name: String, default: String): String =
     request.queryParameters[name] ?: default
+
+private fun ApplicationCall.authenticatedUserId(): String =
+    principal<JWTPrincipal>()?.payload?.subject?.takeIf { it.isNotBlank() }
+        ?: principal<UserIdPrincipal>()?.name?.takeIf { it.isNotBlank() && it != "api-client" }
+        ?: throw IllegalArgumentException("A signed-in user is required.")
 
 private fun ApplicationCall.cachePublicJson(maxAgeSeconds: Int = PUBLIC_JSON_CACHE_SECONDS) {
     response.header(

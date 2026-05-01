@@ -781,7 +781,8 @@ private data class ReservationPackageOption(
 )
 
 private fun defaultReservationPackages(categoryTitle: String): List<ReservationPackageOption> {
-    // TODO Load real packages, availability windows, venue rules, and price breakdowns from the Ktor API/database.
+    // TODO [IN-PROGRESS] Reservation submission is backend-backed; load packages, availability windows,
+    // venue rules, and price breakdowns from a real reservation catalog API instead of UI defaults.
     return when (categoryTitle) {
         "Wedding venues" -> listOf(
             ReservationPackageOption("Venue only", "Reserve the space and coordinate services later."),
@@ -807,7 +808,8 @@ private fun defaultReservationPackages(categoryTitle: String): List<ReservationP
 }
 
 private fun defaultReservationAddOns(categoryTitle: String): List<String> {
-    // TODO Route add-ons to the right product modules: catering, styling, cleaning, insurance, media, transport, and event layouts.
+    // TODO [PENDING] Route add-ons to the right product modules: catering, styling, cleaning,
+    // insurance, media, transport, and event layouts.
     return when (categoryTitle) {
         "Wedding venues" -> listOf("Catering", "Styling & decor", "Photo & video", "Guest access", "Insurance")
         "Conference rooms" -> listOf("Coffee break", "Projector", "Livestream", "Guest access", "Cleaning")
@@ -828,7 +830,8 @@ private fun defaultPaymentMethods(): List<String> = listOf(
 )
 
 private fun paymentSubtitle(method: String): String {
-    // TODO Validate payment methods per platform, provider, hotel, venue, and country before showing them as available.
+    // TODO [PENDING] Validate payment methods per platform, provider, hotel, venue, and country
+    // before showing them as available.
     return when (method) {
         "Cash at venue" -> "Confirm in Kaze after payment is received."
         "Card" -> "Useful for guests or companies that prefer card payment."
@@ -843,6 +846,8 @@ private data class ReservationServerIds(
 )
 
 private fun HomeServiceResult.reservationServerIds(content: HomeServicePageContent): ReservationServerIds =
+    // TODO [IN-PROGRESS] Reservation writes are persisted; replace this UI-side mapping with
+    // place/service IDs returned by the public venue catalog API.
     when (title) {
         "Kigali Garden Pavilion", "Lake View Wedding Lawn" ->
             ReservationServerIds("rw-rebero-umucyo-gardens", "svc_umucyo_garden")
@@ -886,7 +891,8 @@ private fun reservationInvitationSeed(
     guests: Int,
     note: String,
 ): InvitationDraftSeed {
-    // TODO Replace this heuristic with an event type returned by the reservation API when venues/services become database-backed.
+    // TODO [IN-PROGRESS] Replace this heuristic with an event type returned by the reservation
+    // API/catalog once venue/service details are fully database-backed.
     val eventType = when (content.title) {
         "Wedding venues" -> InvitationEventType.WEDDING
         "Conference rooms" -> InvitationEventType.CONFERENCE

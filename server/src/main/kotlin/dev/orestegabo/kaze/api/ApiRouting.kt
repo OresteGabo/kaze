@@ -42,7 +42,9 @@ internal fun Application.registerApiRoutes(
 
         rateLimit(ApiRateLimit) {
             route("/api/v1") {
-                registerAuthRoutes(authService)
+                rateLimit(AuthRateLimit) {
+                    registerAuthRoutes(authService)
+                }
                 registerPublicApiV1Routes(dependencies)
 
                 if (isApiAuthenticationEnabled() || isJwtAuthenticationRequired()) {

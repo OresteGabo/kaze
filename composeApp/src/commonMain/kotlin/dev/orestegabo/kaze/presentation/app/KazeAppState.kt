@@ -21,6 +21,7 @@ internal data class KazeAppUiState(
     val sessionEvents: List<AuthEventSummary> = emptyList(),
     val themeMode: KazeThemeMode = KazeThemeMode.SYSTEM,
     val edgeAiEnabled: Boolean = true,
+    val privacyConsent: KazePrivacyConsent = KazePrivacyConsent(),
     val currentDestination: KazeDestination = KazeDestination.HOME,
     val activeMapTarget: MapNavigationTarget = MapNavigationTarget(),
     val feedbackMessage: String = "",
@@ -35,4 +36,11 @@ internal enum class KazeSessionMode {
 internal data class KazeSuccessCelebration(
     val title: String,
     val subtitle: String,
+)
+
+internal data class KazePrivacyConsent(
+    val mapAndVenueActivityEnabled: Boolean = true,
+    val diagnosticsEnabled: Boolean = true,
+    val notificationsEnabled: Boolean = true,
+    val analyticsEnabled: Boolean = false,
 )

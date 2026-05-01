@@ -8,6 +8,11 @@ internal enum class SocialAuthProvider(val routeName: String, val displayName: S
     FACEBOOK("facebook", "Facebook"),
 }
 
+internal enum class SocialAuthCredentialType {
+    ID_TOKEN,
+    ACCESS_TOKEN,
+}
+
 internal data class AuthSession(
     val userId: String,
     val accessToken: String,
@@ -16,6 +21,13 @@ internal data class AuthSession(
     val displayName: String? = null,
     val username: String? = null,
     val phoneNumber: String? = null,
+    val privacyConsent: AuthPrivacyConsent = AuthPrivacyConsent(),
+)
+
+internal data class NativeSocialAuthResult(
+    val credential: String,
+    val credentialType: SocialAuthCredentialType = SocialAuthCredentialType.ID_TOKEN,
+    val displayName: String? = null,
 )
 
 @Serializable
@@ -56,6 +68,7 @@ internal data class AuthProfileUpdateRequest(
     val displayName: String? = null,
     val username: String? = null,
     val phoneNumber: String? = null,
+    val privacyConsent: AuthPrivacyConsent? = null,
 )
 
 @Serializable
@@ -72,7 +85,16 @@ internal data class AuthUser(
     val displayName: String? = null,
     val username: String? = null,
     val phoneNumber: String? = null,
+    val privacyConsent: AuthPrivacyConsent = AuthPrivacyConsent(),
     val roles: List<String> = emptyList(),
+)
+
+@Serializable
+internal data class AuthPrivacyConsent(
+    val mapAndVenueActivityEnabled: Boolean = true,
+    val diagnosticsEnabled: Boolean = true,
+    val notificationsEnabled: Boolean = true,
+    val analyticsEnabled: Boolean = false,
 )
 
 @Serializable
@@ -105,4 +127,11 @@ internal data class AuthEventSummary(
 @Serializable
 internal data class AuthInvitationResponseRequest(
     val response: String,
+)
+
+@Serializable
+internal data class SocialSigninRequest(
+    val idToken: String? = null,
+    val accessToken: String? = null,
+    val displayName: String? = null,
 )

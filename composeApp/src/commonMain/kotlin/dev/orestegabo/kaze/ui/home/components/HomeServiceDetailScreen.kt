@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
+import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
@@ -124,6 +126,7 @@ internal fun HomeServiceDetailScreen(
     serviceQuery: String,
     bottomContentPadding: Dp,
     onBack: () -> Unit,
+    onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
 ) {
     val content = servicePageContent(serviceQuery)
     val scrollState = rememberScrollState()
@@ -151,6 +154,7 @@ internal fun HomeServiceDetailScreen(
             result = selectedResult,
             bottomContentPadding = bottomContentPadding,
             onBack = { selectedResultTitle = null },
+            onSubmitReservation = onSubmitReservation,
         )
         return
     }
@@ -586,6 +590,7 @@ private fun HomeServiceResultDetailScreen(
     result: HomeServiceResult,
     bottomContentPadding: Dp,
     onBack: () -> Unit,
+    onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
 ) {
     val scrollState = rememberScrollState()
     var selectedTab by rememberSaveable(result.title) { mutableStateOf(ServiceResultDetailTab.DETAILS.name) }
@@ -597,6 +602,7 @@ private fun HomeServiceResultDetailScreen(
             result = result,
             bottomContentPadding = bottomContentPadding,
             onBack = { isReservationDraftOpen = false },
+            onSubmitReservation = onSubmitReservation,
         )
         return
     }

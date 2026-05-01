@@ -130,6 +130,37 @@ internal data class AuthInvitationResponseRequest(
 )
 
 @Serializable
+internal data class ReservationDraftSubmissionRequest(
+    val placeId: String,
+    val serviceId: String? = null,
+    val eventName: String,
+    val preferredDateLabel: String,
+    val guestCount: Int,
+    val packageLabel: String,
+    val addOns: List<String> = emptyList(),
+    val paymentMethod: String,
+    val note: String? = null,
+)
+
+@Serializable
+internal data class ReservationResponse(
+    val id: String,
+    val reservationCode: String,
+    val eventId: String,
+    val placeId: String,
+    val placeName: String,
+    val serviceId: String? = null,
+    val status: String,
+    val eventName: String,
+    val preferredDateLabel: String,
+    val guestCount: Int,
+    val packageLabel: String,
+    val addOns: List<String>,
+    val paymentMethod: String,
+    val createdAtIso: String,
+)
+
+@Serializable
 internal data class SocialSigninRequest(
     val idToken: String? = null,
     val accessToken: String? = null,

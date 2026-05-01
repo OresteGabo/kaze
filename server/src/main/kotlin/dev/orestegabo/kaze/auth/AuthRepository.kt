@@ -52,6 +52,7 @@ internal interface AuthRepository {
         displayName: String?,
         username: String?,
         phoneNumber: String?,
+        privacyConsent: AuthPrivacyConsent,
     ): StoredAuthUser?
     fun listInvitationsForUser(userId: String): List<AuthInvitationSummaryDto>
     fun listEventsForUser(userId: String): List<AuthEventSummaryDto>
@@ -71,7 +72,9 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT id, email, display_name, username, phone_number, password_hash, roles
+                SELECT id, email, display_name, username, phone_number,
+                       map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                       password_hash, roles
                 FROM app_users
                 WHERE lower(email) = lower(?)
                 """.trimIndent(),
@@ -87,7 +90,9 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT id, email, display_name, username, phone_number, password_hash, roles
+                SELECT id, email, display_name, username, phone_number,
+                       map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                       password_hash, roles
                 FROM app_users
                 WHERE username = ?
                 """.trimIndent(),
@@ -103,7 +108,9 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT id, email, display_name, username, phone_number, password_hash, roles
+                SELECT id, email, display_name, username, phone_number,
+                       map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                       password_hash, roles
                 FROM app_users
                 WHERE phone_number = ?
                 """.trimIndent(),
@@ -119,7 +126,9 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT u.id, u.email, u.display_name, u.username, u.phone_number, u.password_hash, u.roles
+                SELECT u.id, u.email, u.display_name, u.username, u.phone_number,
+                       u.map_and_venue_activity_enabled, u.diagnostics_enabled, u.notifications_enabled, u.analytics_enabled,
+                       u.password_hash, u.roles
                 FROM app_users u
                 INNER JOIN user_auth_providers p ON p.user_id = u.id
                 WHERE p.provider = ? AND p.provider_subject = ?
@@ -137,7 +146,9 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT u.id, u.email, u.display_name, u.username, u.phone_number, u.password_hash, u.roles, u.disabled, u.last_login_at
+                SELECT u.id, u.email, u.display_name, u.username, u.phone_number,
+                       u.map_and_venue_activity_enabled, u.diagnostics_enabled, u.notifications_enabled, u.analytics_enabled,
+                       u.password_hash, u.roles, u.disabled, u.last_login_at
                 FROM app_users u
                 INNER JOIN user_auth_providers p ON p.user_id = u.id
                 WHERE p.provider = ? AND p.provider_subject = ?
@@ -233,17 +244,27 @@ internal class JdbcAuthRepository(
     ): StoredAuthUser =
         connection.prepareStatement(
             """
-            INSERT INTO app_users (email, display_name, username, phone_number, password_hash, roles)
-            VALUES (?, ?, ?, ?, ?, ?::TEXT[])
-            RETURNING id, email, display_name, username, phone_number, password_hash, roles
+            INSERT INTO app_users (
+                email, display_name, username, phone_number,
+                map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                password_hash, roles
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::TEXT[])
+            RETURNING id, email, display_name, username, phone_number,
+                      map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                      password_hash, roles
             """.trimIndent(),
         ).use { statement ->
             statement.setString(1, email.trim().lowercase())
             statement.setString(2, displayName?.trim()?.takeIf { it.isNotEmpty() })
             statement.setString(3, username?.trim()?.lowercase()?.takeIf { it.isNotEmpty() })
             statement.setString(4, phoneNumber?.trim()?.takeIf { it.isNotEmpty() })
-            statement.setString(5, passwordHash)
-            statement.setString(6, roles.joinToString(prefix = "{", postfix = "}") { it.name })
+            statement.setBoolean(5, true)
+            statement.setBoolean(6, true)
+            statement.setBoolean(7, true)
+            statement.setBoolean(8, false)
+            statement.setString(9, passwordHash)
+            statement.setString(10, roles.joinToString(prefix = "{", postfix = "}") { it.name })
             statement.executeQuery().use { result ->
                 check(result.next()) { "User insert did not return a row" }
                 result.toStoredAuthUser()
@@ -455,7 +476,9 @@ internal class JdbcAuthRepository(
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT id, email, display_name, username, phone_number, password_hash, roles
+                SELECT id, email, display_name, username, phone_number,
+                       map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                       password_hash, roles
                 FROM app_users
                 WHERE id = ?
                 """.trimIndent(),
@@ -472,6 +495,7 @@ internal class JdbcAuthRepository(
         displayName: String?,
         username: String?,
         phoneNumber: String?,
+        privacyConsent: AuthPrivacyConsent,
     ): StoredAuthUser? =
         dataSource.connection.use { connection ->
             connection.prepareStatement(
@@ -480,15 +504,25 @@ internal class JdbcAuthRepository(
                 SET display_name = ?,
                     username = ?,
                     phone_number = ?,
+                    map_and_venue_activity_enabled = ?,
+                    diagnostics_enabled = ?,
+                    notifications_enabled = ?,
+                    analytics_enabled = ?,
                     updated_at = now()
                 WHERE id = ?
-                RETURNING id, email, display_name, username, phone_number, password_hash, roles
+                RETURNING id, email, display_name, username, phone_number,
+                          map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                          password_hash, roles
                 """.trimIndent(),
             ).use { statement ->
                 statement.setString(1, displayName?.trim()?.takeIf { it.isNotEmpty() })
                 statement.setString(2, username?.trim()?.lowercase()?.takeIf { it.isNotEmpty() })
                 statement.setString(3, phoneNumber?.trim()?.takeIf { it.isNotEmpty() })
-                statement.setString(4, userId)
+                statement.setBoolean(4, privacyConsent.mapAndVenueActivityEnabled)
+                statement.setBoolean(5, privacyConsent.diagnosticsEnabled)
+                statement.setBoolean(6, privacyConsent.notificationsEnabled)
+                statement.setBoolean(7, privacyConsent.analyticsEnabled)
+                statement.setString(8, userId)
                 statement.executeQuery().use { result ->
                     result.singleUserOrNull()
                 }
@@ -720,6 +754,12 @@ private fun ResultSet.toStoredAuthUser(): StoredAuthUser =
             displayName = getString("display_name"),
             username = getString("username"),
             phoneNumber = getString("phone_number"),
+            privacyConsent = AuthPrivacyConsent(
+                mapAndVenueActivityEnabled = getBoolean("map_and_venue_activity_enabled"),
+                diagnosticsEnabled = getBoolean("diagnostics_enabled"),
+                notificationsEnabled = getBoolean("notifications_enabled"),
+                analyticsEnabled = getBoolean("analytics_enabled"),
+            ),
             roles = getArray("roles")
                 ?.array
                 ?.let { it as Array<*> }

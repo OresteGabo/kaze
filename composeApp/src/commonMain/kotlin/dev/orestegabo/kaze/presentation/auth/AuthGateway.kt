@@ -31,6 +31,7 @@ internal interface AuthGateway {
     suspend fun getProfile(accessToken: String): AuthUser
     suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary>
     suspend fun getEvents(accessToken: String): List<AuthEventSummary>
+    suspend fun getActiveStay(accessToken: String): AuthActiveStay?
     suspend fun submitReservation(accessToken: String, request: ReservationDraftSubmissionRequest): ReservationResponse
     suspend fun respondToInvitation(accessToken: String, invitationId: String, response: String): AuthInvitationSummary
     suspend fun updateProfile(
@@ -101,6 +102,11 @@ internal class KazeAuthGateway(
         client.get("$authBaseUrl/auth/me/events") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
+
+    override suspend fun getActiveStay(accessToken: String): AuthActiveStay? =
+        client.get("$authBaseUrl/auth/me/active-stay") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body<AuthActiveStayResponse>().activeStay
 
     override suspend fun submitReservation(
         accessToken: String,
@@ -228,6 +234,8 @@ internal object NoopAuthGateway : AuthGateway {
     override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = unavailable()
 
     override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = unavailable()
+
+    override suspend fun getActiveStay(accessToken: String): AuthActiveStay? = unavailable()
 
     override suspend fun submitReservation(
         accessToken: String,

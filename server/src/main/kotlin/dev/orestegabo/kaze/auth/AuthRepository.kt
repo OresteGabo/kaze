@@ -56,6 +56,7 @@ internal interface AuthRepository {
     ): StoredAuthUser?
     fun listInvitationsForUser(userId: String): List<AuthInvitationSummaryDto>
     fun listEventsForUser(userId: String): List<AuthEventSummaryDto>
+    fun findActiveStayForUser(userId: String): AuthActiveStayDto?
     fun respondToInvitation(userId: String, invitationId: String, accepted: Boolean): AuthInvitationSummaryDto?
 }
 
@@ -604,6 +605,37 @@ internal class JdbcAuthRepository(
             }
         }
 
+    override fun findActiveStayForUser(userId: String): AuthActiveStayDto? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT
+                    s.hotel_id,
+                    h.display_name AS hotel_display_name,
+                    g.id AS guest_id,
+                    g.full_name AS guest_name,
+                    s.id AS stay_id,
+                    s.room_id,
+                    s.status AS stay_status,
+                    s.start_iso_utc,
+                    s.end_iso_utc
+                FROM guests g
+                INNER JOIN stays s ON s.guest_id = g.id
+                INNER JOIN hotels h ON h.id = s.hotel_id
+                WHERE g.user_id = ?
+                    AND s.status = 'ACTIVE'
+                    AND now() BETWEEN s.start_iso_utc AND s.end_iso_utc
+                ORDER BY s.start_iso_utc DESC
+                LIMIT 1
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.executeQuery().use { result ->
+                    if (result.next()) result.toAuthActiveStayDto() else null
+                }
+            }
+        }
+
     override fun respondToInvitation(userId: String, invitationId: String, accepted: Boolean): AuthInvitationSummaryDto? =
         dataSource.connection.use { connection ->
             connection.autoCommit = false
@@ -840,6 +872,19 @@ private fun ResultSet.toAuthEventSummaryDto(): AuthEventSummaryDto =
         endIso = getTimestamp("ends_at").toInstant().toString(),
         venueLabel = getString("venue_label"),
         hostLabel = getString("host_label"),
+    )
+
+private fun ResultSet.toAuthActiveStayDto(): AuthActiveStayDto =
+    AuthActiveStayDto(
+        hotelId = getString("hotel_id"),
+        hotelDisplayName = getString("hotel_display_name"),
+        guestId = getString("guest_id"),
+        guestName = getString("guest_name"),
+        stayId = getString("stay_id"),
+        roomId = getString("room_id"),
+        stayStatus = getString("stay_status"),
+        startsAtIso = getTimestamp("start_iso_utc").toInstant().toString(),
+        endsAtIso = getTimestamp("end_iso_utc").toInstant().toString(),
     )
 
 private fun AppUser.toStoredAuthUser(): StoredAuthUser =

@@ -105,6 +105,8 @@ jobs:
       - name: Run server tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaze?sslmode=disable
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
         run: ./gradlew :server:test --no-daemon
 
       - name: Print failing server test details

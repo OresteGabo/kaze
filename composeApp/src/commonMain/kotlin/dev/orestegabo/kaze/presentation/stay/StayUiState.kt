@@ -15,6 +15,7 @@ import dev.orestegabo.kaze.domain.DigitalAccessCard
 internal data class StayUiState(
     val hotelDisplayName: String = "",
     val guestName: String = "Aline",
+    val assignedRoomLabel: String = "",
     val accessProfileLabel: String = "Conference guest",
     val accessStatusLabel: String = "Active pass",
     val accessCard: DigitalAccessCard? = null,

@@ -31,6 +31,8 @@ import dev.orestegabo.kaze.presentation.demo.ServiceRequestRecord
 import dev.orestegabo.kaze.presentation.demo.StayMoment
 import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
 import dev.orestegabo.kaze.presentation.demo.StayScreen
+import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
+import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.ui.home.components.*
 import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
 import dev.orestegabo.kaze.ui.stay.LateCheckoutScreen
@@ -41,6 +43,7 @@ internal fun HomeScreen(
     modifier: Modifier = Modifier,
     hotelDisplayName: String,
     guestName: String,
+    assignedRoomLabel: String,
     accessProfileLabel: String,
     accessStatusLabel: String,
     accessCard: DigitalAccessCard?,
@@ -64,6 +67,7 @@ internal fun HomeScreen(
     onEnterCode: (String) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
     onSeeAllInvitations: () -> Unit,
+    onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
     bottomContentPadding: Dp = 20.dp,
 ) {
     var joinCode by rememberSaveable { mutableStateOf("") }
@@ -94,6 +98,7 @@ internal fun HomeScreen(
                 onBack = onBackToStayHome,
                 onDraftChange = onServiceRequestDraftChange,
                 onSubmit = { onServiceRequestSubmit(serviceRequestDraft) },
+                assignedRoomLabel = assignedRoomLabel,
                 bottomContentPadding = bottomContentPadding,
             )
             return@BoxWithConstraints
@@ -104,6 +109,7 @@ internal fun HomeScreen(
                 serviceQuery = serviceQuery,
                 bottomContentPadding = bottomContentPadding,
                 onBack = { selectedServiceQuery = null },
+                onSubmitReservation = onSubmitReservation,
             )
             return@BoxWithConstraints
         }

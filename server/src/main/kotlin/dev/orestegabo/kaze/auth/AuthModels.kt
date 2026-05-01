@@ -21,7 +21,23 @@ internal data class AuthUser(
     val displayName: String?,
     val username: String? = null,
     val phoneNumber: String? = null,
+    val privacyConsent: AuthPrivacyConsent = AuthPrivacyConsent(),
     val roles: Set<AuthRole>,
+)
+
+@Serializable
+internal data class AuthPrivacyConsentDto(
+    val mapAndVenueActivityEnabled: Boolean = true,
+    val diagnosticsEnabled: Boolean = true,
+    val notificationsEnabled: Boolean = true,
+    val analyticsEnabled: Boolean = false,
+)
+
+internal data class AuthPrivacyConsent(
+    val mapAndVenueActivityEnabled: Boolean = true,
+    val diagnosticsEnabled: Boolean = true,
+    val notificationsEnabled: Boolean = true,
+    val analyticsEnabled: Boolean = false,
 )
 
 internal data class ExternalIdentity(
@@ -67,7 +83,8 @@ internal data class AuthSigninRequest(
 
 @Serializable
 internal data class SocialSigninRequest(
-    val idToken: String,
+    val idToken: String? = null,
+    val accessToken: String? = null,
     val displayName: String? = null,
 )
 
@@ -113,6 +130,7 @@ internal data class AuthUserDto(
     val displayName: String? = null,
     val username: String? = null,
     val phoneNumber: String? = null,
+    val privacyConsent: AuthPrivacyConsentDto = AuthPrivacyConsentDto(),
     val roles: List<String>,
 )
 
@@ -121,6 +139,7 @@ internal data class AuthProfileUpdateRequest(
     val displayName: String? = null,
     val username: String? = null,
     val phoneNumber: String? = null,
+    val privacyConsent: AuthPrivacyConsentDto? = null,
 )
 
 @Serializable
@@ -162,5 +181,22 @@ internal fun AuthUser.toDto(): AuthUserDto =
         displayName = displayName,
         username = username,
         phoneNumber = phoneNumber,
+        privacyConsent = privacyConsent.toDto(),
         roles = roles.map { it.name }.sorted(),
+    )
+
+internal fun AuthPrivacyConsent.toDto(): AuthPrivacyConsentDto =
+    AuthPrivacyConsentDto(
+        mapAndVenueActivityEnabled = mapAndVenueActivityEnabled,
+        diagnosticsEnabled = diagnosticsEnabled,
+        notificationsEnabled = notificationsEnabled,
+        analyticsEnabled = analyticsEnabled,
+    )
+
+internal fun AuthPrivacyConsentDto.toDomain(): AuthPrivacyConsent =
+    AuthPrivacyConsent(
+        mapAndVenueActivityEnabled = mapAndVenueActivityEnabled,
+        diagnosticsEnabled = diagnosticsEnabled,
+        notificationsEnabled = notificationsEnabled,
+        analyticsEnabled = analyticsEnabled,
     )

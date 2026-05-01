@@ -88,7 +88,6 @@ internal fun Application.configureHttp(authService: AuthService) {
         options { _, content ->
             when (content.contentType?.withoutParameters()) {
                 ContentType.Text.Html -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = DOCS_CACHE_SECONDS))
-                ContentType.Application.Json -> CachingOptions(CacheControl.NoStore(CacheControl.Visibility.Private))
                 else -> null
             }
         }
@@ -212,8 +211,9 @@ internal fun Application.configureHttp(authService: AuthService) {
         }
     }
     install(StatusPages) {
-        exception<ApiNotFoundException> { call, cause ->
-            call.respond(HttpStatusCode.NotFound, ApiProblem("not_found", cause.message ?: "Resource not found"))
+        exception<ApiNotFoundException> { call, _ ->
+            call.application.environment.log.info("Resource not found at {}", call.request.path())
+            call.respond(HttpStatusCode.NotFound, ApiProblem("not_found", "Resource not found"))
         }
         exception<AuthProblemException> { call, cause ->
             call.respond(cause.status, ApiProblem(cause.code, cause.message))
@@ -222,10 +222,12 @@ internal fun Application.configureHttp(authService: AuthService) {
             call.respond(HttpStatusCode.BadRequest, ApiProblem("validation_error", cause.reasons.joinToString("; ")))
         }
         exception<IllegalArgumentException> { call, cause ->
-            call.respond(HttpStatusCode.BadRequest, ApiProblem("bad_request", cause.message ?: "Invalid request"))
+            call.application.environment.log.info("Bad request at {}: {}", call.request.path(), cause.message)
+            call.respond(HttpStatusCode.BadRequest, ApiProblem("bad_request", "Invalid request"))
         }
         exception<Throwable> { call, cause ->
-            call.respond(HttpStatusCode.InternalServerError, ApiProblem("internal_error", cause.message ?: "Unexpected server error"))
+            call.application.environment.log.error("Unhandled server error at ${call.request.path()}", cause)
+            call.respond(HttpStatusCode.InternalServerError, ApiProblem("internal_error", "Unexpected server error"))
         }
     }
 }
@@ -238,12 +240,16 @@ internal fun Application.isJwtAuthenticationRequired(): Boolean = loadJwtConfig(
 
 private fun Application.loadApiSecurityConfig(): ApiSecurityConfig =
     ApiSecurityConfig(
-        apiToken = environment.config.propertyOrNull("kaze.security.apiToken")
-            ?.getString()
+        apiToken = (
+            environment.config.propertyOrNull("kaze.security.apiToken")?.getString()
+                ?: System.getenv("KAZE_API_TOKEN")
+            )
             ?.trim()
             ?.takeIf { it.isNotEmpty() },
-        corsAllowedHosts = environment.config.propertyOrNull("kaze.security.cors.allowedHosts")
-            ?.getString()
+        corsAllowedHosts = (
+            environment.config.propertyOrNull("kaze.security.cors.allowedHosts")?.getString()
+                ?: System.getenv("KAZE_CORS_ALLOWED_HOSTS")
+            )
             ?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }

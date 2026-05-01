@@ -6,6 +6,7 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.statement.bodyAsText
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -29,6 +30,7 @@ internal interface AuthGateway {
         displayName: String? = null,
     ): AuthSession
     suspend fun getProfile(accessToken: String): AuthUser
+    suspend fun getSession(accessToken: String): AuthSessionBootstrap
     suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary>
     suspend fun getEvents(accessToken: String): List<AuthEventSummary>
     suspend fun getActiveStay(accessToken: String): AuthActiveStay?
@@ -66,10 +68,14 @@ internal class KazeAuthGateway(
         }.body<AuthResponse>().toSession()
 
     override suspend fun createAccount(email: String, password: String): AuthSession =
-        client.post("$authBaseUrl/auth/signup") {
-            contentType(ContentType.Application.Json)
-            setBody(AuthSignupRequest(email = email, password = password))
-        }.body<AuthResponse>().toSession()
+        try {
+            client.post("$authBaseUrl/auth/signup") {
+                contentType(ContentType.Application.Json)
+                setBody(AuthSignupRequest(email = email, password = password))
+            }.body<AuthResponse>().toSession()
+        } catch (cause: ClientRequestException) {
+            throw cause.toAuthGatewayProblem()
+        }
 
     override suspend fun signInWithCredential(
         provider: SocialAuthProvider,
@@ -90,6 +96,11 @@ internal class KazeAuthGateway(
 
     override suspend fun getProfile(accessToken: String): AuthUser =
         client.get("$authBaseUrl/auth/me") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body()
+
+    override suspend fun getSession(accessToken: String): AuthSessionBootstrap =
+        client.get("$authBaseUrl/auth/session") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
 
@@ -231,6 +242,8 @@ internal object NoopAuthGateway : AuthGateway {
 
     override suspend fun getProfile(accessToken: String): AuthUser = unavailable()
 
+    override suspend fun getSession(accessToken: String): AuthSessionBootstrap = unavailable()
+
     override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = unavailable()
 
     override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = unavailable()
@@ -351,9 +364,23 @@ internal fun Throwable.toSignupMessage(): String =
         is HttpRequestTimeoutException -> {
             "Kaze is taking longer than usual to create your account. Please check your internet and try again."
         }
+        is AuthGatewayProblemException -> when {
+            statusCode == 409 && problemCode == "email_already_registered" ->
+                "This email is already registered. Try logging in instead."
+            statusCode == 409 && problemCode == "username_already_registered" ->
+                "That username is already taken. Try another one."
+            statusCode == 409 && problemCode == "phone_number_already_registered" ->
+                "This phone number is already registered."
+            statusCode == 400 && problemCode == "validation_error" ->
+                message.ifBlank { "Please check your details and try again." }
+            statusCode == 429 ->
+                "You have tried too many times in a short time. Please wait a minute and try again."
+            else -> message.ifBlank { "Could not create your account. Please try again." }
+        }
         is ClientRequestException -> when (response.status.value) {
             400 -> "Please check your details and try again."
             409 -> "That email, username, or phone number is already in use."
+            429 -> "You have tried too many times in a short time. Please wait a minute and try again."
             else -> "Could not create your account. Please try again."
         }
         is ServerResponseException -> "Kaze is having trouble creating your account. Please try again."
@@ -381,3 +408,18 @@ internal fun Throwable.toProfileMessage(): String =
         is ServerResponseException -> "Kaze is having trouble saving your profile. Please try again."
         else -> "Could not save your profile right now."
     }
+
+private suspend fun ClientRequestException.toAuthGatewayProblem(): AuthGatewayProblemException {
+    val fallbackMessage = response.status.description.takeIf { it.isNotBlank() }
+        ?: "Request failed."
+    val problem = runCatching { response.body<AuthApiProblem>() }.getOrNull()
+        ?: runCatching {
+            val rawBody = response.bodyAsText().trim()
+            if (rawBody.isEmpty()) null else Json.decodeFromString<AuthApiProblem>(rawBody)
+        }.getOrNull()
+    return AuthGatewayProblemException(
+        statusCode = response.status.value,
+        problemCode = problem?.code,
+        message = problem?.message ?: fallbackMessage,
+    )
+}

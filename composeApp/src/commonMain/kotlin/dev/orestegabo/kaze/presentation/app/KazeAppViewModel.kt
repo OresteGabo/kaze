@@ -15,6 +15,8 @@ import dev.orestegabo.kaze.presentation.auth.NativeSocialAuthLauncher
 import dev.orestegabo.kaze.presentation.auth.NoopExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.NoopAuthGateway
 import dev.orestegabo.kaze.presentation.auth.NoopNativeSocialAuthLauncher
+import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
+import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.presentation.auth.SocialAuthProvider
 import dev.orestegabo.kaze.presentation.auth.toProfileMessage
 import dev.orestegabo.kaze.presentation.auth.toAuthMessage
@@ -330,6 +332,7 @@ internal class KazeAppViewModel(
             sessionPhoneNumber = "",
             sessionInvitations = emptyList(),
             sessionEvents = emptyList(),
+            sessionActiveStay = null,
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
             feedbackMessage = "",
@@ -399,6 +402,14 @@ internal class KazeAppViewModel(
         }
     }
 
+    suspend fun submitReservation(request: ReservationDraftSubmissionRequest): ReservationResponse {
+        val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+        require(!accessToken.isNullOrBlank()) { "Sign in before saving a reservation request." }
+        return authGateway.submitReservation(accessToken, request).also {
+            refreshSessionContentFromServer(accessToken)
+        }
+    }
+
     private fun claimSocialSession(loginToken: String) {
         showFeedback("Finishing secure sign-in...")
         scope.launch {
@@ -454,6 +465,7 @@ internal class KazeAppViewModel(
             privacyConsent = privacyConsent,
             sessionInvitations = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionInvitations else emptyList(),
             sessionEvents = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionEvents else emptyList(),
+            sessionActiveStay = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionActiveStay else null,
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
         )
@@ -506,6 +518,7 @@ internal class KazeAppViewModel(
             uiState = uiState.copy(
                 sessionInvitations = emptyList(),
                 sessionEvents = emptyList(),
+                sessionActiveStay = null,
             )
         }
         showFeedback(feedback)
@@ -538,9 +551,11 @@ internal class KazeAppViewModel(
         scope.launch {
             val invitations = runCatching { authGateway.getInvitations(accessToken) }.getOrDefault(emptyList())
             val events = runCatching { authGateway.getEvents(accessToken) }.getOrDefault(emptyList())
+            val activeStay = runCatching { authGateway.getActiveStay(accessToken) }.getOrNull()
             uiState = uiState.copy(
                 sessionInvitations = invitations,
                 sessionEvents = events,
+                sessionActiveStay = activeStay,
             )
         }
     }

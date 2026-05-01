@@ -2,12 +2,16 @@ package dev.orestegabo.kaze.api
 
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.application.ServerDependencies
+import dev.orestegabo.kaze.application.isProductionEnvironment
+import io.ktor.http.HttpHeaders
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.AuthenticationStrategy
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.request.receive
+import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -28,7 +32,9 @@ internal fun Application.registerApiRoutes(
             call.respond(ApiInfoDto(name = "Kaze API", status = "healthy", version = "1.0.0"))
         }
 
-        swaggerUI(path = "swagger", swaggerFile = "openapi/kaze-api.yaml")
+        if (!isProductionEnvironment()) {
+            swaggerUI(path = "swagger", swaggerFile = "openapi/kaze-api.yaml")
+        }
 
         rateLimit(ApiRateLimit) {
             route("/api/v1") {
@@ -51,38 +57,45 @@ private fun Route.registerPublicApiV1Routes(
     dependencies: ServerDependencies,
 ) {
     get {
+        call.cachePublicJson()
         call.respond(ApiInfoDto(name = "Kaze API", status = "ready", version = "v1"))
     }
 
     get("/hotels") {
+        call.cachePublicJson()
         call.respond(dependencies.hotelService.listHotels().map { it.toDto() })
     }
 
     route("/hotels/{hotelId}") {
         get {
+            call.cachePublicJson()
             val hotelId = call.requiredParam("hotelId")
             call.respond(dependencies.hotelService.getHotel(hotelId).toDto())
         }
 
         get("/events/days") {
+            call.cachePublicJson()
             val hotelId = call.requiredParam("hotelId")
             call.respond(dependencies.experienceService.getEventDays(hotelId).map { it.toDto() })
         }
 
         get("/events/schedule") {
+            call.cachePublicJson()
             val hotelId = call.requiredParam("hotelId")
             val dayId = call.requiredQuery("dayId")
             call.respond(dependencies.experienceService.getSchedule(hotelId, dayId).map { it.toDto() })
         }
 
         get("/explore/highlights") {
+            call.cachePublicJson()
             val hotelId = call.requiredParam("hotelId")
             call.respond(dependencies.experienceService.getHighlights(hotelId).map { it.toDto() })
         }
 
         get("/amenities/status") {
+            call.cachePublicJson(maxAgeSeconds = AMENITY_STATUS_CACHE_SECONDS)
             val hotelId = call.requiredParam("hotelId")
-            call.respond(dependencies.assistantService.listAmenityStatuses(hotelId).map { it.toDto() })
+            call.respond(dependencies.assistantService.listAmenityStatusesCached(hotelId).map { it.toDto() })
         }
     }
 }
@@ -92,6 +105,7 @@ private fun Route.registerPrivateApiV1Routes(
 ) {
     route("/hotels/{hotelId}") {
         get("/map") {
+            call.noStore()
             val hotelId = call.requiredParam("hotelId")
             val mapId = call.request.queryParameters["mapId"]?.takeIf { it.isNotBlank() }
             call.respond(dependencies.mapService.getHotelMap(hotelId, mapId).toDto())
@@ -99,18 +113,21 @@ private fun Route.registerPrivateApiV1Routes(
 
         route("/guests/{guestId}") {
             get {
+                call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
                 call.respond(dependencies.guestStayService.getGuest(hotelId, guestId).toDto())
             }
 
             get("/itinerary") {
+                call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
                 call.respond(dependencies.guestStayService.getItinerary(hotelId, guestId).toDto())
             }
 
             get("/late-checkout") {
+                call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
                 call.respond(dependencies.guestStayService.getLateCheckoutHistory(hotelId, guestId).map { it.toDto() })
@@ -137,6 +154,7 @@ private fun Route.registerPrivateApiV1Routes(
             }
 
             get("/service-requests") {
+                call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
                 call.respond(dependencies.guestStayService.getServiceRequestHistory(hotelId, guestId).map { it.toDto() })
@@ -160,6 +178,7 @@ private fun Route.registerPrivateApiV1Routes(
         }
 
         post("/assistant/query") {
+            call.noStore()
             val hotelId = call.requiredParam("hotelId")
             val request = call.receive<AssistantQueryRequest>()
             val answer = dependencies.assistantService.answer(hotelId, request.question)
@@ -182,3 +201,18 @@ private fun io.ktor.server.application.ApplicationCall.requiredQuery(name: Strin
 
 private fun io.ktor.server.application.ApplicationCall.queryOrDefault(name: String, default: String): String =
     request.queryParameters[name] ?: default
+
+private fun ApplicationCall.cachePublicJson(maxAgeSeconds: Int = PUBLIC_JSON_CACHE_SECONDS) {
+    response.header(
+        HttpHeaders.CacheControl,
+        "public, max-age=$maxAgeSeconds, stale-while-revalidate=$PUBLIC_JSON_STALE_SECONDS",
+    )
+}
+
+private fun ApplicationCall.noStore() {
+    response.header(HttpHeaders.CacheControl, "no-store")
+}
+
+private const val PUBLIC_JSON_CACHE_SECONDS = 120
+private const val PUBLIC_JSON_STALE_SECONDS = 300
+private const val AMENITY_STATUS_CACHE_SECONDS = 30

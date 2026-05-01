@@ -6,10 +6,14 @@ import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
 import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
 import dev.orestegabo.kaze.presentation.auth.AuthEventSummary
 import dev.orestegabo.kaze.presentation.auth.AuthGateway
+import dev.orestegabo.kaze.presentation.auth.AuthActiveStay
 import dev.orestegabo.kaze.presentation.auth.AuthInvitationSummary
 import dev.orestegabo.kaze.presentation.auth.AuthSession
+import dev.orestegabo.kaze.presentation.auth.AuthSessionBootstrap
 import dev.orestegabo.kaze.presentation.auth.AuthStartResponse
 import dev.orestegabo.kaze.presentation.auth.AuthUser
+import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
+import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.presentation.auth.SocialAuthCredentialType
 import dev.orestegabo.kaze.presentation.auth.SocialAuthProvider
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
@@ -301,9 +305,40 @@ class FeatureViewModelTest {
                 displayName = "Aline",
             )
 
+        override suspend fun getSession(accessToken: String): AuthSessionBootstrap =
+            AuthSessionBootstrap(
+                user = getProfile(accessToken),
+                invitations = emptyList(),
+                events = emptyList(),
+                activeStay = null,
+            )
+
         override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = emptyList()
 
         override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = emptyList()
+
+        override suspend fun getActiveStay(accessToken: String): AuthActiveStay? = null
+
+        override suspend fun submitReservation(
+            accessToken: String,
+            request: ReservationDraftSubmissionRequest,
+        ): ReservationResponse =
+            ReservationResponse(
+                id = "reservation_test",
+                reservationCode = "KAZE-TEST",
+                eventId = "event_test",
+                placeId = request.placeId,
+                placeName = "Test place",
+                serviceId = request.serviceId,
+                status = "PENDING_CONFIRMATION",
+                eventName = request.eventName,
+                preferredDateLabel = request.preferredDateLabel,
+                guestCount = request.guestCount,
+                packageLabel = request.packageLabel,
+                addOns = request.addOns,
+                paymentMethod = request.paymentMethod,
+                createdAtIso = "2026-05-01T00:00:00Z",
+            )
 
         override suspend fun respondToInvitation(
             accessToken: String,

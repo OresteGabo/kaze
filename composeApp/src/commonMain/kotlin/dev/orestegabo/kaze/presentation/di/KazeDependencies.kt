@@ -11,8 +11,10 @@ import dev.orestegabo.kaze.platform.PlatformServicesProvider
 import dev.orestegabo.kaze.presentation.auth.AuthGateway
 import dev.orestegabo.kaze.presentation.auth.ExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.KazeAuthGateway
+import dev.orestegabo.kaze.presentation.auth.NativeSocialAuthLauncher
 import dev.orestegabo.kaze.presentation.auth.createAuthHttpClient
 import dev.orestegabo.kaze.presentation.auth.createExternalUrlLauncher
+import dev.orestegabo.kaze.presentation.auth.createNativeSocialAuthLauncher
 import dev.orestegabo.kaze.presentation.auth.defaultAuthApiBaseUrl
 import dev.orestegabo.kaze.presentation.auth.defaultDeviceLabel
 import dev.orestegabo.kaze.presentation.demo.repository.DemoExperienceRepository
@@ -35,6 +37,7 @@ internal data class KazeDependencies(
     val platformServices: PlatformServices,
     val authGateway: AuthGateway,
     val externalUrlLauncher: ExternalUrlLauncher,
+    val nativeSocialAuthLauncher: NativeSocialAuthLauncher,
 ) {
     companion object {
         fun demo(): KazeDependencies {
@@ -60,6 +63,7 @@ internal data class KazeDependencies(
                     deviceLabel = defaultDeviceLabel(),
                 ),
                 externalUrlLauncher = createExternalUrlLauncher(),
+                nativeSocialAuthLauncher = createNativeSocialAuthLauncher(),
             )
         }
     }

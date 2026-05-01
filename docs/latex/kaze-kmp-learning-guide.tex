@@ -1,0 +1,1067 @@
+\documentclass[11pt,a4paper]{article}
+\input{kaze-theme.tex}
+\usepackage{listings}
+\usepackage{upquote}
+
+\definecolor{CodeBg}{HTML}{F4F1EA}
+\definecolor{CodeRule}{HTML}{D8CCBC}
+\definecolor{CodeComment}{HTML}{6A737D}
+\definecolor{CodeKeyword}{HTML}{284F58}
+\definecolor{CodeString}{HTML}{8A6538}
+
+\lstdefinestyle{kazekotlin}{
+    language={},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{CodeKeyword}\bfseries,
+    commentstyle=\color{CodeComment},
+    stringstyle=\color{CodeString},
+    showstringspaces=false,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{CodeRule},
+    backgroundcolor=\color{CodeBg},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    aboveskip=0.8em,
+    belowskip=0.8em
+}
+
+\begin{document}
+
+\KazeCover
+  {KMP Learning Guide for Kaze}
+  {A course-style guide for building good Kotlin Multiplatform apps}
+  {April 2026}
+  {Developer learning workbook}
+
+\KazePageTitle{KMP Learning Guide}
+\KazeDocumentNotice
+
+\section{How To Read This Guide}
+
+This guide assumes you already know basic programming and have at least some Kotlin exposure. The goal here is not to explain what a class or function is. The goal is to teach how Kotlin Multiplatform apps are structured and why they are structured that way.
+
+This document tries to answer five recurring questions:
+\begin{itemize}
+    \item what is this concept?
+    \item why does KMP need it?
+    \item how is it different from single-platform Android or iOS thinking?
+    \item when should I use it?
+    \item how does it show up in Kaze?
+\end{itemize}
+
+\begin{kazecalloutbox}[Important Mindset]
+Kotlin Multiplatform is not magic code sharing. It is a design approach. You still need to decide what should be shared, what must stay platform-specific, and where UI, domain logic, and platform APIs should live.
+\end{kazecalloutbox}
+
+\section{Glossary}
+
+\textbf{KMP}
+
+Kotlin Multiplatform. A Kotlin approach for sharing some code across multiple platforms while still allowing platform-specific implementations.
+
+\textbf{Compose Multiplatform}
+
+JetBrains' multiplatform UI toolkit based on Compose concepts.
+
+\textbf{Common Code}
+
+Code in shared source sets such as \texttt{commonMain}, meant to work across platforms.
+
+\textbf{Platform-Specific Code}
+
+Code that only works on one target, such as Android, iOS, JVM, JS, or Wasm.
+
+\textbf{Source Set}
+
+A Gradle/Kotlin grouping of code for a target or shared layer, such as \texttt{commonMain}, \texttt{androidMain}, or \texttt{iosMain}.
+
+\textbf{Composable}
+
+A function annotated with \texttt{@Composable} that describes UI in Compose.
+
+\textbf{State}
+
+Data that affects what the UI shows.
+
+\textbf{Recomposition}
+
+Compose rerunning composable functions when relevant state changes.
+
+\textbf{Expect/Actual}
+
+Kotlin Multiplatform mechanism for declaring a common API and implementing it differently per platform.
+
+\textbf{Platform Bridge}
+
+A shared abstraction over a platform-specific capability, such as opening URLs, secure storage, haptics, or network reachability.
+
+\textbf{Intent}
+
+On Android, an object representing an action request, such as opening another app, sharing content, or launching a screen.
+
+\textbf{Deep Link}
+
+A link that opens a specific screen or flow inside an app.
+
+\textbf{Canvas}
+
+A low-level drawing surface used for custom graphics, maps, charts, and interactions.
+
+\section{Chapter 1: What Kotlin Multiplatform Actually Is}
+
+\subsection{The Core Idea}
+
+Kotlin Multiplatform is a way to share code across platforms without pretending every platform is the same.
+
+That is a very important point.
+
+KMP does not say:
+\begin{quote}
+everything should be shared
+\end{quote}
+
+It says:
+\begin{quote}
+share what makes sense, and keep platform-specific things where they belong
+\end{quote}
+
+\subsection{What KMP Usually Shares Well}
+
+Good candidates for shared code:
+\begin{itemize}
+    \item domain models
+    \item business rules
+    \item use cases
+    \item repository interfaces
+    \item networking models
+    \item state management
+    \item sometimes UI, if using Compose Multiplatform
+\end{itemize}
+
+\subsection{What Usually Stays Platform-Specific}
+
+Things that often remain platform-specific:
+\begin{itemize}
+    \item Android intents
+    \item iOS system integrations
+    \item secure storage implementations
+    \item push notifications
+    \item camera and permissions details
+    \item app entrypoints
+\end{itemize}
+
+\subsection{Why This Matters}
+
+The biggest beginner mistake in KMP is trying to share code for ideological reasons instead of architectural reasons.
+
+Good KMP design is not:
+\begin{quote}
+share as much as possible
+\end{quote}
+
+Good KMP design is:
+\begin{quote}
+share what improves maintainability without fighting the platforms
+\end{quote}
+
+\subsection{How Kaze Uses This}
+
+Kaze already reflects this structure:
+\begin{itemize}
+    \item \texttt{shared} contains domain and shared logic
+    \item \texttt{composeApp} contains Compose Multiplatform UI
+    \item \texttt{iosApp} holds iOS entry code
+    \item platform-specific code exists under \texttt{androidMain}, \texttt{iosMain}, \texttt{jsMain}, and \texttt{wasmJsMain}
+\end{itemize}
+
+\section{Chapter 2: Project Structure and Source Sets}
+
+\subsection{Why Source Sets Exist}
+
+KMP needs a way to organize code by sharing level.
+
+That is what source sets do.
+
+Common examples:
+\begin{itemize}
+    \item \texttt{commonMain}: shared production code
+    \item \texttt{commonTest}: shared tests
+    \item \texttt{androidMain}: Android-specific code
+    \item \texttt{iosMain}: iOS-specific code
+    \item \texttt{jsMain}: JavaScript-specific code
+    \item \texttt{wasmJsMain}: WebAssembly-specific code
+\end{itemize}
+
+\subsection{How To Think About This}
+
+Imagine concentric circles:
+\begin{itemize}
+    \item outer shared circle: code all platforms can use
+    \item inner platform circles: code only one platform can use
+\end{itemize}
+
+If code imports Android-only APIs, it cannot live in \texttt{commonMain}.
+
+\subsection{Best Practice}
+
+\begin{itemize}
+    \item keep domain and app logic as high in the shared hierarchy as reasonable
+    \item move code down into platform source sets only when platform APIs force it
+    \item do not pollute \texttt{commonMain} with fake abstractions for things that are deeply platform-native unless you truly need sharing
+\end{itemize}
+
+\subsection{A Tiny Source Set Example}
+
+Shared code:
+
+\begin{lstlisting}[style=kazekotlin]
+// commonMain
+data class UserProfile(
+    val id: String,
+    val displayName: String
+)
+\end{lstlisting}
+
+Platform-specific code:
+
+\begin{lstlisting}[style=kazekotlin]
+// androidMain
+fun defaultPlatformName(): String = "Android"
+
+// iosMain
+fun defaultPlatformName(): String = "iOS"
+\end{lstlisting}
+
+This is the basic KMP idea in miniature: share the parts that are truly common, split the parts that are platform-specific.
+
+\section{Chapter 3: Compose Multiplatform and Composables}
+
+\subsection{What A Composable Is}
+
+A composable is a function that describes UI.
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun Greeting(name: String) {
+    Text("Hello, $name")
+}
+\end{lstlisting}
+
+The important mindset shift is this:
+
+Compose UI is not about manually mutating views step by step.
+It is about describing what the UI should look like for the current state.
+
+\subsection{A Slightly More Real Example}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun ProfileCard(
+    name: String,
+    isOnline: Boolean,
+    onMessageClick: () -> Unit
+) {
+    Column {
+        Text(text = name)
+        Text(
+            text = if (isOnline) "Online" else "Offline"
+        )
+        Button(onClick = onMessageClick) {
+            Text("Message")
+        }
+    }
+}
+\end{lstlisting}
+
+What this example teaches:
+\begin{itemize}
+    \item composables receive data as parameters
+    \item composables receive actions as callbacks
+    \item the UI is derived from current state such as \texttt{isOnline}
+\end{itemize}
+
+\subsection{Why This Style Exists}
+
+Traditional UI systems often involve:
+\begin{itemize}
+    \item inflating layouts
+    \item finding views
+    \item mutating them manually
+    \item keeping view state and app state synchronized
+\end{itemize}
+
+Compose tries to reduce that complexity by making the UI a function of state.
+
+\subsection{What Recomposition Means}
+
+When state changes, Compose may run relevant composables again.
+
+This is called recomposition.
+
+Beginners often worry:
+\begin{quote}
+if functions rerun, is that bad?
+\end{quote}
+
+No. Recomposition is normal. Compose is designed around it.
+
+What matters is keeping composables predictable and making sure heavy work is not repeated carelessly.
+
+\subsection{What To Watch Out For}
+
+\begin{itemize}
+    \item do not put heavy blocking work directly in composables
+    \item keep composables as UI descriptions, not giant business-logic containers
+    \item remember that local state and remembered objects affect recomposition behavior
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze's main app entry in [KazeApp.kt](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/KazeApp.kt) shows a large Compose tree with shared screens, state-driven navigation, and view models.
+
+\section{Chapter 4: State, Recomposition, and View Models}
+
+\subsection{What State Is}
+
+State is any data that changes what the UI shows.
+
+Examples:
+\begin{itemize}
+    \item whether a user is signed in
+    \item which tab is selected
+    \item whether a network call is loading
+    \item which map room is selected
+\end{itemize}
+
+\subsection{Local State Example}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun CounterCard() {
+    var count by remember { mutableStateOf(0) }
+
+    Column {
+        Text("Count: $count")
+        Button(onClick = { count++ }) {
+            Text("Increase")
+        }
+    }
+}
+\end{lstlisting}
+
+This works because:
+\begin{itemize}
+    \item \texttt{count} is state
+    \item Compose tracks it
+    \item when it changes, the relevant UI recomposes
+\end{itemize}
+
+\subsection{Screen State Example}
+
+\begin{lstlisting}[style=kazekotlin]
+data class ProfileUiState(
+    val isLoading: Boolean = true,
+    val displayName: String = "",
+    val errorMessage: String? = null
+)
+\end{lstlisting}
+
+This kind of state belongs at the screen or view-model level because it represents the whole screen's condition, not just one tiny widget.
+
+\subsection{Why State Management Is Central}
+
+Most UI bugs are really state bugs:
+\begin{itemize}
+    \item state changed but UI did not update
+    \item UI updated from stale state
+    \item too much mutable state exists in too many places
+\end{itemize}
+
+Compose encourages you to make state explicit.
+
+\subsection{Local State vs Screen State}
+
+Local state is good for small UI concerns:
+\begin{itemize}
+    \item expanded/collapsed flag
+    \item text field content in a local form
+\end{itemize}
+
+Screen or app state often belongs in a view model or similar controller:
+\begin{itemize}
+    \item authenticated session
+    \item loaded domain data
+    \item navigation-related app mode
+\end{itemize}
+
+\subsection{Why View Models Help}
+
+View models help separate:
+\begin{itemize}
+    \item UI description
+    \item state ownership
+    \item business logic coordination
+\end{itemize}
+
+This is especially valuable in larger apps because composables stay focused on rendering.
+
+\subsection{A View Model Style Example}
+
+\begin{lstlisting}[style=kazekotlin]
+class ProfileViewModel(
+    private val repository: ProfileRepository
+) {
+    var uiState by mutableStateOf(ProfileUiState())
+        private set
+
+    suspend fun loadProfile() {
+        uiState = uiState.copy(isLoading = true)
+        uiState = try {
+            val profile = repository.loadProfile()
+            uiState.copy(
+                isLoading = false,
+                displayName = profile.displayName,
+                errorMessage = null
+            )
+        } catch (e: Exception) {
+            uiState.copy(
+                isLoading = false,
+                errorMessage = "Could not load profile"
+            )
+        }
+    }
+}
+\end{lstlisting}
+
+This example is useful because it shows the split clearly:
+\begin{itemize}
+    \item repository loads data
+    \item view model manages screen state
+    \item composable reads and renders the state
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze has view-model-style classes such as \texttt{StayViewModel}, \texttt{EventsViewModel}, \texttt{ExploreViewModel}, and \texttt{KazeAppViewModel}. That is a healthy sign that the app is not trying to put all behavior inside composables.
+
+\section{Chapter 5: Navigation in KMP Apps}
+
+\subsection{Why Navigation Matters}
+
+Navigation is not just changing screens. It is managing app flow.
+
+Good navigation architecture affects:
+\begin{itemize}
+    \item how screens communicate
+    \item how deep links work
+    \item how state survives transitions
+    \item how easy the app is to test
+\end{itemize}
+
+\subsection{Shared Navigation vs Platform Navigation}
+
+In a KMP app, you can:
+\begin{itemize}
+    \item keep navigation mostly shared in common code
+    \item delegate some navigation concerns to platform-specific entrypoints
+\end{itemize}
+
+This depends on your architecture.
+
+\subsection{A Simple Shared Navigator Pattern}
+
+Kaze uses a shared navigator-style object in [KazeNavigator.kt](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/presentation/navigation/KazeNavigator.kt).
+
+That approach works well when:
+\begin{itemize}
+    \item the app's destinations are known in shared code
+    \item UI flow is mostly common across platforms
+    \item you want state-driven navigation rather than platform-fragment-driven navigation
+\end{itemize}
+
+\subsection{Simple Navigation Example}
+
+\begin{lstlisting}[style=kazekotlin]
+enum class AppDestination {
+    HOME,
+    PROFILE,
+    SETTINGS
+}
+
+class AppNavigator {
+    var currentDestination by mutableStateOf(AppDestination.HOME)
+        private set
+
+    fun goTo(destination: AppDestination) {
+        currentDestination = destination
+    }
+}
+\end{lstlisting}
+
+In the UI:
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun AppRoot(navigator: AppNavigator) {
+    when (navigator.currentDestination) {
+        AppDestination.HOME -> HomeScreen(
+            onOpenProfile = { navigator.goTo(AppDestination.PROFILE) }
+        )
+        AppDestination.PROFILE -> ProfileScreen()
+        AppDestination.SETTINGS -> SettingsScreen()
+    }
+}
+\end{lstlisting}
+
+This is not the only navigation style in KMP, but it is one of the easiest to understand.
+
+\subsection{Best Practice}
+
+\begin{itemize}
+    \item model destinations clearly
+    \item avoid letting every screen navigate however it wants with hidden global side effects
+    \item keep navigation state understandable and testable
+\end{itemize}
+
+\section{Chapter 6: Platform Actions, Android Intents, and Their KMP Equivalents}
+
+\subsection{What An Android Intent Is}
+
+On Android, an intent is a message-like object used to request an action:
+\begin{itemize}
+    \item open another app
+    \item share content
+    \item open a browser
+    \item launch another activity
+\end{itemize}
+
+\subsection{Why This Becomes A KMP Question}
+
+In a multiplatform app, Android intents are not directly available in common code.
+So the real question becomes:
+
+\begin{quote}
+what is the shared abstraction for ``ask the platform to do something external''?
+\end{quote}
+
+\subsection{The KMP Way To Think About It}
+
+Instead of putting Android intent code directly in shared UI logic, you usually create a shared abstraction such as:
+\begin{itemize}
+    \item open external URL
+    \item share text
+    \item launch auth flow
+    \item open map app
+\end{itemize}
+
+Then each platform implements that behavior in its own way.
+
+\subsection{What These Are Called Outside Android}
+
+They are not usually called ``intents'' on other platforms.
+
+Instead, you might think in terms of:
+\begin{itemize}
+    \item URL launching
+    \item deep links
+    \item navigation requests
+    \item platform service actions
+    \item OS integration APIs
+\end{itemize}
+
+\subsection{Expect/Actual and Platform Bridges}
+
+One strong KMP pattern is:
+\begin{enumerate}
+    \item define a shared capability
+    \item provide platform-specific implementations
+\end{enumerate}
+
+Example concept:
+
+\begin{lstlisting}[style=kazekotlin]
+interface ExternalUrlLauncher {
+    fun open(url: String): Boolean
+}
+\end{lstlisting}
+
+This is usually a better shared design than exposing Android intent details directly to common code.
+
+\subsection{A Shared Platform Action Example}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun HelpButton(urlLauncher: ExternalUrlLauncher) {
+    Button(onClick = {
+        urlLauncher.open("https://kazerwanda.com/help")
+    }) {
+        Text("Open help")
+    }
+}
+\end{lstlisting}
+
+This is a good KMP example because the shared UI says what it wants:
+\begin{quote}
+open this help link
+\end{quote}
+
+but it does not care whether Android uses an intent, iOS uses its own system API, or web uses browser logic.
+
+\subsection{How Kaze Uses This}
+
+Kaze already uses platform-bridge ideas around auth and external launching. That is exactly the sort of thing you want in KMP: shared app logic asks for a capability, while platform-specific code handles the real OS integration.
+
+\subsection{Best Practice}
+
+\begin{itemize}
+    \item expose shared intent-like behavior as capabilities, not as Android-specific types
+    \item keep the Android intent object itself in Android code
+    \item keep common code focused on the action the app wants, not the platform mechanism
+\end{itemize}
+
+\section{Chapter 7: Resources, Themes, and Design Systems}
+
+\subsection{Why This Matters}
+
+A good KMP app is not just shared code. It is a coherent cross-platform product.
+
+That means you need a way to think about:
+\begin{itemize}
+    \item colors
+    \item typography
+    \item spacing
+    \item icons
+    \item images
+    \item strings
+\end{itemize}
+
+\subsection{Shared Design Language}
+
+Compose Multiplatform makes it natural to share a design system:
+\begin{itemize}
+    \item theme definitions
+    \item common components
+    \item layout primitives
+    \item visual states
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze's shared UI and theme files show this direction clearly: common theme definitions, shared screens, and reusable UI components across the app.
+
+\section{Chapter 8: Networking, Repositories, and App Architecture}
+
+\subsection{Why Architecture Matters More In KMP}
+
+Because KMP apps already have shared and platform-specific layers, architecture becomes even more important.
+
+Without clear boundaries, your code can become confusing quickly.
+
+\subsection{A Healthy Layering Pattern}
+
+Many good KMP apps separate:
+\begin{itemize}
+    \item UI
+    \item presentation/state management
+    \item domain/use cases
+    \item data/repositories
+    \item platform services
+\end{itemize}
+
+\subsection{Why Repositories Matter}
+
+Repositories let shared business logic depend on abstract data access rather than platform-specific implementation details.
+
+That means:
+\begin{itemize}
+    \item UI stays cleaner
+    \item fake repositories are easier in tests
+    \item storage and networking decisions stay replaceable
+\end{itemize}
+
+\section{Chapter 9: Platform Services and Expect/Actual}
+
+\subsection{What Expect/Actual Solves}
+
+Sometimes a shared module needs a capability, but the implementation must differ by platform.
+
+That is what \texttt{expect}/\texttt{actual} is for.
+
+\subsection{Mental Model}
+
+\begin{itemize}
+    \item \texttt{expect}: common code declares what it needs
+    \item \texttt{actual}: each platform provides the real implementation
+\end{itemize}
+
+\subsection{When To Use It}
+
+Use \texttt{expect}/\texttt{actual} when:
+\begin{itemize}
+    \item the capability is truly shared in concept
+    \item the implementation must differ by platform
+\end{itemize}
+
+Examples:
+\begin{itemize}
+    \item platform name or device label
+    \item secure store implementation
+    \item network reachability
+    \item browser or external URL launching
+\end{itemize}
+
+\subsection{Expect/Actual Example}
+
+\begin{lstlisting}[style=kazekotlin]
+// commonMain
+expect fun defaultDeviceLabel(): String
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+// androidMain
+actual fun defaultDeviceLabel(): String = "Android device"
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+// iosMain
+actual fun defaultDeviceLabel(): String = "iPhone"
+\end{lstlisting}
+
+This is one of the clearest examples of what KMP is trying to do:
+\begin{itemize}
+    \item common code defines the need
+    \item each platform supplies the real answer
+\end{itemize}
+
+\subsection{When Not To Force It}
+
+Do not create an \texttt{expect}/\texttt{actual} abstraction for every tiny platform difference if a simpler architecture would be clearer.
+
+\section{Chapter 10: Canvas, Custom Drawing, and Interactive Graphics}
+
+\subsection{What Canvas Is}
+
+Canvas is a low-level drawing API. Instead of composing only standard UI components like rows, columns, buttons, and text fields, you draw shapes, lines, paths, gradients, and labels manually.
+
+\subsection{A Tiny Canvas Example}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun SimpleBadge() {
+    Canvas(modifier = Modifier.size(120.dp)) {
+        drawCircle(
+            color = Color(0xFF284F58),
+            radius = size.minDimension / 2
+        )
+        drawLine(
+            color = Color.White,
+            start = Offset(20f, size.height / 2),
+            end = Offset(size.width - 20f, size.height / 2),
+            strokeWidth = 8f
+        )
+    }
+}
+\end{lstlisting}
+
+This example is intentionally small. It teaches the core idea:
+\begin{itemize}
+    \item you are drawing directly
+    \item you work with coordinates and sizes
+    \item there are no ready-made widgets doing the visual work for you
+\end{itemize}
+
+\subsection{Why You Would Use Canvas}
+
+Use canvas when the UI is:
+\begin{itemize}
+    \item map-like
+    \item chart-like
+    \item diagram-like
+    \item game-like
+    \item highly custom
+\end{itemize}
+
+\subsection{Why Canvas Feels Different From Normal Compose UI}
+
+In normal Compose UI, you describe ready-made widgets.
+
+In canvas work, you describe geometry and drawing operations.
+
+So you need to think about:
+\begin{itemize}
+    \item coordinates
+    \item bounds
+    \item scaling
+    \item transforms
+    \item hit-testing
+    \item custom gestures
+\end{itemize}
+
+\subsection{A Map-Like Interaction Example}
+
+\begin{lstlisting}[style=kazekotlin]
+var zoom by remember { mutableFloatStateOf(1f) }
+var pan by remember { mutableStateOf(Offset.Zero) }
+
+Canvas(
+    modifier = Modifier.pointerInput(Unit) {
+        detectTransformGestures { _, panChange, zoomChange, _ ->
+            zoom *= zoomChange
+            pan += panChange
+        }
+    }
+) {
+    withTransform({
+        translate(pan.x, pan.y)
+        scale(zoom, zoom)
+    }) {
+        // draw shapes here
+    }
+}
+\end{lstlisting}
+
+This is the kind of pattern you use for zoomable maps, diagrams, and floor plans.
+
+\subsection{How Kaze Uses This}
+
+Kaze's [KazeMapView.kt](/Users/muhirwagabooreste/AndroidStudioProjects/kaze/composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/ui/map/components/KazeMapView.kt) is a strong example of a KMP-friendly canvas use case: shared custom drawing for map-style interaction, including zoom, pan, selection, and custom rendering.
+
+\subsection{What To Pay Attention To}
+
+\begin{itemize}
+    \item keep drawing math well-structured
+    \item separate rendering logic from domain data when possible
+    \item be careful with performance and repeated allocations
+    \item think about gesture input and coordinate conversion clearly
+\end{itemize}
+
+\section{Chapter 11: Gestures, Animations, and Interaction}
+
+\subsection{Why Interaction Design Matters}
+
+A good KMP app is not only correct. It must also feel responsive and natural.
+
+This includes:
+\begin{itemize}
+    \item taps
+    \item scroll
+    \item drag
+    \item pinch-to-zoom
+    \item transitions
+    \item loading feedback
+\end{itemize}
+
+\subsection{What To Watch Out For}
+
+\begin{itemize}
+    \item gesture code can become hard to reason about if mixed carelessly with business state
+    \item animations should support meaning, not just decoration
+    \item custom interactions should still feel usable across platforms
+\end{itemize}
+
+\section{Chapter 12: Lifecycle, Side Effects, and Asynchronous Work}
+
+\subsection{Why Side Effects Need Care}
+
+UI code is not just rendering. Sometimes it must:
+\begin{itemize}
+    \item load data
+    \item start a network request
+    \item react to external events
+    \item persist something
+\end{itemize}
+
+These are side effects.
+
+\subsection{Why This Is Tricky In Compose}
+
+Because composables may re-run, you must think carefully about when work should happen.
+
+That is why Compose has effect APIs and why state ownership matters so much.
+
+\subsection{Coroutines In KMP Apps}
+
+Coroutines are a major part of KMP app development because they help coordinate:
+\begin{itemize}
+    \item network calls
+    \item storage access
+    \item background work
+    \item cancellation-aware UI actions
+\end{itemize}
+
+\subsection{A Side Effect Example}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun ProfileScreen(viewModel: ProfileViewModel) {
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
+    Text(viewModel.uiState.displayName)
+}
+\end{lstlisting}
+
+This example teaches an important Compose idea:
+\begin{itemize}
+    \item composables describe UI
+    \item side effects such as loading data should happen through effect APIs
+    \item \texttt{LaunchedEffect} gives you a safe place to start coroutine-based work tied to composition
+\end{itemize}
+
+\section{Chapter 13: Testing KMP Apps}
+
+\subsection{What To Test}
+
+A good KMP app usually needs tests at multiple levels:
+\begin{itemize}
+    \item shared logic tests
+    \item view-model or state tests
+    \item repository tests
+    \item UI tests where practical
+\end{itemize}
+
+\subsection{A Shared Logic Test Example}
+
+\begin{lstlisting}[style=kazekotlin]
+class GreetingFormatterTest {
+    @Test
+    fun formatsName() {
+        val result = formatGreeting("Aline")
+        assertEquals("Hello, Aline", result)
+    }
+}
+\end{lstlisting}
+
+This may look simple, but it demonstrates one of KMP's big strengths:
+\begin{quote}
+logic in shared code can be tested once and reused across targets
+\end{quote}
+
+\subsection{Why Shared Logic Testing Is Powerful}
+
+One of KMP's strengths is that shared logic can be tested once and benefit multiple targets.
+
+That makes good architectural separation even more valuable.
+
+\section{Chapter 14: Performance, Debugging, and Common Mistakes}
+
+\subsection{Common Mistakes}
+
+\begin{longtable}{p{0.26\textwidth} p{0.28\textwidth} p{0.36\textwidth}}
+\textbf{Mistake} & \textbf{Symptom} & \textbf{What To Watch} \\
+Trying to share everything & Architecture feels forced & Accept platform differences where appropriate. \\
+Putting too much logic in composables & Hard-to-maintain UI & Move state and logic into view models or use cases. \\
+Platform APIs leaking into common code & Build/design problems & Use abstractions or platform source sets. \\
+Bad canvas/state separation & Messy interactive graphics & Separate geometry, rendering, and interaction concerns. \\
+Ignoring recomposition behavior & Performance or correctness surprises & Understand state and effect APIs. \\
+\end{longtable}
+
+\subsection{Debugging Habit}
+
+When a KMP UI problem appears, ask:
+\begin{enumerate}
+    \item is the state correct?
+    \item is the state in the right place?
+    \item is recomposition happening as expected?
+    \item is this actually a platform-specific bug rather than a shared-code bug?
+\end{enumerate}
+
+\section{Chapter 15: What You Need To Build A Good KMP App}
+
+\subsection{Core Ingredients}
+
+A good KMP app usually needs:
+\begin{itemize}
+    \item clear shared domain models
+    \item strong state management
+    \item composables that stay mostly declarative
+    \item a navigation strategy
+    \item platform bridges for OS-specific capabilities
+    \item repository-driven data flow
+    \item good coroutine usage
+    \item testing strategy
+    \item design-system consistency
+\end{itemize}
+
+\subsection{What Makes KMP Apps Go Wrong}
+
+KMP apps often go wrong when teams:
+\begin{itemize}
+    \item confuse code sharing with good architecture
+    \item let platform details leak everywhere
+    \item make UI composables do too much
+    \item ignore how state and side effects interact
+\end{itemize}
+
+\section{Mapping This Back To Kaze}
+
+\begin{longtable}{p{0.28\textwidth} p{0.64\textwidth}}
+\textbf{Concept} & \textbf{Where To Look In Kaze} \\
+Shared UI app root & \texttt{composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/KazeApp.kt} \\
+Shared navigation & \texttt{composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/presentation/navigation/KazeNavigator.kt} \\
+Shared dependencies assembly & \texttt{composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/presentation/di/KazeDependencies.kt} \\
+Platform-specific implementations & \texttt{androidMain}, \texttt{iosMain}, \texttt{jsMain}, \texttt{wasmJsMain} source sets \\
+Canvas-based rendering & \texttt{composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/ui/map/components/KazeMapView.kt} \\
+Shared domain layer & \texttt{shared/src/commonMain/kotlin/dev/orestegabo/kaze/...} \\
+\end{longtable}
+
+\section{Exercises}
+
+\subsection{Architecture}
+
+\begin{itemize}
+    \item List three things in an app that should probably live in shared code.
+    \item List three things that should probably stay platform-specific.
+\end{itemize}
+
+\subsection{Compose}
+
+\begin{itemize}
+    \item Write a simple composable that shows a title and button.
+    \item Explain in your own words what recomposition means.
+\end{itemize}
+
+\subsection{Platform Bridges}
+
+\begin{itemize}
+    \item Design a shared interface for ``open external URL'' without mentioning Android intents directly.
+    \item Explain why that is a better shared abstraction than exposing Android APIs to common code.
+\end{itemize}
+
+\subsection{Canvas}
+
+\begin{itemize}
+    \item Name two app features that would be better built with canvas than with only standard widgets.
+    \item Explain why zoomable maps are a strong canvas use case.
+\end{itemize}
+
+\subsection{State and Navigation}
+
+\begin{itemize}
+    \item Explain the difference between local UI state and screen-level app state.
+    \item Explain one advantage of having a shared navigator object.
+\end{itemize}
+
+\section{Final Advice}
+
+The healthiest way to learn KMP is to stop asking:
+\begin{quote}
+how much code can I share?
+\end{quote}
+
+and start asking:
+\begin{quote}
+what architecture gives me the clearest, safest, and most maintainable cross-platform app?
+\end{quote}
+
+That is the mindset that leads to good KMP applications.
+
+\section{Contact}
+
+\KazeContactBlock
+
+\end{document}

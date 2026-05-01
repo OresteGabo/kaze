@@ -14,6 +14,18 @@ Current documents:
 - `kaze-investor-brief.tex`
   - investor and partner-facing overview
   - useful for fundraising, partnerships, and strategic discussions
+- `kaze-kmp-bootcamp.tex`
+  - build-along practical KMP bootcamp that walks through creating a small real app step by step, including shared models, repositories, state, navigation, platform bridges, canvas, and testing
+  - useful when you want to move from understanding KMP concepts to actually building a multiplatform app skeleton
+- `kaze-kmp-learning-guide.tex`
+  - course-style Kotlin Multiplatform and Compose Multiplatform learning guide covering architecture, composables, shared vs platform-specific code, navigation, platform bridges, canvas, and app-building fundamentals
+  - useful for learning how to design and build a strong KMP app before reading or expanding Kaze deeply
+- `kaze-kotlin-learning-guide.tex`
+  - course-style Kotlin learning guide for Java/C++ programmers, from Kotlin basics through coroutines and advanced language concepts
+  - useful for language onboarding before reading the Kaze codebase deeply
+- `kaze-ktor-learning-guide.tex`
+  - detailed Ktor and backend learning guide tied to the real Kaze server code
+  - useful for Kotlin/Ktor onboarding, backend code reading, and understanding the current auth and data flow
 - `kaze-technical-brief.tex`
   - architecture and platform overview for future developers and technical stakeholders
   - useful before diving into the codebase

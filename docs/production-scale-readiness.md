@@ -22,6 +22,9 @@ The current app has important foundations:
 - Private/user-specific responses marked `no-store`.
 - Android/iOS token storage hardened.
 - Cloud Run deploy defaults improved for warm instances and explicit concurrency.
+- Stricter Ktor rate limit for auth routes.
+- Short client request timeouts across Android, iOS, JS, and Wasm.
+- Database-backed active-stay lookup instead of hardcoded stay identity.
 
 The remaining bottlenecks are mostly:
 
@@ -45,7 +48,9 @@ The remaining bottlenecks are mostly:
 - Done: Web auth tokens use `sessionStorage` instead of persistent `localStorage`.
 - Done: Generic server errors no longer expose raw exception messages.
 - Done: Production hides Swagger UI.
-- Partial: CORS reads `KAZE_CORS_ALLOWED_HOSTS`, and production defaults are tightened.
+- Done: CORS reads `KAZE_CORS_ALLOWED_HOSTS`, and production refuses local/default CORS hosts.
+- Done: Auth and reservation request payloads have max-length and bounds validation.
+- Partial: Database-backed active-stay identity exists; empty states and multi-stay selection still need UX work.
 - Later: Add resource ownership checks so an authenticated user can only access their own guest/stay/event data.
 - Later: Add OAuth redirect allowlist for `appRedirectUri`.
 - Todo: Add email verification.
@@ -76,6 +81,100 @@ The remaining bottlenecks are mostly:
 - Todo: Add cache invalidation/admin refresh path for hotel/map/schedule changes.
 - Todo: Move larger map/media/static assets to object storage/CDN instead of serving everything through the app server.
 
+### Redis Decision Guide
+
+Redis is not required for Kaze to launch with a small user base. The current in-process `TtlCache` is enough for early-stage traffic if:
+
+- there are few users
+- there is only one backend instance, or very few
+- cached data is mostly public and changes rarely
+- occasional cache misses are acceptable
+
+Redis becomes much more attractive when one or more of these signals appear:
+
+- multiple backend instances are serving traffic and each one rebuilds the same cache separately
+- public read endpoints become hot enough that repeated DB reads start to dominate latency or cost
+- users expect fast responses for shared data right after deploys or instance cold starts
+- cache invalidation needs to be coordinated across instances
+- background jobs, workers, or rate limits need shared state
+- login/session bootstrap traffic becomes large enough that local-only caches no longer help enough
+
+Reasons to add Redis:
+
+- shared cache across all app instances
+- lower database read pressure
+- faster warm reads after autoscaling
+- better foundation for shared rate limiting, short-lived counters, and background coordination
+- much easier than trying to make many app instances keep their own caches consistent
+
+Reasons not to add Redis yet:
+
+- extra cost
+- extra operational complexity
+- extra moving part to monitor
+- little benefit if traffic is still small and one app instance handles most requests
+
+Current recommendation for Kaze:
+
+- Keep the local `TtlCache` now.
+- Add Redis later when Kaze has multiple active instances or repeated hot-read pressure.
+- Do not introduce Redis just because it sounds more "production"; add it when metrics show repeated duplicate reads, slow cold-start behavior, or cache inconsistency across instances.
+
+### Build Your Own Cache Vs Redis
+
+It is completely reasonable to build your own small cache for an early-stage app. In fact, Kaze already has one in `TtlCache`.
+
+Good use cases for your own simple cache:
+
+- in-memory per-process cache
+- short TTL
+- public or low-risk data
+- no need to share cache state across instances
+- no need for persistence after restart
+
+What your own simple cache can do well enough:
+
+- cache hotel list
+- cache hotel detail
+- cache event days and schedules
+- cache amenity status
+- cache map metadata or rendered map payloads
+
+What gets hard when building your own bigger caching system:
+
+- sharing cache across many app instances
+- keeping cache entries consistent after writes
+- avoiding duplicate cache fills under concurrency
+- handling eviction policies well under memory pressure
+- adding visibility into hit rate, miss rate, and memory use
+- using cache for distributed rate limiting, locks, queues, or shared ephemeral state
+
+Practical rule:
+
+- Build your own small in-memory cache: yes
+- Build your own Redis replacement: no
+
+If Kaze stays small for a while, improving the current `TtlCache` a little is perfectly sensible. Useful small upgrades would be:
+
+- configurable TTL per cache
+- configurable max entries per cache
+- request coalescing so many simultaneous misses do not all hit the DB
+- hit/miss metrics
+- explicit invalidation hooks for admin content changes
+
+### What Should Trigger Redis Later
+
+Use Redis when at least one of these becomes true in production:
+
+- Kaze regularly runs on multiple backend instances
+- DB read load is high for shared/public data
+- p95 latency spikes happen during cold starts or autoscaling
+- you need shared rate limiting across instances
+- you need distributed short-lived state such as locks, counters, job coordination, or idempotency keys
+- local cache hit rates are low because traffic is spread across many instances
+
+If none of those are true yet, Redis can wait.
+
 ## Cloud Run And Traffic Handling
 
 - Done: Deploy script sets `KAZE_ENV=production`.
@@ -105,7 +204,7 @@ The remaining bottlenecks are mostly:
 - Done: DB max pool size can be configured with `KAZE_DB_MAXIMUM_POOL_SIZE`.
 - Done: Production blocks destructive schema modes.
 - Partial: Prepared statements are used widely, which reduces SQL injection risk.
-- Partial: Some indexes exist, but every hot query should be reviewed against real query plans.
+- Partial: Indexes exist for auth/session, invitation/event, active-stay, request, and reservation hot paths, but every hot query should still be reviewed against real query plans.
 - Todo: Add PgBouncer or managed connection pooling.
 - Todo: Confirm Neon/Postgres max connection limits and tune app pool sizes accordingly.
 - Todo: Add Flyway or Liquibase migrations.
@@ -144,14 +243,15 @@ The remaining bottlenecks are mostly:
 ## Rate Limiting And Abuse Protection
 
 - Done: Basic Ktor rate limiting exists.
+- Done: Auth endpoints have a stricter Ktor rate limit than general API traffic.
 - Partial: Ktor in-process rate limiting does not coordinate across Cloud Run instances.
 - Todo: Add Cloud Armor rate limits for public endpoints.
-- Todo: Add stricter limits for:
+- Done: Add stricter in-process limits for:
   - `/api/v1/auth/signin`
   - `/api/v1/auth/signup`
   - `/api/v1/auth/refresh`
   - `/api/v1/auth/session/claim`
-  - OAuth callback endpoints
+- Partial: OAuth callback endpoints share the auth limiter; add provider-specific abuse monitoring before launch.
 - Todo: Add per-account and per-IP throttles for auth.
 - Todo: Add request body size limits.
 - Todo: Add bot protection if public signup becomes abused.
@@ -173,7 +273,7 @@ The remaining bottlenecks are mostly:
 
 ## Client Performance
 
-- Partial: Web auth token persistence is safer now, but public data cache needs more work.
+- Partial: Web auth token persistence is safer now, client HTTP timeouts are short, but public data cache needs more work.
 - Todo: Add cached startup state for:
   - hotel list
   - selected hotel
@@ -191,6 +291,19 @@ The remaining bottlenecks are mostly:
 - Todo: Add graceful offline mode for public browsing.
 - Todo: Compress and resize all images; serve WebP/AVIF variants.
 - Todo: Lazy-load heavy map data only when needed.
+
+## Offline And Low-Resource Devices
+
+- Done: Startup can continue into guest/offline mode if the backend is slow or unavailable.
+- Done: Auth/session refresh failures do not block the whole app from rendering cached/demo/public flows.
+- Done: Mobile and web auth clients use short timeouts so low network does not hang screens for too long.
+- Partial: Public browsing, maps, schedules, and invitations have enough local/demo data to remain navigable offline, but the last successful live payloads are not persisted yet.
+- Todo: Add local persisted caches for public venue catalog, event schedule, map metadata, active pass summary, and last known invitations.
+- Todo: Add explicit connectivity state to prevent network calls for screens that can render from cache.
+- Todo: Add low-data mode that disables prefetch, avoids large imagery, and prefers cached map metadata.
+- Todo: Add low-battery mode that disables expensive animations, map preloads, and background refresh.
+- Todo: Add older-device QA targets with memory, startup time, and frame-time budgets.
+- Todo: Add compact-screen visual regression tests for 320dp-wide devices and large font/accessibility settings.
 
 ## Observability And Operations
 

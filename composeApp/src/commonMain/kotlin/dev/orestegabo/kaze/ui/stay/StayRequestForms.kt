@@ -275,6 +275,7 @@ internal fun ServiceRequestScreen(
     onBack: () -> Unit,
     onDraftChange: (ServiceRequestDraftUi) -> Unit,
     onSubmit: () -> Unit,
+    assignedRoomLabel: String,
     bottomContentPadding: Dp = 20.dp,
 ) {
     val isTowelRequest = draft.option.title == "Fresh towels"
@@ -362,8 +363,7 @@ internal fun ServiceRequestScreen(
         }
         if (usesAssignedRoomContext) {
             item {
-                // TODO replace the demo room label with the guest's actual assigned room from live stay data.
-                RequestContextLabel(label = "Room", value = "Room 906")
+                RequestContextLabel(label = "Room", value = assignedRoomLabel.ifBlank { "Assigned room pending" })
             }
         }
         if (needsExplicitLocation) {

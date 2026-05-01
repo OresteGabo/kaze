@@ -50,6 +50,7 @@ import org.slf4j.event.Level
 import kotlin.time.Duration.Companion.minutes
 
 internal val ApiRateLimit = RateLimitName("api")
+internal val AuthRateLimit = RateLimitName("auth")
 internal const val ApiAuth = "api-bearer"
 internal const val ApiJwtAuth = "api-jwt"
 
@@ -135,8 +136,13 @@ internal fun Application.configureHttp(authService: AuthService) {
         validate<AuthSignupRequest> { request ->
             when {
                 request.email.isBlank() -> ValidationResult.Invalid("email is required")
+                request.email.length > AUTH_EMAIL_MAX_LENGTH -> ValidationResult.Invalid("email is too long")
                 request.password.length < AUTH_PASSWORD_MIN_LENGTH ->
                     ValidationResult.Invalid("password must be at least $AUTH_PASSWORD_MIN_LENGTH characters")
+                request.password.length > AUTH_PASSWORD_MAX_LENGTH ->
+                    ValidationResult.Invalid("password must be $AUTH_PASSWORD_MAX_LENGTH characters or fewer")
+                request.displayName != null && request.displayName.length > AUTH_DISPLAY_NAME_MAX_LENGTH ->
+                    ValidationResult.Invalid("displayName must be $AUTH_DISPLAY_NAME_MAX_LENGTH characters or fewer")
                 request.username != null && request.username.isNotBlank() &&
                     !AUTH_USERNAME_REGEX.matches(request.username.trim().lowercase()) ->
                     ValidationResult.Invalid("username must be 3 to 32 characters and use only letters, numbers, dots, and underscores")
@@ -150,7 +156,13 @@ internal fun Application.configureHttp(authService: AuthService) {
             when {
                 request.identifier.isNullOrBlank() && request.email.isNullOrBlank() ->
                     ValidationResult.Invalid("identifier is required")
+                request.identifier != null && request.identifier.length > AUTH_EMAIL_MAX_LENGTH ->
+                    ValidationResult.Invalid("identifier is too long")
+                request.email != null && request.email.length > AUTH_EMAIL_MAX_LENGTH ->
+                    ValidationResult.Invalid("email is too long")
                 request.password.isBlank() -> ValidationResult.Invalid("password is required")
+                request.password.length > AUTH_PASSWORD_MAX_LENGTH ->
+                    ValidationResult.Invalid("password must be $AUTH_PASSWORD_MAX_LENGTH characters or fewer")
                 else -> ValidationResult.Valid
             }
         }
@@ -158,6 +170,12 @@ internal fun Application.configureHttp(authService: AuthService) {
             when {
                 request.idToken.isNullOrBlank() && request.accessToken.isNullOrBlank() ->
                     ValidationResult.Invalid("idToken or accessToken is required")
+                request.idToken != null && request.idToken.length > AUTH_TOKEN_MAX_LENGTH ->
+                    ValidationResult.Invalid("idToken is too long")
+                request.accessToken != null && request.accessToken.length > AUTH_TOKEN_MAX_LENGTH ->
+                    ValidationResult.Invalid("accessToken is too long")
+                request.displayName != null && request.displayName.length > AUTH_DISPLAY_NAME_MAX_LENGTH ->
+                    ValidationResult.Invalid("displayName must be $AUTH_DISPLAY_NAME_MAX_LENGTH characters or fewer")
                 else -> ValidationResult.Valid
             }
         }
@@ -198,10 +216,20 @@ internal fun Application.configureHttp(authService: AuthService) {
                 request.eventName.length > RESERVATION_EVENT_NAME_MAX_LENGTH ->
                     ValidationResult.Invalid("eventName must be $RESERVATION_EVENT_NAME_MAX_LENGTH characters or fewer")
                 request.preferredDateLabel.isBlank() -> ValidationResult.Invalid("preferredDateLabel is required")
+                request.preferredDateLabel.length > RESERVATION_DATE_LABEL_MAX_LENGTH ->
+                    ValidationResult.Invalid("preferredDateLabel must be $RESERVATION_DATE_LABEL_MAX_LENGTH characters or fewer")
                 request.guestCount !in 1..RESERVATION_GUEST_MAX_COUNT ->
                     ValidationResult.Invalid("guestCount must be between 1 and $RESERVATION_GUEST_MAX_COUNT")
                 request.packageLabel.isBlank() -> ValidationResult.Invalid("packageLabel is required")
+                request.packageLabel.length > RESERVATION_PACKAGE_LABEL_MAX_LENGTH ->
+                    ValidationResult.Invalid("packageLabel must be $RESERVATION_PACKAGE_LABEL_MAX_LENGTH characters or fewer")
+                request.addOns.size > RESERVATION_ADD_ON_MAX_COUNT ->
+                    ValidationResult.Invalid("addOns must include $RESERVATION_ADD_ON_MAX_COUNT items or fewer")
+                request.addOns.any { it.length > RESERVATION_ADD_ON_MAX_LENGTH } ->
+                    ValidationResult.Invalid("Each add-on must be $RESERVATION_ADD_ON_MAX_LENGTH characters or fewer")
                 request.paymentMethod.isBlank() -> ValidationResult.Invalid("paymentMethod is required")
+                request.paymentMethod.length > RESERVATION_PAYMENT_METHOD_MAX_LENGTH ->
+                    ValidationResult.Invalid("paymentMethod must be $RESERVATION_PAYMENT_METHOD_MAX_LENGTH characters or fewer")
                 request.note != null && request.note.length > RESERVATION_NOTE_MAX_LENGTH ->
                     ValidationResult.Invalid("note must be $RESERVATION_NOTE_MAX_LENGTH characters or fewer")
                 else -> ValidationResult.Valid
@@ -220,9 +248,13 @@ internal fun Application.configureHttp(authService: AuthService) {
         register(ApiRateLimit) {
             rateLimiter(limit = API_RATE_LIMIT_REQUESTS, refillPeriod = API_RATE_LIMIT_WINDOW)
             requestKey { call ->
-                call.request.origin.remoteHost.takeIf { it.isNotBlank() }
-                    ?: call.request.headers["X-Real-IP"]?.trim()?.takeIf { it.isNotEmpty() }
-                    ?: "direct-client"
+                call.stableClientKey()
+            }
+        }
+        register(AuthRateLimit) {
+            rateLimiter(limit = AUTH_RATE_LIMIT_REQUESTS, refillPeriod = AUTH_RATE_LIMIT_WINDOW)
+            requestKey { call ->
+                "${call.stableClientKey()}:${call.request.path()}"
             }
         }
     }
@@ -278,6 +310,16 @@ private data class ApiSecurityConfig(
     val corsAllowedHosts: List<String>,
 )
 
+private fun io.ktor.server.application.ApplicationCall.stableClientKey(): String =
+    request.headers["X-Forwarded-For"]
+        ?.split(",")
+        ?.firstOrNull()
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: request.headers["X-Real-IP"]?.trim()?.takeIf { it.isNotEmpty() }
+        ?: request.origin.remoteHost.takeIf { it.isNotBlank() }
+        ?: "direct-client"
+
 private fun normalizeAuthPhoneNumber(phoneNumber: String): String =
     buildString(phoneNumber.length) {
         phoneNumber.trim().forEachIndexed { index, char ->
@@ -289,18 +331,29 @@ private fun normalizeAuthPhoneNumber(phoneNumber: String): String =
     }
 
 private const val API_RATE_LIMIT_REQUESTS = 120
+private const val AUTH_RATE_LIMIT_REQUESTS = 20
 private const val API_COMPRESSION_MIN_BYTES = 64L
+private const val AUTH_EMAIL_MAX_LENGTH = 320
 private const val AUTH_PASSWORD_MIN_LENGTH = 8
+private const val AUTH_PASSWORD_MAX_LENGTH = 256
+private const val AUTH_DISPLAY_NAME_MAX_LENGTH = 240
+private const val AUTH_TOKEN_MAX_LENGTH = 8_192
 private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
 private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500
 private const val RESERVATION_EVENT_NAME_MAX_LENGTH = 240
+private const val RESERVATION_DATE_LABEL_MAX_LENGTH = 120
 private const val RESERVATION_GUEST_MAX_COUNT = 50_000
+private const val RESERVATION_PACKAGE_LABEL_MAX_LENGTH = 160
+private const val RESERVATION_ADD_ON_MAX_COUNT = 20
+private const val RESERVATION_ADD_ON_MAX_LENGTH = 120
+private const val RESERVATION_PAYMENT_METHOD_MAX_LENGTH = 120
 private const val RESERVATION_NOTE_MAX_LENGTH = 1_500
 private const val CORS_PREFLIGHT_CACHE_SECONDS = 3_600L
 private const val DOCS_CACHE_SECONDS = 300
 private val AUTH_USERNAME_REGEX = Regex("^[a-z0-9._]{3,32}$")
 private val AUTH_PHONE_NUMBER_REGEX = Regex("^\\+?[1-9][0-9]{7,14}$")
 private val API_RATE_LIMIT_WINDOW = 1.minutes
+private val AUTH_RATE_LIMIT_WINDOW = 1.minutes
 private val DEFAULT_CORS_ALLOWED_HOSTS = listOf(
     "localhost:3000",
     "localhost:5173",

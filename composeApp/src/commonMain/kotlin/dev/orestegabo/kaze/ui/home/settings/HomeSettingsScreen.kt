@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.getPlatform
+import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
 import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.theme.KazeThemeMode
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
@@ -50,6 +51,7 @@ internal fun HomeSettingsScreen(
     bottomContentPadding: Dp,
     themeMode: KazeThemeMode,
     edgeAiEnabled: Boolean,
+    privacyConsent: KazePrivacyConsent,
     sessionLabel: String,
     sessionDisplayName: String,
     sessionUsername: String,
@@ -58,6 +60,10 @@ internal fun HomeSettingsScreen(
     needsProfileCompletion: Boolean,
     onThemeModeChange: (KazeThemeMode) -> Unit,
     onEdgeAiEnabledChange: (Boolean) -> Unit,
+    onMapAndVenueActivityConsentChange: (Boolean) -> Unit,
+    onDiagnosticsConsentChange: (Boolean) -> Unit,
+    onNotificationsConsentChange: (Boolean) -> Unit,
+    onAnalyticsConsentChange: (Boolean) -> Unit,
     onUpdateProfile: (String, String, String) -> Unit,
     onLogout: () -> Unit,
     onBack: () -> Unit,
@@ -77,6 +83,11 @@ internal fun HomeSettingsScreen(
             sessionPhoneNumber = sessionPhoneNumber,
             needsProfileCompletion = needsProfileCompletion,
             bottomContentPadding = bottomContentPadding,
+            privacyConsent = privacyConsent,
+            onMapAndVenueActivityConsentChange = onMapAndVenueActivityConsentChange,
+            onDiagnosticsConsentChange = onDiagnosticsConsentChange,
+            onNotificationsConsentChange = onNotificationsConsentChange,
+            onAnalyticsConsentChange = onAnalyticsConsentChange,
             onUpdateProfile = onUpdateProfile,
             onBack = { selectedSettingsPage = null },
         )

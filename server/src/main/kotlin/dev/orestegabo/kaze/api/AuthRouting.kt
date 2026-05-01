@@ -8,6 +8,7 @@ import dev.orestegabo.kaze.auth.AuthLogoutResponseDto
 import dev.orestegabo.kaze.auth.AuthInvitationResponseRequest
 import dev.orestegabo.kaze.auth.AuthProfileUpdateRequest
 import dev.orestegabo.kaze.auth.AuthSessionClaimRequest
+import dev.orestegabo.kaze.auth.AuthSessionBootstrapDto
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.auth.AuthSigninRequest
 import dev.orestegabo.kaze.auth.AuthStartResponseDto
@@ -102,6 +103,12 @@ internal fun Route.registerAuthRoutes(
         }
 
         authenticate(ApiJwtAuth) {
+            get("/session") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.respond<AuthSessionBootstrapDto>(authService.currentUserSession(principal.payload.subject))
+            }
+
             get("/me") {
                 val principal = call.principal<JWTPrincipal>()
                     ?: throw IllegalArgumentException("Missing JWT principal")

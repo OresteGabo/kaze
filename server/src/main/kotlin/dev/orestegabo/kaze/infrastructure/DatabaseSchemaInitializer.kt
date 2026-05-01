@@ -486,6 +486,7 @@ private val CREATE_SCHEMA_SQL = listOf(
     "CREATE INDEX IF NOT EXISTS access_passes_event_id_idx ON access_passes(event_id)",
     "CREATE INDEX IF NOT EXISTS oauth_login_attempts_expires_at_idx ON oauth_login_attempts(expires_at)",
     "CREATE INDEX IF NOT EXISTS stays_guest_id_idx ON stays(guest_id)",
+    "CREATE INDEX IF NOT EXISTS stays_guest_status_window_idx ON stays(guest_id, status, start_iso_utc DESC, end_iso_utc)",
     "CREATE INDEX IF NOT EXISTS event_days_hotel_id_idx ON event_days(hotel_id)",
     "CREATE INDEX IF NOT EXISTS scheduled_experiences_day_id_idx ON scheduled_experiences(day_id)",
     "CREATE INDEX IF NOT EXISTS late_checkout_requests_guest_id_idx ON late_checkout_requests(guest_id)",

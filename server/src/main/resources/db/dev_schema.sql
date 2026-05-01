@@ -103,6 +103,28 @@ CREATE TABLE IF NOT EXISTS events (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS venue_reservations (
+    id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    reservation_code VARCHAR(64) NOT NULL UNIQUE,
+    requester_user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    place_id VARCHAR(120) NOT NULL REFERENCES service_places(id) ON DELETE CASCADE,
+    service_id VARCHAR(120),
+    event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    event_name VARCHAR(240) NOT NULL,
+    preferred_date_label VARCHAR(120) NOT NULL,
+    guest_count INTEGER NOT NULL CHECK (guest_count > 0),
+    package_label VARCHAR(160) NOT NULL,
+    add_ons TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    payment_method VARCHAR(120) NOT NULL,
+    note TEXT,
+    status VARCHAR(64) NOT NULL DEFAULT 'PENDING_CONFIRMATION',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_venue_reservations_requester ON venue_reservations(requester_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_venue_reservations_place ON venue_reservations(place_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS event_memberships (
     id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
     event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,

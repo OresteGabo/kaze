@@ -7,10 +7,14 @@ import androidx.lifecycle.ViewModel
 import dev.orestegabo.kaze.platform.SecureStore
 import dev.orestegabo.kaze.presentation.auth.AuthDeepLinks
 import dev.orestegabo.kaze.presentation.auth.AuthGateway
+import dev.orestegabo.kaze.presentation.auth.AuthPrivacyConsent
+import dev.orestegabo.kaze.presentation.auth.AuthUser
 import dev.orestegabo.kaze.presentation.auth.AuthSession
-import dev.orestegabo.kaze.presentation.auth.DemoAuthGateway
 import dev.orestegabo.kaze.presentation.auth.ExternalUrlLauncher
+import dev.orestegabo.kaze.presentation.auth.NativeSocialAuthLauncher
 import dev.orestegabo.kaze.presentation.auth.NoopExternalUrlLauncher
+import dev.orestegabo.kaze.presentation.auth.NoopAuthGateway
+import dev.orestegabo.kaze.presentation.auth.NoopNativeSocialAuthLauncher
 import dev.orestegabo.kaze.presentation.auth.SocialAuthProvider
 import dev.orestegabo.kaze.presentation.auth.toProfileMessage
 import dev.orestegabo.kaze.presentation.auth.toAuthMessage
@@ -30,8 +34,9 @@ import kotlinx.coroutines.launch
 internal class KazeAppViewModel(
     private val secureStore: SecureStore,
     private val navigator: KazeNavigator = KazeNavigator(),
-    private val authGateway: AuthGateway = DemoAuthGateway,
+    private val authGateway: AuthGateway = NoopAuthGateway,
     private val externalUrlLauncher: ExternalUrlLauncher = NoopExternalUrlLauncher,
+    private val nativeSocialAuthLauncher: NativeSocialAuthLauncher = NoopNativeSocialAuthLauncher,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var feedbackDismissJob: Job? = null
@@ -78,6 +83,12 @@ internal class KazeAppViewModel(
             val persistedThemeMode = secureStore.get(THEME_MODE_KEY).toThemeModeOrDefault()
             val persistedSessionMode = secureStore.get(SESSION_MODE_KEY).toSessionModeOrNull()
             val persistedEdgeAiEnabled = secureStore.get(EDGE_AI_ENABLED_KEY)?.toBooleanStrictOrNull() ?: true
+            val persistedPrivacyConsent = KazePrivacyConsent(
+                mapAndVenueActivityEnabled = secureStore.get(PRIVACY_MAP_ACTIVITY_ENABLED_KEY)?.toBooleanStrictOrNull() ?: true,
+                diagnosticsEnabled = secureStore.get(PRIVACY_DIAGNOSTICS_ENABLED_KEY)?.toBooleanStrictOrNull() ?: true,
+                notificationsEnabled = secureStore.get(PRIVACY_NOTIFICATIONS_ENABLED_KEY)?.toBooleanStrictOrNull() ?: true,
+                analyticsEnabled = secureStore.get(PRIVACY_ANALYTICS_ENABLED_KEY)?.toBooleanStrictOrNull() ?: false,
+            )
             uiState = uiState.copy(
                 isReady = true,
                 isStartupTakingTooLong = false,
@@ -91,6 +102,7 @@ internal class KazeAppViewModel(
                 sessionPhoneNumber = secureStore.get(SESSION_PHONE_NUMBER_KEY).orEmpty(),
                 themeMode = persistedThemeMode,
                 edgeAiEnabled = persistedEdgeAiEnabled,
+                privacyConsent = persistedPrivacyConsent,
             )
             if (persistedSessionMode == KazeSessionMode.AUTHENTICATED) {
                 refreshProfileFromServer()
@@ -174,6 +186,42 @@ internal class KazeAppViewModel(
         }
     }
 
+    fun onMapAndVenueActivityConsentChanged(enabled: Boolean) {
+        updatePrivacyConsent(uiState.privacyConsent.copy(mapAndVenueActivityEnabled = enabled))
+    }
+
+    fun onDiagnosticsConsentChanged(enabled: Boolean) {
+        updatePrivacyConsent(uiState.privacyConsent.copy(diagnosticsEnabled = enabled))
+    }
+
+    fun onNotificationsConsentChanged(enabled: Boolean) {
+        updatePrivacyConsent(uiState.privacyConsent.copy(notificationsEnabled = enabled))
+    }
+
+    fun onAnalyticsConsentChanged(enabled: Boolean) {
+        updatePrivacyConsent(uiState.privacyConsent.copy(analyticsEnabled = enabled))
+    }
+
+    private fun updatePrivacyConsent(consent: KazePrivacyConsent) {
+        uiState = uiState.copy(
+            privacyConsent = consent,
+        )
+        scope.launch {
+            persistPrivacyConsent(consent)
+            if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+                if (!accessToken.isNullOrBlank()) {
+                    runCatching {
+                        authGateway.updatePrivacyConsent(
+                            accessToken = accessToken,
+                            privacyConsent = consent,
+                        )
+                    }.onSuccess(::applyAuthUserState)
+                }
+            }
+        }
+    }
+
     fun signIn(email: String, password: String) {
         val normalizedEmail = email.trim().lowercase()
         if (normalizedEmail.isBlank() || password.isBlank()) {
@@ -224,6 +272,27 @@ internal class KazeAppViewModel(
         }
         showFeedback("Opening ${socialProvider.displayName} sign-in...")
         scope.launch {
+            val nativeResult = runCatching { nativeSocialAuthLauncher.signIn(socialProvider) }
+                .onFailure { showFeedback(it.toAuthMessage()) }
+                .getOrNull()
+
+            if (nativeResult != null) {
+                runCatching {
+                    authGateway.signInWithCredential(
+                        provider = socialProvider,
+                        credential = nativeResult.credential,
+                        credentialType = nativeResult.credentialType,
+                        displayName = nativeResult.displayName,
+                    )
+                }.onSuccess { session ->
+                    startAuthenticatedSession(
+                        session = session,
+                        feedback = "${socialProvider.displayName} sign-in is ready.",
+                    )
+                }.onFailure { showFeedback(it.toAuthMessage()) }
+                return@launch
+            }
+
             runCatching { authGateway.startSocialLogin(socialProvider) }
                 .onSuccess { response ->
                     if (response.authorizationUrl.isBlank()) {
@@ -296,16 +365,11 @@ internal class KazeAppViewModel(
                     displayName = normalizedDisplayName,
                     username = username.trim().takeIf { it.isNotBlank() },
                     phoneNumber = phoneNumber.trim().takeIf { it.isNotBlank() },
+                    privacyConsent = uiState.privacyConsent,
                 )
             }
-                .onSuccess { user ->
-                    applyProfileState(
-                        userId = uiState.sessionUserId,
-                        email = user.email,
-                        displayName = user.displayName.orEmpty(),
-                        username = user.username.orEmpty(),
-                        phoneNumber = user.phoneNumber.orEmpty(),
-                    )
+                .onSuccess {
+                    applyAuthUserState(it)
                     showFeedback("Profile updated.")
                 }
                 .onFailure { showFeedback(it.toProfileMessage()) }
@@ -357,6 +421,7 @@ internal class KazeAppViewModel(
             displayName = session.displayName.orEmpty(),
             username = session.username.orEmpty(),
             phoneNumber = session.phoneNumber.orEmpty(),
+            privacyConsent = session.privacyConsent.toKazePrivacyConsent(),
             feedback = feedback,
             accessToken = session.accessToken,
             refreshToken = session.refreshToken,
@@ -370,6 +435,7 @@ internal class KazeAppViewModel(
         displayName: String,
         username: String = "",
         phoneNumber: String = "",
+        privacyConsent: KazePrivacyConsent = uiState.privacyConsent,
         feedback: String,
         accessToken: String? = null,
         refreshToken: String? = null,
@@ -385,6 +451,7 @@ internal class KazeAppViewModel(
             sessionDisplayName = displayName,
             sessionUsername = username,
             sessionPhoneNumber = phoneNumber,
+            privacyConsent = privacyConsent,
             sessionInvitations = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionInvitations else emptyList(),
             sessionEvents = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionEvents else emptyList(),
             currentDestination = navigator.state.currentDestination,
@@ -418,7 +485,11 @@ internal class KazeAppViewModel(
                 secureStore.put(SESSION_PHONE_NUMBER_KEY, phoneNumber)
             }
             if (mode == KazeSessionMode.AUTHENTICATED) {
-                secureStore.put(AUTH_TOKEN_KEY, accessToken ?: DEMO_AUTH_TOKEN)
+                if (accessToken.isNullOrBlank()) {
+                    secureStore.remove(AUTH_TOKEN_KEY)
+                } else {
+                    secureStore.put(AUTH_TOKEN_KEY, accessToken)
+                }
                 if (refreshToken.isNullOrBlank()) {
                     secureStore.remove(REFRESH_TOKEN_KEY)
                 } else {
@@ -429,7 +500,7 @@ internal class KazeAppViewModel(
                 secureStore.remove(REFRESH_TOKEN_KEY)
             }
         }
-        if (mode == KazeSessionMode.AUTHENTICATED && !accessToken.isNullOrBlank() && accessToken != DEMO_AUTH_TOKEN) {
+        if (mode == KazeSessionMode.AUTHENTICATED && !accessToken.isNullOrBlank()) {
             refreshSessionContentFromServer(accessToken)
         } else {
             uiState = uiState.copy(
@@ -443,19 +514,24 @@ internal class KazeAppViewModel(
     private fun refreshProfileFromServer() {
         scope.launch {
             val accessToken = secureStore.get(AUTH_TOKEN_KEY)
-            if (accessToken.isNullOrBlank() || accessToken == DEMO_AUTH_TOKEN) return@launch
+            if (accessToken.isNullOrBlank()) return@launch
             runCatching { authGateway.getProfile(accessToken) }
                 .onSuccess { user ->
-                    applyProfileState(
-                        userId = user.id,
-                        email = user.email,
-                        displayName = user.displayName.orEmpty(),
-                        username = user.username.orEmpty(),
-                        phoneNumber = user.phoneNumber.orEmpty(),
-                    )
+                    applyAuthUserState(user)
                     refreshSessionContentFromServer(accessToken)
                 }
         }
+    }
+
+    private fun applyAuthUserState(user: AuthUser) {
+        applyProfileState(
+            userId = user.id,
+            email = user.email,
+            displayName = user.displayName.orEmpty(),
+            username = user.username.orEmpty(),
+            phoneNumber = user.phoneNumber.orEmpty(),
+            privacyConsent = user.privacyConsent.toKazePrivacyConsent(),
+        )
     }
 
     private fun refreshSessionContentFromServer(accessToken: String) {
@@ -475,6 +551,7 @@ internal class KazeAppViewModel(
         displayName: String,
         username: String,
         phoneNumber: String,
+        privacyConsent: KazePrivacyConsent = uiState.privacyConsent,
     ) {
         uiState = uiState.copy(
             sessionUserId = userId,
@@ -482,6 +559,7 @@ internal class KazeAppViewModel(
             sessionDisplayName = displayName,
             sessionUsername = username,
             sessionPhoneNumber = phoneNumber,
+            privacyConsent = privacyConsent,
         )
         scope.launch {
             if (userId.isBlank()) {
@@ -509,7 +587,15 @@ internal class KazeAppViewModel(
             } else {
                 secureStore.put(SESSION_PHONE_NUMBER_KEY, phoneNumber)
             }
+            persistPrivacyConsent(privacyConsent)
         }
+    }
+
+    private suspend fun persistPrivacyConsent(consent: KazePrivacyConsent) {
+        secureStore.put(PRIVACY_MAP_ACTIVITY_ENABLED_KEY, consent.mapAndVenueActivityEnabled.toString())
+        secureStore.put(PRIVACY_DIAGNOSTICS_ENABLED_KEY, consent.diagnosticsEnabled.toString())
+        secureStore.put(PRIVACY_NOTIFICATIONS_ENABLED_KEY, consent.notificationsEnabled.toString())
+        secureStore.put(PRIVACY_ANALYTICS_ENABLED_KEY, consent.analyticsEnabled.toString())
     }
 
     fun openMapRoute(route: String, floorId: String, floorLabel: String) {
@@ -554,6 +640,10 @@ internal class KazeAppViewModel(
         const val HAS_SEEN_ONBOARDING_KEY = "app.has_seen_onboarding"
         const val THEME_MODE_KEY = "app.theme_mode"
         const val EDGE_AI_ENABLED_KEY = "app.edge_ai_enabled"
+        const val PRIVACY_MAP_ACTIVITY_ENABLED_KEY = "app.privacy.map_activity_enabled"
+        const val PRIVACY_DIAGNOSTICS_ENABLED_KEY = "app.privacy.diagnostics_enabled"
+        const val PRIVACY_NOTIFICATIONS_ENABLED_KEY = "app.privacy.notifications_enabled"
+        const val PRIVACY_ANALYTICS_ENABLED_KEY = "app.privacy.analytics_enabled"
         const val SESSION_MODE_KEY = "app.session_mode"
         const val SESSION_USER_ID_KEY = "app.session_user_id"
         const val SESSION_EMAIL_KEY = "app.session_email"
@@ -562,7 +652,6 @@ internal class KazeAppViewModel(
         const val SESSION_PHONE_NUMBER_KEY = "app.session_phone_number"
         const val AUTH_TOKEN_KEY = "auth.access_token"
         const val REFRESH_TOKEN_KEY = "auth.refresh_token"
-        const val DEMO_AUTH_TOKEN = "demo-local-session"
         const val TRUE_VALUE = "true"
         const val FEEDBACK_DURATION_MS = 2400L
         const val STARTUP_TIMEOUT_MS = 10000L
@@ -577,3 +666,11 @@ private fun String.toSocialAuthProvider(): SocialAuthProvider? =
         "facebook", "meta" -> SocialAuthProvider.FACEBOOK
         else -> null
     }
+
+private fun AuthPrivacyConsent.toKazePrivacyConsent(): KazePrivacyConsent =
+    KazePrivacyConsent(
+        mapAndVenueActivityEnabled = mapAndVenueActivityEnabled,
+        diagnosticsEnabled = diagnosticsEnabled,
+        notificationsEnabled = notificationsEnabled,
+        analyticsEnabled = analyticsEnabled,
+    )

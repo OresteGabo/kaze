@@ -2,8 +2,6 @@ package dev.orestegabo.kaze
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import dev.orestegabo.kaze.api.AssistantAnswerDto
-import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.head
 import io.ktor.client.request.header
@@ -296,9 +294,9 @@ class ApiRoutesTest {
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
-        val body = response.body<AssistantAnswerDto>()
-        assertEquals("hotel amenity hours", body.source)
-        assertTrue(body.answer.contains("open right now"))
+        val body = response.bodyAsText()
+        assertTrue(body.contains("\"source\": \"hotel amenity hours\""))
+        assertTrue(body.contains("open right now"))
     }
 
     @Test

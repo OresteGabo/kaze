@@ -29,9 +29,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 internal class KazeAppViewModel(
     private val secureStore: SecureStore,
@@ -406,7 +408,7 @@ internal class KazeAppViewModel(
         val accessToken = secureStore.get(AUTH_TOKEN_KEY)
         require(!accessToken.isNullOrBlank()) { "Sign in before saving a reservation request." }
         return authGateway.submitReservation(accessToken, request).also {
-            refreshSessionContentFromServer(accessToken)
+            refreshAuthenticatedSessionFromServer(accessToken)
         }
     }
 
@@ -513,7 +515,7 @@ internal class KazeAppViewModel(
             }
         }
         if (mode == KazeSessionMode.AUTHENTICATED && !accessToken.isNullOrBlank()) {
-            refreshSessionContentFromServer(accessToken)
+            refreshAuthenticatedSessionFromServer(accessToken)
         } else {
             uiState = uiState.copy(
                 sessionInvitations = emptyList(),
@@ -528,11 +530,7 @@ internal class KazeAppViewModel(
         scope.launch {
             val accessToken = secureStore.get(AUTH_TOKEN_KEY)
             if (accessToken.isNullOrBlank()) return@launch
-            runCatching { authGateway.getProfile(accessToken) }
-                .onSuccess { user ->
-                    applyAuthUserState(user)
-                    refreshSessionContentFromServer(accessToken)
-                }
+            refreshAuthenticatedSessionFromServer(accessToken)
         }
     }
 
@@ -547,18 +545,49 @@ internal class KazeAppViewModel(
         )
     }
 
-    private fun refreshSessionContentFromServer(accessToken: String) {
+    private fun refreshAuthenticatedSessionFromServer(accessToken: String) {
         scope.launch {
-            val invitations = runCatching { authGateway.getInvitations(accessToken) }.getOrDefault(emptyList())
-            val events = runCatching { authGateway.getEvents(accessToken) }.getOrDefault(emptyList())
-            val activeStay = runCatching { authGateway.getActiveStay(accessToken) }.getOrNull()
+            val bootstrap = runCatching { authGateway.getSession(accessToken) }.getOrNull()
+            if (bootstrap != null) {
+                applyAuthUserState(bootstrap.user)
+                uiState = uiState.copy(
+                    sessionInvitations = bootstrap.invitations,
+                    sessionEvents = bootstrap.events,
+                    sessionActiveStay = bootstrap.activeStay,
+                )
+                return@launch
+            }
+
+            runCatching { authGateway.getProfile(accessToken) }
+                .onSuccess(::applyAuthUserState)
+
+            val content = loadSessionContentInParallel(accessToken)
             uiState = uiState.copy(
-                sessionInvitations = invitations,
-                sessionEvents = events,
-                sessionActiveStay = activeStay,
+                sessionInvitations = content.invitations,
+                sessionEvents = content.events,
+                sessionActiveStay = content.activeStay,
             )
         }
     }
+
+    private suspend fun loadSessionContentInParallel(accessToken: String): SessionContent =
+        supervisorScope {
+            val invitationsDeferred = async {
+                runCatching { authGateway.getInvitations(accessToken) }.getOrDefault(emptyList())
+            }
+            val eventsDeferred = async {
+                runCatching { authGateway.getEvents(accessToken) }.getOrDefault(emptyList())
+            }
+            val activeStayDeferred = async {
+                runCatching { authGateway.getActiveStay(accessToken) }.getOrNull()
+            }
+
+            SessionContent(
+                invitations = invitationsDeferred.await(),
+                events = eventsDeferred.await(),
+                activeStay = activeStayDeferred.await(),
+            )
+        }
 
     private fun applyProfileState(
         userId: String,
@@ -689,3 +718,9 @@ private fun AuthPrivacyConsent.toKazePrivacyConsent(): KazePrivacyConsent =
         notificationsEnabled = notificationsEnabled,
         analyticsEnabled = analyticsEnabled,
     )
+
+private data class SessionContent(
+    val invitations: List<dev.orestegabo.kaze.presentation.auth.AuthInvitationSummary>,
+    val events: List<dev.orestegabo.kaze.presentation.auth.AuthEventSummary>,
+    val activeStay: dev.orestegabo.kaze.presentation.auth.AuthActiveStay?,
+)

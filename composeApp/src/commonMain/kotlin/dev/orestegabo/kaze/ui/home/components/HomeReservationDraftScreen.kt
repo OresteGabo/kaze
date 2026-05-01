@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +54,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
+import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
@@ -60,6 +63,7 @@ import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 import dev.orestegabo.kaze.ui.home.invitations.InvitationEventType
 import org.jetbrains.compose.resources.painterResource
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun HomeReservationDraftScreen(
@@ -67,8 +71,10 @@ internal fun HomeReservationDraftScreen(
     result: HomeServiceResult,
     bottomContentPadding: Dp,
     onBack: () -> Unit,
+    onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
 ) {
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
     var eventName by rememberSaveable(result.title) { mutableStateOf("") }
     var preferredDate by rememberSaveable(result.title) { mutableStateOf("") }
     var guests by rememberSaveable(result.title) { mutableIntStateOf(defaultGuestCount(content.title)) }
@@ -77,6 +83,9 @@ internal fun HomeReservationDraftScreen(
     var paymentMethod by rememberSaveable(result.title) { mutableStateOf(defaultPaymentMethods().first()) }
     var note by rememberSaveable(result.title) { mutableStateOf("") }
     var isSaved by rememberSaveable(result.title) { mutableStateOf(false) }
+    var isSaving by rememberSaveable(result.title) { mutableStateOf(false) }
+    var saveError by rememberSaveable(result.title) { mutableStateOf("") }
+    var savedReservationCode by rememberSaveable(result.title) { mutableStateOf("") }
     var isCreatingInvitation by rememberSaveable(result.title) { mutableStateOf(false) }
     var linkedInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
 
@@ -128,6 +137,7 @@ internal fun HomeReservationDraftScreen(
                 selectedAddOns = selectedAddOns,
                 paymentMethod = paymentMethod,
                 note = note,
+                reservationCode = savedReservationCode,
                 linkedInvitation = linkedInvitation,
                 onCreateInvitation = { isCreatingInvitation = true },
                 onBack = onBack,
@@ -232,15 +242,52 @@ internal fun HomeReservationDraftScreen(
         )
 
         KazePrimaryButton(
-            label = "Save reservation request",
+            label = if (isSaving) "Saving..." else "Save reservation request",
             onClick = {
-                // TODO Persist this draft through the reservation API and show the confirmed reservation code after the backend accepts it.
-                // TODO Connect a saved venue reservation to event creation, invitations, Kaze Pass access, maps, and payment status.
-                isSaved = true
+                if (isSaving) return@KazePrimaryButton
+                val normalizedEventName = eventName.trim().ifBlank { result.title }
+                val normalizedPreferredDate = preferredDate.trim()
+                if (normalizedPreferredDate.isBlank()) {
+                    saveError = "Add a preferred date before saving."
+                    return@KazePrimaryButton
+                }
+                val serverIds = result.reservationServerIds(content)
+                isSaving = true
+                saveError = ""
+                coroutineScope.launch {
+                    runCatching {
+                        onSubmitReservation(
+                            ReservationDraftSubmissionRequest(
+                                placeId = serverIds.placeId,
+                                serviceId = serverIds.serviceId,
+                                eventName = normalizedEventName,
+                                preferredDateLabel = normalizedPreferredDate,
+                                guestCount = guests,
+                                packageLabel = selectedPackage,
+                                addOns = selectedAddOns,
+                                paymentMethod = paymentMethod,
+                                note = note.trim().takeIf { it.isNotBlank() },
+                            ),
+                        )
+                    }.onSuccess { response ->
+                        savedReservationCode = response.reservationCode
+                        isSaved = true
+                    }.onFailure { throwable ->
+                        saveError = throwable.message ?: "Could not save this reservation right now."
+                    }
+                    isSaving = false
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = Icons.Default.CheckCircle,
         )
+        if (saveError.isNotBlank()) {
+            Text(
+                saveError,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 
@@ -601,6 +648,7 @@ private fun ReservationSavedCard(
     selectedAddOns: List<String>,
     paymentMethod: String,
     note: String,
+    reservationCode: String,
     linkedInvitation: InvitationPreview?,
     onCreateInvitation: () -> Unit,
     onBack: () -> Unit,
@@ -635,7 +683,7 @@ private fun ReservationSavedCard(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        result.title,
+                        if (reservationCode.isNotBlank()) "${result.title} • $reservationCode" else result.title,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                     )
@@ -788,6 +836,40 @@ private fun paymentSubtitle(method: String): String {
         else -> "Useful for local mobile payments."
     }
 }
+
+private data class ReservationServerIds(
+    val placeId: String,
+    val serviceId: String?,
+)
+
+private fun HomeServiceResult.reservationServerIds(content: HomeServicePageContent): ReservationServerIds =
+    when (title) {
+        "Kigali Garden Pavilion", "Lake View Wedding Lawn" ->
+            ReservationServerIds("rw-rebero-umucyo-gardens", "svc_umucyo_garden")
+        "Umubano Grand Hall" ->
+            ReservationServerIds("rw-kgl-serena", "svc_serena_private_dinner")
+        "Nyarutarama Boardroom", "Kigali Training Suite", "Kivu Meeting Room" ->
+            ReservationServerIds("rw-kgl-marriott", "svc_marriott_boardroom")
+        "Airport VIP Pickup", "Wedding Guest Shuttle" ->
+            ReservationServerIds("rw-kgl-marriott", "svc_marriott_airport")
+        "Delegate Shuttle Loop" ->
+            ReservationServerIds("rw-kgl-convention-centre", "svc_kcc_delegate_flow")
+        "Plated Dinner Service", "Cocktail Reception Menu", "Breakfast Meeting Table" ->
+            ReservationServerIds("rw-kgl-serena", "svc_serena_private_dinner")
+        "Conference Photography", "Hybrid Livestream Setup", "Wedding Film Package" ->
+            ReservationServerIds("rw-rebero-umucyo-gardens", "svc_umucyo_photo")
+        "Reception Decor Package", "Stage And Lighting Styling", "Garden Ceremony Styling" ->
+            ReservationServerIds("rw-rebero-umucyo-gardens", "svc_umucyo_garden")
+        else -> when (content.title) {
+            "Wedding venues" -> ReservationServerIds("rw-rebero-umucyo-gardens", "svc_umucyo_garden")
+            "Conference rooms" -> ReservationServerIds("rw-kgl-marriott", "svc_marriott_boardroom")
+            "Hotels" -> ReservationServerIds("rw-kgl-marriott", "svc_marriott_boardroom")
+            "Transport" -> ReservationServerIds("rw-kgl-marriott", "svc_marriott_airport")
+            "Catering" -> ReservationServerIds("rw-kgl-serena", "svc_serena_private_dinner")
+            "Photo & video" -> ReservationServerIds("rw-rebero-umucyo-gardens", "svc_umucyo_photo")
+            else -> ReservationServerIds("rw-kgl-marriott", null)
+        }
+    }
 
 private fun defaultGuestCount(categoryTitle: String): Int = when (categoryTitle) {
     "Wedding venues" -> 300

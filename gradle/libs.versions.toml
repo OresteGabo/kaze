@@ -25,6 +25,7 @@ jwks-rsa = "0.23.0"
 jbcrypt = "0.4"
 exposed = "0.53.0"
 facebook-android = "18.2.3"
+multiplatform-settings = "1.3.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -72,6 +73,7 @@ ktor-clientAndroid = { module = "io.ktor:ktor-client-android", version.ref = "kt
 ktor-clientDarwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-clientJs = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 facebook-login = { module = "com.facebook.android:facebook-login", version.ref = "facebook-android" }
+multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
 ktor-serverAutoHeadResponse = { module = "io.ktor:ktor-server-auto-head-response-jvm", version.ref = "ktor" }
 ktor-serverCachingHeaders = { module = "io.ktor:ktor-server-caching-headers-jvm", version.ref = "ktor" }
 ktor-serverCallLogging = { module = "io.ktor:ktor-server-call-logging-jvm", version.ref = "ktor" }

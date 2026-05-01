@@ -97,6 +97,11 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
+      - name: Check Postgres service
+        env:
+          PGPASSWORD: postgres
+        run: pg_isready -h localhost -p 5432 -U postgres -d kaze
+
       - name: Run server tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaze?sslmode=disable

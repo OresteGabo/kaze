@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze
 
 import android.Manifest
+import android.content.Intent
 import android.os.Bundle
 import android.os.Build
 import androidx.activity.ComponentActivity
@@ -9,7 +10,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import android.content.Intent
 import dev.orestegabo.kaze.platform.KazeConnectivityContext
 import dev.orestegabo.kaze.platform.PlatformServicesProvider
 import dev.orestegabo.kaze.presentation.auth.KazeAuthAndroidPlatform
@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
         KazeConnectivityContext.initialize(applicationContext)
         PlatformServicesProvider.initialize(applicationContext)
         KazeAuthAndroidPlatform.initialize(applicationContext)
+        KazeAuthAndroidPlatform.attachActivity(this)
         handleAuthDeepLink(intent)
         requestNotificationPermissionIfNeeded()
 
@@ -40,6 +41,19 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleAuthDeepLink(intent)
+    }
+
+    @Deprecated("Facebook SDK activity result bridge")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (KazeAuthAndroidPlatform.onActivityResult(requestCode, resultCode, data)) {
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onDestroy() {
+        KazeAuthAndroidPlatform.detachActivity(this)
+        super.onDestroy()
     }
 
     private fun handleAuthDeepLink(intent: Intent?) {

@@ -1,0 +1,1273 @@
+\documentclass[11pt,a4paper]{article}
+\input{kaze-theme.tex}
+\usepackage{listings}
+\usepackage{upquote}
+
+\definecolor{CodeBg}{HTML}{F4F1EA}
+\definecolor{CodeRule}{HTML}{D8CCBC}
+\definecolor{CodeComment}{HTML}{6A737D}
+\definecolor{CodeKeyword}{HTML}{284F58}
+\definecolor{CodeString}{HTML}{8A6538}
+
+\lstdefinestyle{kazekotlin}{
+    language={},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{CodeKeyword}\bfseries,
+    commentstyle=\color{CodeComment},
+    stringstyle=\color{CodeString},
+    showstringspaces=false,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{CodeRule},
+    backgroundcolor=\color{CodeBg},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    aboveskip=0.8em,
+    belowskip=0.8em
+}
+
+\begin{document}
+
+\KazeCover
+  {Kotlin Learning Guide for Kaze}
+  {A course-style guide for Java and C++ programmers learning Kotlin deeply}
+  {April 2026}
+  {Developer learning workbook}
+
+\KazePageTitle{Kotlin Learning Guide}
+\KazeDocumentNotice
+
+\section{How To Use This Guide}
+
+This document assumes you already know basic programming from C++ and Java. So it will not spend time teaching what a variable or function is. Instead, it focuses on what is different, important, and easy to misunderstand in Kotlin.
+
+The goal is not just to teach Kotlin syntax. The goal is to teach Kotlin as a programming style:
+\begin{itemize}
+    \item how Kotlin structures data
+    \item how Kotlin handles nullability
+    \item how Kotlin expresses object-oriented programming
+    \item how Kotlin does functional-style programming
+    \item how Kotlin handles concurrency with threads and coroutines
+    \item how Kotlin differs from Java and C++
+\end{itemize}
+
+\begin{kazecalloutbox}[Course Pattern]
+For the most important Kotlin features, this guide tries to answer five questions:
+\begin{itemize}
+    \item what is this feature?
+    \item what problem was JetBrains trying to solve?
+    \item how is this different from the usual Java way?
+    \item when should I use it?
+    \item when would using it badly make code worse instead of better?
+\end{itemize}
+\end{kazecalloutbox}
+
+\begin{kazecalloutbox}[Reading Strategy]
+When a Kotlin feature looks small, ask whether it changes design as well as syntax. Kotlin often does. For example, null safety is not just a syntax difference from Java. It changes how you design data and APIs.
+\end{kazecalloutbox}
+
+\section{Glossary Of Technical Words}
+
+\textbf{Immutable}
+
+An object or value that does not change after creation.
+
+\textbf{Mutable}
+
+An object or value that can change after creation.
+
+\textbf{Nullable}
+
+A value that is allowed to be \texttt{null}.
+
+\textbf{Non-null}
+
+A value that is guaranteed not to be \texttt{null}.
+
+\textbf{Constructor}
+
+The mechanism used to create and initialize an object.
+
+\textbf{Inheritance}
+
+One class extending another class and reusing or changing behavior.
+
+\textbf{Polymorphism}
+
+The ability to treat different types through a common parent type or interface while getting behavior specific to the real implementation.
+
+\textbf{Generic}
+
+A type or function that works with multiple types, such as \texttt{List<String>} or \texttt{fun <T> identity(value: T): T}.
+
+\textbf{Lambda}
+
+An anonymous function value that can be passed around.
+
+\textbf{Coroutine}
+
+A lightweight concurrency construct in Kotlin used for asynchronous and concurrent programming.
+
+\textbf{Thread}
+
+A unit of execution managed by the runtime or operating system. Threads are heavier than coroutines.
+
+\textbf{Suspend Function}
+
+A function marked with \texttt{suspend}, meaning it can pause and resume as part of coroutine-based code.
+
+\textbf{DSL}
+
+Domain-Specific Language. Kotlin uses DSL-style APIs to make configuration code read like a mini language.
+
+\textbf{Extension Function}
+
+A function that adds behavior to an existing type without modifying the type's source code.
+
+\textbf{Data Class}
+
+A class mainly intended to hold data, with generated utility methods such as \texttt{equals}, \texttt{hashCode}, \texttt{toString}, and \texttt{copy}.
+
+\section{Chapter 1: Kotlin's Design Philosophy}
+
+\subsection{Why Kotlin Exists}
+
+Kotlin was designed to improve many pain points that developers experienced in Java:
+\begin{itemize}
+    \item too much boilerplate
+    \item weak null safety
+    \item verbose functional programming
+    \item poor support for concise immutable data structures
+    \item heavy syntax for common patterns
+\end{itemize}
+
+If you come from Java, Kotlin often feels like Java with many annoyances removed.
+
+If you come from C++, Kotlin often feels more managed, more expressive, and more focused on application programming than systems programming.
+
+\subsection{What Kotlin Tries To Optimize For}
+
+Kotlin strongly emphasizes:
+\begin{itemize}
+    \item readability
+    \item safety
+    \item conciseness
+    \item interoperability with Java
+    \item modern concurrency
+\end{itemize}
+
+That means the language often prefers making common good patterns easier and dangerous patterns more explicit.
+
+\subsection{What This Means In Practice}
+
+Kotlin is not only ``shorter Java.'' It often encourages better defaults:
+\begin{itemize}
+    \item immutable values with \texttt{val}
+    \item explicit nullable types
+    \item data classes instead of verbose POJOs
+    \item composition and interfaces instead of deep inheritance
+    \item coroutines instead of low-level thread management for many async tasks
+\end{itemize}
+
+\subsection{Java And C++ Mental Bridge}
+
+\begin{longtable}{p{0.26\textwidth} p{0.30\textwidth} p{0.34\textwidth}}
+\textbf{Topic} & \textbf{Java/C++ Habit} & \textbf{Kotlin Tendency} \\
+Boilerplate & Often accepted & Reduced aggressively \\
+Nulls & Often runtime problem & Type-system-level concern \\
+Data holders & Verbose classes & Data classes \\
+Utility methods & Static helper classes & Top-level and extension functions \\
+Async style & Threads, futures, callbacks & Coroutines \\
+\end{longtable}
+
+\section{Chapter 2: Values, Types, and Variables The Kotlin Way}
+
+\subsection{\texttt{val} vs \texttt{var}}
+
+One of Kotlin's most important everyday ideas is:
+\begin{itemize}
+    \item \texttt{val} means read-only reference
+    \item \texttt{var} means mutable reference
+\end{itemize}
+
+Example:
+
+\begin{lstlisting}[style=kazekotlin]
+val name = "Kaze"
+var counter = 0
+\end{lstlisting}
+
+\texttt{name} cannot be reassigned.
+\texttt{counter} can be reassigned.
+
+\subsection{Why This Matters}
+
+Kotlin nudges you toward immutability because immutable values are easier to reason about, safer in concurrent code, and usually produce fewer bugs.
+
+Best practice:
+\begin{itemize}
+    \item default to \texttt{val}
+    \item use \texttt{var} only when mutation is actually needed
+\end{itemize}
+
+\subsection{Type Inference}
+
+Kotlin often infers types:
+
+\begin{lstlisting}[style=kazekotlin]
+val age = 28
+val price = 4.5
+val active = true
+\end{lstlisting}
+
+You can still write the type explicitly:
+
+\begin{lstlisting}[style=kazekotlin]
+val age: Int = 28
+\end{lstlisting}
+
+Type inference reduces noise, but understanding the real type is still important.
+
+\subsection{Primitive-Like Types}
+
+Common Kotlin built-in types:
+\begin{itemize}
+    \item \texttt{Int}
+    \item \texttt{Long}
+    \item \texttt{Double}
+    \item \texttt{Float}
+    \item \texttt{Boolean}
+    \item \texttt{Char}
+    \item \texttt{String}
+\end{itemize}
+
+Kotlin presents them as regular types, but on the JVM they may compile efficiently using primitives where possible.
+
+\subsection{Collections}
+
+Kotlin distinguishes between read-only and mutable collection interfaces.
+
+\begin{lstlisting}[style=kazekotlin]
+val names: List<String> = listOf("A", "B")
+val scores: MutableList<Int> = mutableListOf(1, 2, 3)
+\end{lstlisting}
+
+This distinction is very important for API design.
+
+\subsection{What To Pay Attention To}
+
+\begin{itemize}
+    \item \texttt{val} does not always mean the object itself is immutable; it means the reference cannot be reassigned.
+    \item read-only \texttt{List} is not the same as a deeply immutable data structure
+    \item Kotlin's type inference is helpful, but beginners should still train themselves to know what the type actually is
+\end{itemize}
+
+\section{Chapter 3: Null Safety}
+
+\subsection{Why Null Safety Is A Big Deal}
+
+Null-related bugs have historically been one of the most common sources of runtime failures in Java-style code.
+
+Kotlin attacks this directly by making nullability part of the type system.
+
+\subsection{Nullable vs Non-Nullable Types}
+
+\begin{lstlisting}[style=kazekotlin]
+val name: String = "Kaze"
+val nickname: String? = null
+\end{lstlisting}
+
+\texttt{String} means non-null.
+\texttt{String?} means nullable.
+
+This is one of the most important things to internalize in Kotlin.
+
+\subsection{Safe Calls}
+
+\begin{lstlisting}[style=kazekotlin]
+val length = nickname?.length
+\end{lstlisting}
+
+If \texttt{nickname} is null, the whole expression becomes null instead of crashing.
+
+\subsection{Elvis Operator}
+
+\begin{lstlisting}[style=kazekotlin]
+val displayName = nickname ?: "Anonymous"
+\end{lstlisting}
+
+This means: if \texttt{nickname} is null, use \texttt{"Anonymous"}.
+
+\subsection{Why Kotlin Forces You To Care}
+
+In Java, null often sneaks through until runtime.
+In Kotlin, the compiler pushes you to handle it earlier.
+
+That means Kotlin code may feel stricter, but it is often safer.
+
+\subsection{Dangerous Operators}
+
+\begin{lstlisting}[style=kazekotlin]
+val forced = nickname!!
+\end{lstlisting}
+
+\texttt{!!} means ``I am certain this is not null.''
+
+If you are wrong, it crashes.
+
+Best practice:
+\begin{itemize}
+    \item use \texttt{!!} rarely
+    \item prefer safe calls, Elvis, and proper type design
+\end{itemize}
+
+\subsection{Smart Casts}
+
+Kotlin can sometimes infer a safer type after a null check:
+
+\begin{lstlisting}[style=kazekotlin]
+if (nickname != null) {
+    println(nickname.length)
+}
+\end{lstlisting}
+
+Inside the block, Kotlin knows \texttt{nickname} is not null.
+
+\subsection{Programmatic Lesson Beyond Kotlin}
+
+Null safety is not just syntax. It is a design discipline.
+
+Good programmers learn to ask:
+\begin{itemize}
+    \item should this value really be optional?
+    \item if it is optional, what does absence mean?
+    \item where should null be handled so the rest of the code stays simpler?
+\end{itemize}
+
+\section{Chapter 4: Functions the Kotlin Way}
+
+\subsection{Why Kotlin Functions Feel Different From Java}
+
+If Chapter 4 feels surprising, that is normal.
+
+In Java, many developers are used to:
+\begin{itemize}
+    \item methods always living inside classes
+    \item several overloads when defaults are needed
+    \item utility classes full of static methods
+    \item verbose anonymous classes or interfaces for behavior passing
+\end{itemize}
+
+Kotlin intentionally moves away from that style.
+
+JetBrains wanted function usage to be:
+\begin{itemize}
+    \item shorter
+    \item easier to read
+    \item friendlier to functional-style programming
+    \item less dependent on ceremony like utility classes and overload explosion
+\end{itemize}
+
+So this chapter is not just about syntax. It is about a different design philosophy.
+
+\subsection{Function Syntax}
+
+\begin{lstlisting}[style=kazekotlin]
+fun greet(name: String): String {
+    return "Hello, $name"
+}
+\end{lstlisting}
+
+Kotlin puts:
+\begin{itemize}
+    \item \texttt{fun} first
+    \item parameter types after parameter names
+    \item return type after the parameter list
+\end{itemize}
+
+This may feel unusual at first if you come from Java or C++, but it becomes natural quickly.
+
+\subsection{Why Kotlin Uses This Syntax}
+
+Kotlin tries to make declarations read more consistently:
+\begin{itemize}
+    \item name first for parameters
+    \item type after a colon
+    \item concise return-type syntax
+\end{itemize}
+
+The language uses this same general style in many places, including properties and lambdas.
+
+This improves internal consistency, even if it feels reversed compared with Java at first.
+
+\subsection{Expression Bodies}
+
+If a function is simple, Kotlin lets you shorten it:
+
+\begin{lstlisting}[style=kazekotlin]
+fun greet(name: String): String = "Hello, $name"
+\end{lstlisting}
+
+This is very common in Kotlin.
+
+\subsection{Why JetBrains Wanted Expression Bodies}
+
+In Java-style code, very small functions can become visually larger than the idea they express.
+
+Compare the mental weight:
+
+\begin{lstlisting}[style=kazekotlin]
+fun isAdult(age: Int): Boolean {
+    return age >= 18
+}
+\end{lstlisting}
+
+versus:
+
+\begin{lstlisting}[style=kazekotlin]
+fun isAdult(age: Int): Boolean = age >= 18
+\end{lstlisting}
+
+The second version emphasizes the actual meaning instead of the ceremony.
+
+That is one of Kotlin's core language goals: let obvious code stay visually small.
+
+\subsection{When To Use Expression Bodies}
+
+Use expression bodies when:
+\begin{itemize}
+    \item the function is very small
+    \item there is one main returned expression
+    \item the shorter form improves readability
+\end{itemize}
+
+Avoid forcing them when:
+\begin{itemize}
+    \item the logic becomes hard to scan
+    \item the expression is too dense
+    \item the function becomes more readable with a block body
+\end{itemize}
+
+\subsection{Default Arguments}
+
+\begin{lstlisting}[style=kazekotlin]
+fun greet(name: String, prefix: String = "Hello"): String =
+    "$prefix, $name"
+\end{lstlisting}
+
+This often removes the need for many overloads.
+
+\subsection{Why Kotlin Chose Default Arguments Instead Of The Java Overload Habit}
+
+In Java, if you want optional parameters, you often end up writing several overloads:
+
+\begin{lstlisting}[style=kazekotlin]
+// Java-style idea, shown conceptually
+greet(name)
+greet(name, prefix)
+greet(name, prefix, punctuation)
+\end{lstlisting}
+
+This creates boilerplate and repetition.
+
+Kotlin's answer is:
+\begin{quote}
+make defaults part of the language instead of forcing overloads for common cases
+\end{quote}
+
+Why this is useful:
+\begin{itemize}
+    \item fewer repetitive overloads
+    \item simpler APIs
+    \item one canonical function signature
+\end{itemize}
+
+\subsection{Use Cases For Default Arguments}
+
+Default arguments are especially useful when:
+\begin{itemize}
+    \item one or two parameters are usually the same value
+    \item you want a clean API without overload clutter
+    \item you want to configure behavior while keeping easy defaults
+\end{itemize}
+
+Examples:
+\begin{itemize}
+    \item formatting functions
+    \item configuration helpers
+    \item builder-like setup functions
+    \item UI or framework APIs
+\end{itemize}
+
+\subsection{Named Arguments}
+
+\begin{lstlisting}[style=kazekotlin]
+greet(name = "Oreste", prefix = "Hi")
+\end{lstlisting}
+
+This improves readability, especially when multiple parameters have the same type.
+
+\subsection{Why Named Arguments Exist}
+
+Sometimes a function call is technically correct but mentally unclear:
+
+\begin{lstlisting}[style=kazekotlin]
+createUser("ange", true, false, 30)
+\end{lstlisting}
+
+What do those booleans mean?
+
+Named arguments solve that clarity problem:
+
+\begin{lstlisting}[style=kazekotlin]
+createUser(
+    name = "ange",
+    isAdmin = true,
+    isVerified = false,
+    age = 30
+)
+\end{lstlisting}
+
+JetBrains added this because readable code is not only about fewer lines. It is also about making intent obvious at the call site.
+
+\subsection{Use Cases For Named Arguments}
+
+Named arguments are especially helpful when:
+\begin{itemize}
+    \item several parameters share the same type
+    \item the meaning of values is not obvious
+    \item a function has optional parameters with defaults
+    \item you want call sites to read like small statements of intent
+\end{itemize}
+
+\subsection{Top-Level Functions}
+
+Unlike Java, Kotlin does not force every function into a class.
+
+\begin{lstlisting}[style=kazekotlin]
+fun formatCurrency(amount: Int): String = "$amount RWF"
+\end{lstlisting}
+
+This is useful for utilities and keeps code less ceremony-heavy.
+
+\subsection{Why Kotlin Allows Top-Level Functions}
+
+This is one of the clearest examples of Kotlin rejecting unnecessary Java ceremony.
+
+In Java, many helper functions end up inside:
+\begin{itemize}
+    \item utility classes
+    \item static helper classes
+    \item classes that exist only because the language requires them
+\end{itemize}
+
+JetBrains asked a simple question:
+\begin{quote}
+if a function does not logically belong to an object, why force it into one?
+\end{quote}
+
+So Kotlin allows top-level functions.
+
+\subsection{When Top-Level Functions Are Good}
+
+Use top-level functions when:
+\begin{itemize}
+    \item the function is a pure utility
+    \item it does not need object state
+    \item it conceptually belongs to a file or module more than to a class
+\end{itemize}
+
+Do not use them carelessly for everything. If behavior clearly belongs to a type, keep it with that type.
+
+\subsection{Higher-Order Functions}
+
+A higher-order function is a function that takes another function or returns one.
+
+\begin{lstlisting}[style=kazekotlin]
+fun applyTwice(value: Int, transform: (Int) -> Int): Int =
+    transform(transform(value))
+\end{lstlisting}
+
+This is central to Kotlin's expressive style.
+
+\subsection{Why Kotlin Invested So Much In Higher-Order Functions}
+
+Modern Kotlin libraries rely heavily on passing behavior as values.
+
+JetBrains wanted Kotlin to support:
+\begin{itemize}
+    \item collection transformations
+    \item DSLs
+    \item callbacks without callback hell style syntax
+    \item flexible APIs with concise behavior injection
+\end{itemize}
+
+This is why Kotlin makes function types and lambdas first-class ideas rather than awkward extras.
+
+\subsection{Use Cases For Higher-Order Functions}
+
+You will use them for:
+\begin{itemize}
+    \item \texttt{map}, \texttt{filter}, and collection operations
+    \item framework setup blocks
+    \item retry or transaction wrappers
+    \item custom reusable control flow
+\end{itemize}
+
+\subsection{Lambdas}
+
+\begin{lstlisting}[style=kazekotlin]
+val doubled = listOf(1, 2, 3).map { it * 2 }
+\end{lstlisting}
+
+The \texttt{\{ it * 2 \}} part is a lambda.
+
+\subsection{Why Lambdas Matter So Much In Kotlin}
+
+Without lambdas, Kotlin's modern style would be much weaker.
+
+They are what make code like this feel natural:
+\begin{itemize}
+    \item collection pipelines
+    \item scope functions
+    \item Ktor DSLs
+    \item Koin DSLs
+    \item coroutine builders
+\end{itemize}
+
+In older Java, passing behavior often meant verbose anonymous classes. Kotlin wanted to remove that friction.
+
+\subsection{When Lambdas Help and When They Hurt}
+
+Lambdas help when:
+\begin{itemize}
+    \item the behavior is small and local
+    \item the code reads naturally
+    \item the function being called is designed around them
+\end{itemize}
+
+Lambdas hurt when:
+\begin{itemize}
+    \item they become huge nested blocks
+    \item too many implicit receivers make code hard to follow
+    \item short syntax hides complicated logic
+\end{itemize}
+
+\subsection{What To Pay Attention To}
+
+\begin{itemize}
+    \item default arguments replace many overloads
+    \item top-level functions are normal Kotlin
+    \item higher-order functions are everywhere in Kotlin APIs
+    \item Kotlin's function design is trying to reduce boilerplate while improving call-site clarity
+    \item the goal is not always ``shorter'' code; the goal is often ``clearer'' code
+\end{itemize}
+
+\subsection{The Bigger Lesson Of This Chapter}
+
+JetBrains did not redesign functions just to be different from Java.
+
+The function features in Kotlin are trying to solve repeated real-world annoyances:
+\begin{itemize}
+    \item overload clutter
+    \item static helper boilerplate
+    \item noisy anonymous behavior passing
+    \item overly large syntax for small ideas
+\end{itemize}
+
+So when you study Kotlin functions, do not memorize them as isolated syntax tricks.
+See them as a set of language decisions meant to make APIs cleaner, call sites more readable, and reusable behavior easier to express.
+
+\section{Chapter 5: Classes, Properties, Constructors, and Data Classes}
+
+\subsection{Class Syntax}
+
+\begin{lstlisting}[style=kazekotlin]
+class User(val name: String, var age: Int)
+\end{lstlisting}
+
+This single line declares:
+\begin{itemize}
+    \item a class
+    \item a primary constructor
+    \item one read-only property
+    \item one mutable property
+\end{itemize}
+
+\subsection{Primary Constructor}
+
+The primary constructor is declared in the class header.
+
+\begin{lstlisting}[style=kazekotlin]
+class Hotel(val id: String, val displayName: String)
+\end{lstlisting}
+
+This is far more concise than Java boilerplate.
+
+\subsection{Secondary Constructors}
+
+Kotlin supports secondary constructors, but you often need them less because primary constructors plus default arguments cover many cases.
+
+\begin{lstlisting}[style=kazekotlin]
+class User(val name: String) {
+    constructor() : this("Anonymous")
+}
+\end{lstlisting}
+
+\subsection{Initialization Blocks}
+
+\begin{lstlisting}[style=kazekotlin]
+class User(val age: Int) {
+    init {
+        require(age >= 0) { "Age must be non-negative" }
+    }
+}
+\end{lstlisting}
+
+The \texttt{init} block runs during object creation.
+
+\subsection{Properties vs Fields}
+
+In Kotlin, properties are a first-class language feature.
+
+\begin{lstlisting}[style=kazekotlin]
+class Counter {
+    var value: Int = 0
+}
+\end{lstlisting}
+
+This looks simple, but Kotlin may generate getter and setter methods under the hood on the JVM.
+
+\subsection{Custom Accessors}
+
+\begin{lstlisting}[style=kazekotlin]
+class Person(name: String) {
+    var name: String = name
+        set(value) {
+            field = value.trim()
+        }
+}
+\end{lstlisting}
+
+Here, \texttt{field} refers to the backing field.
+
+\subsection{Data Classes}
+
+\begin{lstlisting}[style=kazekotlin]
+data class Book(
+    val id: String,
+    val title: String
+)
+\end{lstlisting}
+
+Data classes are one of Kotlin's most useful features. They automatically provide:
+\begin{itemize}
+    \item \texttt{toString()}
+    \item \texttt{equals()}
+    \item \texttt{hashCode()}
+    \item \texttt{copy()}
+\end{itemize}
+
+\subsection{Why Data Classes Matter}
+
+In Java, simple data holders often require a lot of boilerplate.
+In Kotlin, data classes make clean, value-oriented code easy.
+
+\section{Chapter 6: Inheritance, Interfaces, and Polymorphism}
+
+\subsection{Classes Are Final By Default}
+
+This is a big difference from Java.
+
+In Kotlin, classes and methods are final by default.
+
+If you want inheritance, you must opt into it:
+
+\begin{lstlisting}[style=kazekotlin]
+open class Animal {
+    open fun speak() = "..."
+}
+
+class Dog : Animal() {
+    override fun speak() = "Woof"
+}
+\end{lstlisting}
+
+\subsection{Why Kotlin Does This}
+
+Kotlin tries to make inheritance a deliberate choice, not an accidental default.
+
+This reduces some classes of design problems and encourages composition when inheritance is unnecessary.
+
+\subsection{Interfaces}
+
+\begin{lstlisting}[style=kazekotlin]
+interface PaymentProvider {
+    fun pay(amount: Int): Boolean
+}
+\end{lstlisting}
+
+Interfaces define contracts. Multiple classes can implement the same interface differently.
+
+\subsection{Polymorphism}
+
+Polymorphism means code can work through a shared abstraction:
+
+\begin{lstlisting}[style=kazekotlin]
+fun process(provider: PaymentProvider) {
+    provider.pay(1000)
+}
+\end{lstlisting}
+
+The function does not care whether the provider is Airtel, MTN, or a fake test provider.
+
+\subsection{Programmatic Lesson Beyond Kotlin}
+
+Polymorphism is not just an OOP buzzword. It is one of the main tools for keeping systems flexible. Whenever you want replaceable behavior, common interfaces are often part of the answer.
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item prefer interfaces for contracts
+    \item use inheritance deliberately
+    \item do not create inheritance trees just because OOP allows it
+\end{itemize}
+
+\section{Chapter 7: Comparisons, Equality, and Operators}
+
+\subsection{Structural vs Referential Equality}
+
+Kotlin has two important equality operators:
+\begin{itemize}
+    \item \texttt{==} means structural equality
+    \item \texttt{===} means referential equality
+\end{itemize}
+
+\begin{lstlisting}[style=kazekotlin]
+val a = "kaze"
+val b = "kaze"
+
+println(a == b)   // value comparison
+println(a === b)  // same object reference?
+\end{lstlisting}
+
+This is a very important difference from Java-style thinking.
+
+\subsection{Comparable and Ordering}
+
+Kotlin makes sorting and comparisons pleasant:
+
+\begin{lstlisting}[style=kazekotlin]
+val numbers = listOf(3, 1, 2).sorted()
+\end{lstlisting}
+
+For custom types, you may implement \texttt{Comparable} or provide comparators.
+
+\subsection{Operator Overloading}
+
+Kotlin allows operator overloading for types that define specific functions.
+
+\begin{lstlisting}[style=kazekotlin]
+data class Point(val x: Int, val y: Int) {
+    operator fun plus(other: Point): Point =
+        Point(x + other.x, y + other.y)
+}
+\end{lstlisting}
+
+Use this carefully. It can be elegant, but unclear operator meanings hurt readability.
+
+\section{Chapter 8: Collections, Generics, and Functional Style}
+
+\subsection{Collections}
+
+Kotlin's collection API is one of the biggest sources of everyday productivity.
+
+Common operations:
+\begin{itemize}
+    \item \texttt{map}
+    \item \texttt{filter}
+    \item \texttt{fold}
+    \item \texttt{associateBy}
+    \item \texttt{groupBy}
+\end{itemize}
+
+Example:
+
+\begin{lstlisting}[style=kazekotlin]
+val evenSquares = listOf(1, 2, 3, 4)
+    .filter { it % 2 == 0 }
+    .map { it * it }
+\end{lstlisting}
+
+\subsection{Why This Matters}
+
+Kotlin encourages a declarative style for many collection transformations. You often say what you want, not how to loop manually step by step.
+
+\subsection{Generics}
+
+\begin{lstlisting}[style=kazekotlin]
+class Box<T>(val value: T)
+\end{lstlisting}
+
+Generics let code work with multiple types while preserving type safety.
+
+\subsection{Variance}
+
+Advanced generic topics such as covariance and contravariance matter in Kotlin.
+
+You may see:
+\begin{itemize}
+    \item \texttt{out T} for producer-like types
+    \item \texttt{in T} for consumer-like types
+\end{itemize}
+
+This can feel abstract at first, but the main idea is about safe subtyping relationships between generic types.
+
+\subsection{A Programmatic Way To Think About Variance}
+
+If a type only gives values out, covariance often makes sense.
+If a type only takes values in, contravariance often makes sense.
+
+This is not only Kotlin knowledge. It is a general type-system idea.
+
+\section{Chapter 9: Extension Functions, Objects, Enums, and Sealed Types}
+
+\subsection{Extension Functions}
+
+\begin{lstlisting}[style=kazekotlin]
+fun String.exclaim(): String = this + "!"
+\end{lstlisting}
+
+This lets you write:
+
+\begin{lstlisting}[style=kazekotlin]
+println("Kaze".exclaim())
+\end{lstlisting}
+
+Extension functions are heavily used in idiomatic Kotlin.
+
+\subsection{Objects}
+
+\begin{lstlisting}[style=kazekotlin]
+object Config {
+    const val APP_NAME = "Kaze"
+}
+\end{lstlisting}
+
+An \texttt{object} declaration creates a singleton-like construct.
+
+\subsection{Enums}
+
+\begin{lstlisting}[style=kazekotlin]
+enum class Role {
+    CUSTOMER,
+    ADMIN
+}
+\end{lstlisting}
+
+Useful for closed sets of simple named constants.
+
+\subsection{Sealed Classes and Sealed Interfaces}
+
+Sealed types are excellent when you want a known closed hierarchy.
+
+\begin{lstlisting}[style=kazekotlin]
+sealed class AuthResult {
+    data class Success(val token: String) : AuthResult()
+    data class Failure(val message: String) : AuthResult()
+}
+\end{lstlisting}
+
+This helps make branching safer and more explicit.
+
+\subsection{Why Sealed Types Matter Beyond Kotlin}
+
+They are a strong tool for modelling finite states, results, events, or UI states. This is one of the most practically useful advanced ideas in modern programming.
+
+\section{Chapter 10: Exceptions, Results, and Error Handling}
+
+\subsection{Exceptions}
+
+Kotlin uses exceptions, but unlike Java it does not force checked exceptions everywhere.
+
+This reduces ceremony, but it means teams must be disciplined about error design.
+
+\subsection{\texttt{require}, \texttt{check}, and \texttt{error}}
+
+\begin{lstlisting}[style=kazekotlin]
+require(age >= 0) { "Age must be non-negative" }
+\end{lstlisting}
+
+These functions are idiomatic for assertions and validation.
+
+\subsection{Result-Like Modelling}
+
+Instead of always throwing exceptions, you can model success and failure explicitly with sealed types or \texttt{Result}.
+
+That style is often useful when failures are expected parts of the domain.
+
+\section{Chapter 11: Threads, Concurrency, and Coroutines}
+
+\subsection{What A Thread Is}
+
+A thread is an execution path that can run code independently of other threads.
+
+If you have worked in Java, you have likely seen \texttt{Thread}, \texttt{Runnable}, or \texttt{ExecutorService}.
+
+Threads are real execution resources. They are not free.
+
+\subsection{Why Threads Matter}
+
+Concurrency matters whenever a program wants to do multiple things without blocking everything else:
+\begin{itemize}
+    \item handling many requests
+    \item waiting for IO
+    \item doing background work
+    \item parallel processing
+\end{itemize}
+
+\subsection{What Makes Thread Programming Hard}
+
+Thread-based programming is powerful, but it introduces:
+\begin{itemize}
+    \item race conditions
+    \item deadlocks
+    \item shared-state bugs
+    \item difficult debugging
+\end{itemize}
+
+\subsection{What A Coroutine Is}
+
+A coroutine is a lightweight concurrency abstraction supported by Kotlin.
+
+Think of it as a unit of work that can pause and resume without requiring a whole dedicated thread for each logical task.
+
+\subsection{Why Coroutines Exist}
+
+Coroutines are especially useful for:
+\begin{itemize}
+    \item asynchronous IO
+    \item scalable server code
+    \item avoiding callback-heavy code
+    \item writing async code in a sequential style
+\end{itemize}
+
+\subsection{Threads vs Coroutines}
+
+\begin{longtable}{p{0.24\textwidth} p{0.28\textwidth} p{0.38\textwidth}}
+\textbf{Topic} & \textbf{Thread} & \textbf{Coroutine} \\
+Weight & Heavier & Lighter \\
+Managed by & OS/runtime level & Kotlin coroutine machinery \\
+Count scalability & More limited & Usually far more scalable for many waiting tasks \\
+Blocking style & Traditional blocking model & Can suspend instead of blocking \\
+\end{longtable}
+
+\subsection{Important Warning}
+
+Coroutines are not magic.
+
+If coroutine code calls blocking work carelessly, the performance benefits can disappear.
+
+\subsection{Suspend Functions}
+
+\begin{lstlisting}[style=kazekotlin]
+suspend fun loadUser(id: String): User { ... }
+\end{lstlisting}
+
+\texttt{suspend} means the function can pause and resume in coroutine contexts.
+
+It does \emph{not} automatically mean:
+\begin{itemize}
+    \item non-blocking
+    \item parallel
+    \item fast
+\end{itemize}
+
+\subsection{Coroutine Builders}
+
+Common builders include:
+\begin{itemize}
+    \item \texttt{launch}
+    \item \texttt{async}
+    \item \texttt{runBlocking}
+\end{itemize}
+
+Use them with understanding, not by cargo cult.
+
+\subsection{Structured Concurrency}
+
+One of Kotlin coroutines' biggest strengths is structured concurrency. The main idea is:
+
+\begin{quote}
+concurrent work should live inside a scope with a clear lifetime
+\end{quote}
+
+This helps avoid orphaned work and improves cancellation and reasoning.
+
+\subsection{Cancellation}
+
+Coroutines support cancellation, which is crucial in real applications. Good async code should cooperate with cancellation instead of ignoring it.
+
+\subsection{Programmatic Lesson Beyond Kotlin}
+
+Concurrency is not just ``make it faster.'' It is about coordination, safety, responsiveness, and resource management.
+
+Even if you become excellent at Kotlin syntax, poor concurrency design can still break a system badly.
+
+\section{Chapter 12: Scope Functions and Idiomatic Kotlin}
+
+\subsection{Scope Functions}
+
+You will often see:
+\begin{itemize}
+    \item \texttt{let}
+    \item \texttt{run}
+    \item \texttt{apply}
+    \item \texttt{also}
+    \item \texttt{with}
+\end{itemize}
+
+These are useful, but can confuse beginners.
+
+\subsection{A Safe Beginner Rule}
+
+Learn the main intent of each one, but do not force them everywhere.
+
+\begin{longtable}{p{0.18\textwidth} p{0.72\textwidth}}
+\textbf{\texttt{let}} & Often used for null-safe transformations or scoped temporary names. \\
+\textbf{\texttt{run}} & Execute a block and return its result. \\
+\textbf{\texttt{apply}} & Configure an object and return the object. \\
+\textbf{\texttt{also}} & Perform side actions and return the object. \\
+\textbf{\texttt{with}} & Run multiple operations with one receiver object. \\
+\end{longtable}
+
+\subsection{Best Practice}
+
+Use scope functions when they make code clearer, not when they make it clever.
+
+\section{Chapter 13: DSLs and Why Kotlin Feels Different}
+
+\subsection{What A DSL Is}
+
+A DSL is an API designed to read like a small language.
+
+Kotlin is excellent for this because of:
+\begin{itemize}
+    \item lambdas with receivers
+    \item type inference
+    \item trailing lambda syntax
+\end{itemize}
+
+\subsection{Why This Matters In Your Project}
+
+Ktor and Koin both use DSL-style APIs.
+
+That is why code like this exists:
+
+\begin{lstlisting}[style=kazekotlin]
+routing {
+    get("/") {
+        call.respondText("Hello")
+    }
+}
+\end{lstlisting}
+
+and:
+
+\begin{lstlisting}[style=kazekotlin]
+module {
+    single { MyService(get()) }
+}
+\end{lstlisting}
+
+If you understand DSL thinking, a large amount of Kotlin framework code becomes less mysterious.
+
+\section{Chapter 14: Common Beginner Mistakes}
+
+\begin{longtable}{p{0.26\textwidth} p{0.28\textwidth} p{0.36\textwidth}}
+\textbf{Mistake} & \textbf{Symptom} & \textbf{What To Remember} \\
+Overusing \texttt{var} & Harder-to-track mutable state & Default to \texttt{val}. \\
+Ignoring nullability & Repeated confusion and crashes & Design nullable types deliberately. \\
+Using \texttt{!!} often & Runtime crashes & Prefer safe handling. \\
+Overusing scope functions & Hard-to-read code & Choose clarity over cleverness. \\
+Confusing thread and coroutine ideas & Async bugs or wrong expectations & Coroutines are not the same as threads. \\
+Using inheritance too quickly & Rigid design & Prefer interfaces and composition when possible. \\
+\end{longtable}
+
+\section{Chapter 15: Mapping This Back To Kaze}
+
+Once you know the language ideas, your project code becomes much easier to understand.
+
+\begin{longtable}{p{0.28\textwidth} p{0.64\textwidth}}
+\textbf{Concept} & \textbf{Where It Appears In Kaze} \\
+Data classes and domain modelling & \texttt{shared/src/commonMain/kotlin/dev/orestegabo/kaze/domain/...} \\
+Interfaces and repositories & \texttt{shared/src/commonMain/kotlin/dev/orestegabo/kaze/data/repository/...} \\
+Extension functions and mappers & server and API mapping files \\
+DSL-style code & Ktor routing and Koin module files in the server module \\
+Null-safe config loading & server config and auth setup files \\
+Coroutine-shaped APIs & suspend repository and service methods across modules \\
+\end{longtable}
+
+\subsection{How To Read Kotlin In This Project Better}
+
+When you see Kotlin code in Kaze, ask:
+\begin{enumerate}
+    \item Is this a data holder, behavior class, or configuration DSL?
+    \item Is this value nullable or non-null?
+    \item Is this using inheritance, interface-based polymorphism, or plain composition?
+    \item Is this code synchronous, thread-based, or coroutine-based?
+\end{enumerate}
+
+\section{Exercises}
+
+\subsection{Core Kotlin}
+
+\begin{itemize}
+    \item Rewrite a small Java POJO as a Kotlin data class.
+    \item Write one example using \texttt{val} and one using \texttt{var}, then explain why each choice is appropriate.
+    \item Write a function with a default argument and named argument usage.
+\end{itemize}
+
+\subsection{Null Safety}
+
+\begin{itemize}
+    \item Write a nullable \texttt{String?} example using safe call and Elvis.
+    \item Rewrite one example that uses \texttt{!!} into a safer version.
+\end{itemize}
+
+\subsection{OOP and Abstractions}
+
+\begin{itemize}
+    \item Create an interface and two implementations.
+    \item Write a function that uses the interface polymorphically.
+\end{itemize}
+
+\subsection{Coroutines}
+
+\begin{itemize}
+    \item Explain in your own words the difference between a thread and a coroutine.
+    \item Explain why \texttt{suspend} does not automatically mean non-blocking.
+\end{itemize}
+
+\section{Final Advice}
+
+The most important thing when learning Kotlin is to avoid treating it as Java with shorter syntax.
+
+Kotlin has different defaults, and those defaults influence design:
+\begin{itemize}
+    \item immutability first
+    \item explicit nullability
+    \item concise data modelling
+    \item expressive higher-order functions
+    \item coroutine-based concurrency
+\end{itemize}
+
+If you learn those ideas, not just the syntax, the rest of the Kotlin ecosystem becomes much easier to understand.
+
+\section{Contact}
+
+\KazeContactBlock
+
+\end{document}

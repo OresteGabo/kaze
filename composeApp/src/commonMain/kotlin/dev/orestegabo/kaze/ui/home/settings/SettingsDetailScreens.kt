@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
 import dev.orestegabo.kaze.theme.KazeTheme
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
@@ -82,6 +84,11 @@ internal fun SettingsDetailScreen(
     sessionPhoneNumber: String,
     needsProfileCompletion: Boolean,
     bottomContentPadding: Dp,
+    privacyConsent: KazePrivacyConsent,
+    onMapAndVenueActivityConsentChange: (Boolean) -> Unit,
+    onDiagnosticsConsentChange: (Boolean) -> Unit,
+    onNotificationsConsentChange: (Boolean) -> Unit,
+    onAnalyticsConsentChange: (Boolean) -> Unit,
     onUpdateProfile: (String, String, String) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -115,7 +122,13 @@ internal fun SettingsDetailScreen(
             )
         }
         if (page == SettingsDetailPage.PRIVACY_CONTROLS) {
-            DataCollectionSettingsCard()
+            DataCollectionSettingsCard(
+                consent = privacyConsent,
+                onMapAndVenueActivityConsentChange = onMapAndVenueActivityConsentChange,
+                onDiagnosticsConsentChange = onDiagnosticsConsentChange,
+                onNotificationsConsentChange = onNotificationsConsentChange,
+                onAnalyticsConsentChange = onAnalyticsConsentChange,
+            )
         }
         if (page == SettingsDetailPage.PAYMENTS) {
             PaymentMethodsCard()
@@ -540,7 +553,13 @@ private fun AboutKazeBrandCard() {
 }
 
 @Composable
-private fun DataCollectionSettingsCard() {
+private fun DataCollectionSettingsCard(
+    consent: KazePrivacyConsent,
+    onMapAndVenueActivityConsentChange: (Boolean) -> Unit,
+    onDiagnosticsConsentChange: (Boolean) -> Unit,
+    onNotificationsConsentChange: (Boolean) -> Unit,
+    onAnalyticsConsentChange: (Boolean) -> Unit,
+) {
     Surface(
         shape = RoundedCornerShape(26.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
@@ -570,20 +589,33 @@ private fun DataCollectionSettingsCard() {
                     description = "Profile, linked contact methods, invitations, stays, passes, and service requests needed to make the app work.",
                     status = "Required",
                 )
-                DataCollectionRow(
+                DataCollectionToggleRow(
                     title = "Map and venue activity",
                     description = "Venue searches, selected maps, saved places, and recently viewed spaces used to improve navigation and recommendations.",
                     status = "Optional",
+                    checked = consent.mapAndVenueActivityEnabled,
+                    onCheckedChange = onMapAndVenueActivityConsentChange,
                 )
-                DataCollectionRow(
+                DataCollectionToggleRow(
                     title = "Diagnostics and crash reports",
                     description = "Device, app version, errors, and crash details used to fix bugs and improve reliability.",
                     status = "Recommended",
+                    checked = consent.diagnosticsEnabled,
+                    onCheckedChange = onDiagnosticsConsentChange,
                 )
-                DataCollectionRow(
+                DataCollectionToggleRow(
                     title = "Notifications",
                     description = "Invitation alerts, event updates, stay reminders, and delivery preferences.",
                     status = "User controlled",
+                    checked = consent.notificationsEnabled,
+                    onCheckedChange = onNotificationsConsentChange,
+                )
+                DataCollectionToggleRow(
+                    title = "Product insights and analytics",
+                    description = "Feature usage patterns and aggregated interaction data used to improve product decisions without changing your account data.",
+                    status = "Optional",
+                    checked = consent.analyticsEnabled,
+                    onCheckedChange = onAnalyticsConsentChange,
                 )
                 DataCollectionRow(
                     title = "Payments and receipts",
@@ -591,7 +623,11 @@ private fun DataCollectionSettingsCard() {
                     status = "When used",
                 )
             }
-            // TODO Store consent choices and connect them to analytics, diagnostics, notifications, maps, and data export.
+            Text(
+                "Your optional choices are saved on this device now. Required service data stays enabled because core Kaze features depend on it.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+            )
         }
     }
 }
@@ -631,6 +667,68 @@ private fun DataCollectionRow(
                 description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun DataCollectionToggleRow(
+    title: String,
+    description: String,
+    status: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            title,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        MetaPill(status)
+                    }
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                    )
+                }
+                KazeAdaptiveSwitch(
+                    checked = checked,
+                    onCheckedChange = onCheckedChange,
+                )
+            }
+            Text(
+                if (checked) "Enabled" else "Disabled",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = if (checked) 1f else 0.72f),
             )
         }
     }

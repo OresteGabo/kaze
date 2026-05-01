@@ -1,0 +1,683 @@
+\documentclass[11pt,a4paper]{article}
+\input{kaze-theme.tex}
+\usepackage{listings}
+\usepackage{upquote}
+
+\definecolor{CodeBg}{HTML}{F4F1EA}
+\definecolor{CodeRule}{HTML}{D8CCBC}
+\definecolor{CodeComment}{HTML}{6A737D}
+\definecolor{CodeKeyword}{HTML}{284F58}
+\definecolor{CodeString}{HTML}{8A6538}
+
+\lstdefinestyle{kazekotlin}{
+    language={},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{CodeKeyword}\bfseries,
+    commentstyle=\color{CodeComment},
+    stringstyle=\color{CodeString},
+    showstringspaces=false,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{CodeRule},
+    backgroundcolor=\color{CodeBg},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    aboveskip=0.8em,
+    belowskip=0.8em
+}
+
+\begin{document}
+
+\KazeCover
+  {KMP Build-Along Bootcamp}
+  {A practical guide to building a real Kotlin Multiplatform app step by step}
+  {April 2026}
+  {Developer learning workbook}
+
+\KazePageTitle{KMP Build-Along}
+\KazeDocumentNotice
+
+\section{What This Document Is}
+
+This document exists because understanding concepts is not the same thing as being able to build an app.
+
+So this is not a theory guide.
+It is a build-along bootcamp.
+
+We will design a small but realistic KMP app called \textbf{City Companion}. It will let a user:
+\begin{itemize}
+    \item browse places
+    \item open a detail screen
+    \item mark favorites
+    \item open an external map link
+    \item load data asynchronously
+    \item show loading and error states
+    \item render a simple custom map block with Canvas
+\end{itemize}
+
+The goal is that after reading this, you should be able to build a decent KMP app skeleton yourself.
+
+\begin{kazecalloutbox}[What You Should Learn]
+By the end, you should know how to split shared and platform-specific code, build screens with Compose, manage state, structure navigation, create platform bridges, perform async loading with coroutines, and test shared logic.
+\end{kazecalloutbox}
+
+\section{App Goal and Architecture}
+
+\subsection{What We Are Building}
+
+We are building a tiny cross-platform app with:
+\begin{itemize}
+    \item one home/list screen
+    \item one detail screen
+    \item favorites state
+    \item one platform-specific action: open external map URL
+    \item one custom-drawn map preview
+\end{itemize}
+
+\subsection{The Architecture We Will Use}
+
+We will use five layers:
+\begin{itemize}
+    \item UI composables
+    \item screen state / view-model-like classes
+    \item use cases
+    \item repositories
+    \item platform services
+\end{itemize}
+
+This is not the only possible architecture, but it is a very practical one.
+
+\subsection{Why This Architecture}
+
+If you skip architecture and just start writing screens, KMP can become confusing fast.
+
+This separation helps because:
+\begin{itemize}
+    \item composables stay mostly about rendering
+    \item business logic stays reusable
+    \item repositories isolate data access
+    \item platform-specific actions stay behind shared interfaces
+\end{itemize}
+
+\section{Step 1: Shared Models}
+
+Start with the data your app actually cares about.
+
+\begin{lstlisting}[style=kazekotlin]
+data class PlaceSummary(
+    val id: String,
+    val title: String,
+    val category: String,
+    val city: String,
+    val isFavorite: Boolean = false
+)
+
+data class PlaceDetail(
+    val id: String,
+    val title: String,
+    val description: String,
+    val mapUrl: String,
+    val x: Float,
+    val y: Float
+)
+\end{lstlisting}
+
+\subsection{Why Start Here}
+
+If you do not define your domain data early, the rest of the app becomes vague.
+
+This is one of the most common developer mistakes:
+\begin{quote}
+building UI before the app's data model is clear
+\end{quote}
+
+\section{Step 2: Repository Interfaces}
+
+Now define what data operations the app needs.
+
+\begin{lstlisting}[style=kazekotlin]
+interface PlacesRepository {
+    suspend fun listPlaces(): List<PlaceSummary>
+    suspend fun getPlace(id: String): PlaceDetail?
+    suspend fun toggleFavorite(id: String): List<PlaceSummary>
+}
+\end{lstlisting}
+
+\subsection{Why Use An Interface First}
+
+Because the UI should depend on behavior, not on storage details.
+
+This lets you start with fake in-memory data, then later move to network or database code without rewriting the screen architecture.
+
+\section{Step 3: A Fake Repository First}
+
+Before building networking, create a fake repository so you can get the app running.
+
+\begin{lstlisting}[style=kazekotlin]
+class FakePlacesRepository : PlacesRepository {
+    private var places = listOf(
+        PlaceSummary("1", "Kigali Convention Centre", "Venue", "Kigali"),
+        PlaceSummary("2", "Inema Arts Center", "Art", "Kigali")
+    )
+
+    private val details = mapOf(
+        "1" to PlaceDetail(
+            id = "1",
+            title = "Kigali Convention Centre",
+            description = "A conference and event venue.",
+            mapUrl = "https://maps.example/1",
+            x = 120f,
+            y = 80f
+        ),
+        "2" to PlaceDetail(
+            id = "2",
+            title = "Inema Arts Center",
+            description = "Creative space for exhibitions and events.",
+            mapUrl = "https://maps.example/2",
+            x = 220f,
+            y = 140f
+        )
+    )
+
+    override suspend fun listPlaces(): List<PlaceSummary> = places
+
+    override suspend fun getPlace(id: String): PlaceDetail? = details[id]
+
+    override suspend fun toggleFavorite(id: String): List<PlaceSummary> {
+        places = places.map { place ->
+            if (place.id == id) place.copy(isFavorite = !place.isFavorite)
+            else place
+        }
+        return places
+    }
+}
+\end{lstlisting}
+
+\subsection{Why This Is A Smart Beginner Move}
+
+Many developers jump into networking too early and then cannot tell whether bugs are caused by UI or API issues.
+
+Using a fake repository first isolates the learning problem.
+
+\section{Step 4: Screen State}
+
+Define the state the screen needs to render.
+
+\begin{lstlisting}[style=kazekotlin]
+data class PlacesUiState(
+    val isLoading: Boolean = true,
+    val places: List<PlaceSummary> = emptyList(),
+    val errorMessage: String? = null
+)
+
+data class PlaceDetailUiState(
+    val isLoading: Boolean = true,
+    val detail: PlaceDetail? = null,
+    val errorMessage: String? = null
+)
+\end{lstlisting}
+
+\subsection{Why This Matters}
+
+If you cannot describe the screen state clearly, your composables will become tangled.
+
+Good app-building habit:
+\begin{quote}
+define the UI state as explicit data before writing much UI
+\end{quote}
+
+\section{Step 5: View-Model-Like State Holders}
+
+Now create classes that own and change the state.
+
+\begin{lstlisting}[style=kazekotlin]
+class PlacesViewModel(
+    private val repository: PlacesRepository
+) {
+    var uiState by mutableStateOf(PlacesUiState())
+        private set
+
+    suspend fun load() {
+        uiState = uiState.copy(isLoading = true, errorMessage = null)
+        uiState = try {
+            uiState.copy(
+                isLoading = false,
+                places = repository.listPlaces()
+            )
+        } catch (e: Exception) {
+            uiState.copy(
+                isLoading = false,
+                errorMessage = "Could not load places"
+            )
+        }
+    }
+
+    suspend fun toggleFavorite(id: String) {
+        uiState = uiState.copy(
+            places = repository.toggleFavorite(id)
+        )
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+class PlaceDetailViewModel(
+    private val repository: PlacesRepository
+) {
+    var uiState by mutableStateOf(PlaceDetailUiState())
+        private set
+
+    suspend fun load(id: String) {
+        uiState = uiState.copy(isLoading = true, errorMessage = null)
+        uiState = try {
+            uiState.copy(
+                isLoading = false,
+                detail = repository.getPlace(id)
+            )
+        } catch (e: Exception) {
+            uiState.copy(
+                isLoading = false,
+                errorMessage = "Could not load place"
+            )
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Why This Pattern Works}
+
+This gives you:
+\begin{itemize}
+    \item a single owner of screen state
+    \item explicit loading behavior
+    \item explicit error behavior
+    \item simpler composables
+\end{itemize}
+
+\section{Step 6: Your First Real Composable Screen}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun PlacesScreen(
+    uiState: PlacesUiState,
+    onPlaceClick: (String) -> Unit,
+    onFavoriteClick: (String) -> Unit
+) {
+    when {
+        uiState.isLoading -> Text("Loading places...")
+        uiState.errorMessage != null -> Text(uiState.errorMessage)
+        else -> Column {
+            uiState.places.forEach { place ->
+                Row {
+                    Text(place.title)
+                    Button(onClick = { onPlaceClick(place.id) }) {
+                        Text("Open")
+                    }
+                    Button(onClick = { onFavoriteClick(place.id) }) {
+                        Text(if (place.isFavorite) "Unfavorite" else "Favorite")
+                    }
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{What This Example Teaches}
+
+\begin{itemize}
+    \item composables receive state
+    \item composables receive callbacks
+    \item composables should not usually own app-wide behavior directly
+\end{itemize}
+
+\subsection{Important Design Rule}
+
+Try to keep your composables ``dumb enough to reuse'' and your state holders ``smart enough to coordinate.''
+
+\section{Step 7: Side Effects and Initial Loading}
+
+Now connect UI and async loading.
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun PlacesRoute(
+    viewModel: PlacesViewModel,
+    onPlaceClick: (String) -> Unit
+) {
+    LaunchedEffect(Unit) {
+        viewModel.load()
+    }
+
+    PlacesScreen(
+        uiState = viewModel.uiState,
+        onPlaceClick = onPlaceClick,
+        onFavoriteClick = { id ->
+            // In a real app this call should happen from a coroutine scope
+        }
+    )
+}
+\end{lstlisting}
+
+\subsection{Why This Step Is Important}
+
+Many developers struggle with where loading code belongs.
+
+The key idea is:
+\begin{itemize}
+    \item composables describe UI
+    \item effect APIs start lifecycle-aware work
+    \item state holders own app state transitions
+\end{itemize}
+
+\section{Step 8: Navigation}
+
+Create a shared navigation model.
+
+\begin{lstlisting}[style=kazekotlin]
+sealed class AppDestination {
+    data object Places : AppDestination()
+    data class Detail(val placeId: String) : AppDestination()
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+class AppNavigator {
+    var currentDestination by mutableStateOf<AppDestination>(AppDestination.Places)
+        private set
+
+    fun openPlaces() {
+        currentDestination = AppDestination.Places
+    }
+
+    fun openDetail(placeId: String) {
+        currentDestination = AppDestination.Detail(placeId)
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun AppRoot(
+    navigator: AppNavigator,
+    placesViewModel: PlacesViewModel,
+    detailViewModel: PlaceDetailViewModel
+) {
+    when (val destination = navigator.currentDestination) {
+        AppDestination.Places -> PlacesRoute(
+            viewModel = placesViewModel,
+            onPlaceClick = { navigator.openDetail(it) }
+        )
+        is AppDestination.Detail -> Text("Detail screen for ${destination.placeId}")
+    }
+}
+\end{lstlisting}
+
+\subsection{Why This Is A Good First Navigation Strategy}
+
+It is:
+\begin{itemize}
+    \item easy to understand
+    \item shared across platforms
+    \item state-driven
+    \item testable
+\end{itemize}
+
+\section{Step 9: Platform Actions Instead Of Android-Only Thinking}
+
+Suppose the detail screen should open a map app or browser.
+
+Do not expose Android \texttt{Intent} in shared code.
+
+Define a shared capability:
+
+\begin{lstlisting}[style=kazekotlin]
+interface ExternalUrlLauncher {
+    fun open(url: String): Boolean
+}
+\end{lstlisting}
+
+Use it in shared UI:
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun PlaceDetailScreen(
+    uiState: PlaceDetailUiState,
+    urlLauncher: ExternalUrlLauncher
+) {
+    val detail = uiState.detail ?: return
+
+    Column {
+        Text(detail.title)
+        Text(detail.description)
+        Button(onClick = { urlLauncher.open(detail.mapUrl) }) {
+            Text("Open in maps")
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Why This Matters So Much In KMP}
+
+Shared code should talk in terms of:
+\begin{quote}
+what action the app wants
+\end{quote}
+
+not:
+\begin{quote}
+what Android API object is used to do it
+\end{quote}
+
+\section{Step 10: Expect/Actual for Platform Details}
+
+Use \texttt{expect}/\texttt{actual} when the concept is shared but implementation differs.
+
+\begin{lstlisting}[style=kazekotlin]
+// commonMain
+expect fun defaultDeviceLabel(): String
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+// androidMain
+actual fun defaultDeviceLabel(): String = "Android phone"
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+// iosMain
+actual fun defaultDeviceLabel(): String = "iPhone"
+\end{lstlisting}
+
+\subsection{When To Use This}
+
+Good uses:
+\begin{itemize}
+    \item device label
+    \item secure store
+    \item URL opening
+    \item platform capability checks
+\end{itemize}
+
+Bad use:
+\begin{itemize}
+    \item creating artificial shared abstractions for things that are simpler as plainly platform-specific code
+\end{itemize}
+
+\section{Step 11: Canvas for Custom UI}
+
+Now let us build one custom visual piece.
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun PlaceMiniMap(
+    x: Float,
+    y: Float
+) {
+    Canvas(modifier = Modifier.size(200.dp)) {
+        drawRect(
+            color = Color(0xFFE8EEF0),
+            size = size
+        )
+
+        drawCircle(
+            color = Color(0xFF284F58),
+            radius = 18f,
+            center = Offset(x, y)
+        )
+    }
+}
+\end{lstlisting}
+
+\subsection{Why This Is Useful}
+
+You now have a practical mental model of canvas:
+\begin{itemize}
+    \item it is for direct drawing
+    \item it works with coordinates
+    \item it is perfect for maps, charts, badges, diagrams, and custom visualizations
+\end{itemize}
+
+\subsection{When To Use Canvas}
+
+Use it when:
+\begin{itemize}
+    \item normal widgets are not enough
+    \item the UI is geometric or graphic
+    \item interaction depends on coordinates
+\end{itemize}
+
+\section{Step 12: App Dependencies Assembly}
+
+Now wire the app together in one place.
+
+\begin{lstlisting}[style=kazekotlin]
+data class AppDependencies(
+    val repository: PlacesRepository,
+    val urlLauncher: ExternalUrlLauncher
+) {
+    companion object {
+        fun create(): AppDependencies =
+            AppDependencies(
+                repository = FakePlacesRepository(),
+                urlLauncher = createExternalUrlLauncher()
+            )
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=kazekotlin]
+@Composable
+fun App() {
+    val dependencies = remember { AppDependencies.create() }
+    val navigator = remember { AppNavigator() }
+    val placesViewModel = remember { PlacesViewModel(dependencies.repository) }
+    val detailViewModel = remember { PlaceDetailViewModel(dependencies.repository) }
+
+    AppRoot(
+        navigator = navigator,
+        placesViewModel = placesViewModel,
+        detailViewModel = detailViewModel
+    )
+}
+\end{lstlisting}
+
+\subsection{Why This Step Matters}
+
+If you do not centralize dependency assembly, larger apps become hard to reason about.
+
+\section{Step 13: Moving From Fake Data to Real Data}
+
+Once the app works with fake data, you can replace the repository implementation.
+
+\begin{lstlisting}[style=kazekotlin]
+class RemotePlacesRepository(
+    private val api: PlacesApi
+) : PlacesRepository {
+    override suspend fun listPlaces(): List<PlaceSummary> =
+        api.listPlaces()
+
+    override suspend fun getPlace(id: String): PlaceDetail? =
+        api.getPlace(id)
+
+    override suspend fun toggleFavorite(id: String): List<PlaceSummary> =
+        api.toggleFavorite(id)
+}
+\end{lstlisting}
+
+\subsection{Why This Is The Right Order}
+
+Because now you are changing the data source, not redesigning the app.
+
+That is exactly the benefit of good architecture.
+
+\section{Step 14: Testing Shared Logic}
+
+Test the repository behavior or view-model behavior in shared code.
+
+\begin{lstlisting}[style=kazekotlin]
+class PlacesViewModelTest {
+    @Test
+    fun loadsPlacesIntoUiState() = runTest {
+        val viewModel = PlacesViewModel(FakePlacesRepository())
+
+        viewModel.load()
+
+        assertFalse(viewModel.uiState.isLoading)
+        assertTrue(viewModel.uiState.places.isNotEmpty())
+    }
+}
+\end{lstlisting}
+
+\subsection{Why This Is Powerful}
+
+One of KMP's best strengths is that your shared app logic can be tested once and benefit all targets.
+
+\section{Step 15: What You Should Add Next In A Real App}
+
+Once this skeleton works, the next realistic improvements are:
+\begin{itemize}
+    \item real navigation library if needed
+    \item persistent favorites
+    \item remote API integration
+    \item retry handling
+    \item better loading and empty states
+    \item permissions
+    \item analytics
+    \item offline caching
+\end{itemize}
+
+\section{How This Maps Back To Kaze}
+
+Kaze uses stronger versions of the exact patterns you just practiced:
+\begin{itemize}
+    \item shared app root in \texttt{KazeApp.kt}
+    \item shared navigator in \texttt{KazeNavigator.kt}
+    \item shared dependencies in \texttt{KazeDependencies.kt}
+    \item platform-specific bridges for auth and external launching
+    \item canvas-based custom rendering in \texttt{KazeMapView.kt}
+    \item view-model-like state holders across features
+\end{itemize}
+
+\section{What Good KMP App Builders Learn Early}
+
+\begin{enumerate}
+    \item Start with shared models.
+    \item Use fake repositories before real networking.
+    \item Keep composables mostly about UI.
+    \item Keep state explicit.
+    \item Hide platform-specific actions behind shared capabilities.
+    \item Share what makes sense, not everything.
+    \item Test shared logic early.
+\end{enumerate}
+
+\begin{kazehighlightbox}
+\textbf{Real takeaway:} if you can build the City Companion skeleton from this document, you can build the first version of many KMP apps. The details will change, but the architecture pattern will keep paying off.
+\end{kazehighlightbox}
+
+\section{Contact}
+
+\KazeContactBlock
+
+\end{document}

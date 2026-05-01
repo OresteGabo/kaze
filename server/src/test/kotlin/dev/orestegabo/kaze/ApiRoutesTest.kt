@@ -294,7 +294,9 @@ class ApiRoutesTest {
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(response.bodyAsText().contains("Hotel kitchen is open right now"))
+        val body = response.bodyAsText()
+        assertTrue(body.contains("\"source\":\"hotel amenity hours\""))
+        assertTrue(body.contains("open right now"))
     }
 
     @Test

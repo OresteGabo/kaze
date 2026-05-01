@@ -15,6 +15,35 @@ Status guide:
 - `[~]` In progress / partially done
 - `[ ]` Not done yet
 
+## V1 Launch Scope
+
+The goal for v1 is not to finish the whole Kaze platform. The goal is to ship a focused, usable first release for pilots in Rwanda, then expand safely after real usage.
+
+### Must Be Ready Before Launch
+
+- authenticated sign-up, sign-in, refresh, logout, and session restore
+- stable first-run flow after onboarding
+- public venue/event browsing or a clear invitation/code-first entry path
+- invitation acceptance and basic pass/event access flow
+- event schedule viewing
+- basic stay flow for authenticated guests with active stay lookup
+- venue reservation submission that persists on the backend
+- production app wiring that uses real repositories for launch-critical flows instead of demo repositories
+- basic error messages, empty states, and retry states
+- release configuration, backend environment/secrets strategy, and minimum production observability
+
+### Can Wait Until After V1
+
+- Edge AI features
+- full event-services marketplace breadth
+- rich provider dashboards and operator dashboards
+- advanced payment orchestration
+- realtime invitation updates
+- pathfinding and current-location maps
+- white-label platform expansion
+- seating planners and reusable venue-map platformization
+- advanced analytics, deep CMS tooling, and large partner workflows
+
 ## Product Foundation
 
 - [x] Kotlin Multiplatform app structure
@@ -339,6 +368,9 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 
 Last checked: 2026-05-01
 
+- [ ] App bootstrap still uses demo dependencies by default: `rememberKazeDependencies()` returns `KazeDependencies.demo()`, so launch-critical app flows are still wired through demo repositories unless explicitly replaced with API-backed dependencies.
+- [ ] Authenticated shell still falls back to demo content in several places: guest invitations, event previews, sample hotel branding, and demo feedback UI are still referenced from the main app entry path.
+- [ ] Invitation creation/composer still depends on demo contacts and placeholder event options; v1 needs either a trimmed real invite flow or that composer hidden until backend-backed contacts and event linkage exist.
 - [~] Reservation draft persistence: backend write path exists and creates a linked draft event; remaining work is catalog-backed packages, availability, pricing, payment methods, and place/service IDs from the public venue API.
 - [~] Invitations: authenticated invitations are database-backed and can be accepted/declined; remaining work is guest-mode replacement, websocket/realtime updates, and full invitation-to-pass entitlement completion.
 - [ ] Venue detail pages: still need backend photos, availability calendar, verified location, cancellation rules, reviews, and provider contacts.
@@ -381,14 +413,36 @@ Last checked: 2026-05-01
 
 ## Highest-Priority Next Steps
 
-1. Build the first-run entry experience after onboarding with `Explore venues`, `Enter code`, and invitation-first access.
-2. Replace demo data with real repositories for stay, events, explore, maps, and public venue discovery.
-3. Build public venue browsing with pricing, capacity, and basic availability signals.
-4. Add short-code and invitation flows that lead into Kaze Pass generation.
-5. Design the reusable venue-maps service and generic venue-space model.
-6. Add seating/layout planning for conference rooms and wedding venues.
-7. Build the first venue reservation flow for conference rooms and wedding spaces.
-8. Add Rwanda payment support strategy for MoMo, Airtel Money, BK/RSwitch, and related methods.
+1. Replace demo dependencies in the app bootstrap with launch-safe real repositories for auth, events, explore, stay, invitations, and reservations.
+2. Build the first-run entry experience after onboarding with `Explore venues`, `Enter code`, and invitation-first access.
+3. Build public venue browsing with pricing, capacity, and basic availability signals, or intentionally narrow v1 to invitation/code-first entry and hide unfinished public discovery.
+4. Finish short-code and invitation flows that lead into Kaze Pass generation.
+5. Tighten the authenticated shell: remove demo fallback content, add real empty states, and keep only features that have real backend support.
+6. Finish the first venue reservation flow for conference rooms and wedding spaces with clear operator-facing status handling.
+7. Finalize launch operations: release config, secrets/environment strategy, crash reporting, and minimal backend observability.
+8. Add Rwanda payment support strategy for MoMo, Airtel Money, BK/RSwitch, and related methods if direct payment is part of v1; otherwise keep reservations in `request/confirm later` mode for launch.
+
+## Suggested V1 Cut
+
+If the goal is to launch sooner, the cleanest v1 is:
+
+- auth
+- onboarding
+- invitation acceptance
+- event schedule
+- pass display
+- active stay dashboard
+- basic venue browsing
+- reservation request submission
+
+And explicitly defer:
+
+- full invitation creation workflow
+- realtime invitations
+- direct payment checkout
+- advanced map pipeline
+- service marketplace depth
+- Edge AI
 
 ## Notes
 

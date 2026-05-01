@@ -37,8 +37,8 @@ Status guide:
 - [ ] event and venue search by name
 - [ ] short code entry flow for conferences, weddings, and private events
 - [ ] invitation-first join flow
-- [ ] invitation acceptance and identity confirmation flow
-- [ ] post-invitation Kaze Pass generation
+- [~] invitation acceptance and identity confirmation flow
+- [~] post-invitation Kaze Pass generation
 - [~] pass-centered home and event entry experience
 - [x] event schedule flow
 - [x] explore flow
@@ -146,7 +146,7 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 ## Event Services And Marketplace
 
 - [x] request catalog UI
-- [~] service request patterns exist in UI
+- [x] service request patterns exist in UI
 - [ ] photography service flow
 - [ ] videography service flow
 - [ ] live-streaming service flow
@@ -156,7 +156,7 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 - [ ] vendor profile and offer cards
 - [ ] request history UI
 - [x] request success feedback
-- [ ] real request persistence from backend
+- [~] real request persistence from backend
 - [ ] request status updates from provider systems
 - [ ] cancellation/edit rules from backend
 - [ ] partner-side request fulfillment flow
@@ -236,12 +236,12 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 
 - [x] secure-store abstraction
 - [x] onboarding persistence
-- [ ] guest and attendee authentication
+- [~] guest and attendee authentication
 - [ ] phone-number-based invitation matching
 - [ ] role and access control model
 - [ ] encrypted sensitive local data
-- [ ] API auth tokens and refresh flow
-- [ ] session expiration strategy
+- [x] API auth tokens and refresh flow
+- [~] session expiration strategy
 - [ ] audit logging
 - [ ] privacy-first analytics plan
 - [ ] data retention policy implementation
@@ -250,17 +250,19 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 ## Backend And Integrations
 
 - [~] backend module exists
-- [ ] production API endpoints
+- [~] production API endpoints
 - [ ] public event and venue catalog API
 - [ ] event/venue search API
 - [ ] short-code lookup and join API
-- [ ] invitation API
-- [ ] invitation-to-pass entitlement flow
-- [ ] venue reservations API
+- [~] invitation API
+- [~] invitation-to-pass entitlement flow
+- [~] venue reservations API
+- [x] authenticated active-stay lookup API
 - [ ] event services commerce API
 - [ ] payment orchestration layer
 - [ ] Rwanda mobile-money integrations
 - [ ] card/bank payment integrations for local rails
+- [~] reservation-to-event integration
 - [ ] reservation-to-pass entitlement integration
 - [ ] organizer dashboard integration
 - [ ] provider dashboard integration
@@ -281,12 +283,12 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 - [ ] feature flags
 - [ ] hotel-by-hotel configuration management
 - [ ] event overrides for spaces and labels
-- [ ] seed data strategy for pilots
+- [~] seed data strategy for pilots
 
 ## Venue Reservations And Commerce
 
-- [ ] conference-room reservation flow
-- [ ] wedding venue reservation flow
+- [~] conference-room reservation flow
+- [~] wedding venue reservation flow
 - [ ] public pricing and capacity display for reservable venues
 - [ ] venue availability calendar and slot logic
 - [ ] booking deposit logic
@@ -298,7 +300,7 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 - [ ] insurance add-on flow
 - [ ] camera, photography, and video streaming add-ons
 - [ ] direct booking checkout with Rwanda payment methods
-- [ ] Kaze Pass-gated event entry after reservation/payment
+- [~] Kaze Pass-gated event entry after reservation/payment
 - [ ] venue operator dashboard for reservation approvals
 - [ ] cancellation and refund policy engine
 - [ ] commission and payout model
@@ -328,8 +330,22 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 - [ ] snapshot/design regression tests
 - [ ] integration tests for repositories
 - [ ] backend contract tests
+- [ ] authenticated active-stay endpoint tests
+- [ ] venue reservation API tests
 - [ ] performance tests
 - [ ] accessibility tests
+
+## Code TODO Audit
+
+Last checked: 2026-05-01
+
+- [~] Reservation draft persistence: backend write path exists and creates a linked draft event; remaining work is catalog-backed packages, availability, pricing, payment methods, and place/service IDs from the public venue API.
+- [~] Invitations: authenticated invitations are database-backed and can be accepted/declined; remaining work is guest-mode replacement, websocket/realtime updates, and full invitation-to-pass entitlement completion.
+- [ ] Venue detail pages: still need backend photos, availability calendar, verified location, cancellation rules, reviews, and provider contacts.
+- [ ] Map placeholders: temporary KotlinConf/SVG map assets and hardcoded coordinates remain until branded hotel/venue plans and a venue-map management pipeline are ready.
+- [ ] Payment settings: payment method status is still static and must be tied to user account verification, provider availability, and country/venue rules.
+- [~] Active stay identity: production lookup is now database-backed through `/auth/me/active-stay`; remaining work is tests, empty-state UX, and multi-stay selection if a user has overlapping active stays.
+- [ ] Test database reliability: server tests still depend on local Postgres credentials; add a deterministic test database/container profile so API tests are not blocked by developer machine auth.
 
 ## CI/CD And Release Operations
 

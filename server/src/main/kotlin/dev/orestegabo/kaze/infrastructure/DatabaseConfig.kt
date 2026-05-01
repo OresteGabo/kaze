@@ -45,7 +45,11 @@ internal fun Application.loadDatabaseConfig(): DatabaseConfig =
                 parsedConnection.password != null -> parsedConnection.password
                 else -> ""
             },
-            maximumPoolSize = environment.config.propertyOrNull("kaze.database.maximumPoolSize")?.getString()?.toInt() ?: 5,
+            maximumPoolSize = (
+                System.getenv("KAZE_DB_MAXIMUM_POOL_SIZE")
+                    ?: System.getenv("DATABASE_MAXIMUM_POOL_SIZE")
+                    ?: environment.config.propertyOrNull("kaze.database.maximumPoolSize")?.getString()
+                )?.toIntOrNull()?.coerceAtLeast(1) ?: 5,
             schemaMode = DatabaseSchemaMode.fromConfig(
                 System.getenv("KAZE_DB_SCHEMA_MODE")
                     ?: System.getProperty("kaze.database.schema.mode")

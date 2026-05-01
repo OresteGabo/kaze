@@ -9,6 +9,7 @@ internal interface AuthRepository {
     fun findByEmail(email: String): StoredAuthUser?
     fun findByUsername(username: String): StoredAuthUser?
     fun findByPhoneNumber(phoneNumber: String): StoredAuthUser?
+    fun findSignupConflicts(email: String, username: String?, phoneNumber: String?): SignupConflicts
     fun findByProvider(provider: AuthProvider, providerSubject: String): StoredAuthUser?
     fun findUserBySocialProvider(provider: String, subject: String): AppUser?
     fun createPasswordUser(
@@ -65,6 +66,12 @@ internal data class StoredAuthUser(
     val passwordHash: String?,
 )
 
+internal data class SignupConflicts(
+    val emailExists: Boolean,
+    val usernameExists: Boolean,
+    val phoneNumberExists: Boolean,
+)
+
 internal class JdbcAuthRepository(
     private val dataSource: DataSource,
 ) : AuthRepository {
@@ -119,6 +126,50 @@ internal class JdbcAuthRepository(
                 statement.setString(1, phoneNumber.trim())
                 statement.executeQuery().use { result ->
                     result.singleUserOrNull()
+                }
+            }
+        }
+
+    override fun findSignupConflicts(email: String, username: String?, phoneNumber: String?): SignupConflicts =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT
+                    EXISTS(
+                        SELECT 1
+                        FROM app_users
+                        WHERE lower(email) = lower(?)
+                    ) AS email_exists,
+                    CASE
+                        WHEN ? IS NULL THEN false
+                        ELSE EXISTS(
+                            SELECT 1
+                            FROM app_users
+                            WHERE username = ?
+                        )
+                    END AS username_exists,
+                    CASE
+                        WHEN ? IS NULL THEN false
+                        ELSE EXISTS(
+                            SELECT 1
+                            FROM app_users
+                            WHERE phone_number = ?
+                        )
+                    END AS phone_number_exists
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, email.trim())
+                statement.setString(2, username?.trim()?.lowercase())
+                statement.setString(3, username?.trim()?.lowercase())
+                statement.setString(4, phoneNumber?.trim())
+                statement.setString(5, phoneNumber?.trim())
+                statement.executeQuery().use { result ->
+                    check(result.next()) { "Signup conflict lookup did not return a row" }
+                    SignupConflicts(
+                        emailExists = result.getBoolean("email_exists"),
+                        usernameExists = result.getBoolean("username_exists"),
+                        phoneNumberExists = result.getBoolean("phone_number_exists"),
+                    )
                 }
             }
         }

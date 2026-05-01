@@ -43,8 +43,11 @@ yaml_quote() {
 
 cat > "$ENV_FILE" <<EOF
 DATABASE_URL: "$(yaml_quote "${DATABASE_URL}")"
+KAZE_ENV: "production"
 KAZE_DB_SCHEMA_MODE: "$(yaml_quote "${KAZE_DB_SCHEMA_MODE:-none}")"
+KAZE_DB_MAXIMUM_POOL_SIZE: "$(yaml_quote "${KAZE_DB_MAXIMUM_POOL_SIZE:-5}")"
 KAZE_JWT_SECRET: "$(yaml_quote "${KAZE_JWT_SECRET}")"
+KAZE_JWT_REQUIRE_FOR_API: "$(yaml_quote "${KAZE_JWT_REQUIRE_FOR_API:-true}")"
 KAZE_JWT_ISSUER: "$(yaml_quote "${KAZE_JWT_ISSUER:-kaze-api}")"
 KAZE_JWT_AUDIENCE: "$(yaml_quote "${KAZE_JWT_AUDIENCE:-kaze-mobile}")"
 KAZE_AUTH_APP_DEEP_LINK_REDIRECT: "$(yaml_quote "${KAZE_AUTH_APP_DEEP_LINK_REDIRECT:-kaze://auth/callback}")"
@@ -59,7 +62,7 @@ APPLE_REDIRECT_URI: "$(yaml_quote "${APPLE_REDIRECT_URI:-}")"
 FACEBOOK_APP_ID: "$(yaml_quote "${FACEBOOK_APP_ID:-}")"
 FACEBOOK_APP_SECRET: "$(yaml_quote "${FACEBOOK_APP_SECRET:-}")"
 FACEBOOK_REDIRECT_URI: "$(yaml_quote "${FACEBOOK_REDIRECT_URI:-}")"
-KAZE_CORS_ALLOWED_HOSTS: "$(yaml_quote "${KAZE_CORS_ALLOWED_HOSTS:-api.kazerwanda.com,www.kazerwanda.com,kazerwanda.com,localhost:8080,10.0.2.2:8080}")"
+KAZE_CORS_ALLOWED_HOSTS: "$(yaml_quote "${KAZE_CORS_ALLOWED_HOSTS:-api.kazerwanda.com,www.kazerwanda.com,kazerwanda.com}")"
 EOF
 
 gcloud config set project "$PROJECT_ID"
@@ -72,6 +75,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --env-vars-file "$ENV_FILE" \
   --memory "${CLOUD_RUN_MEMORY:-1Gi}" \
   --cpu "${CLOUD_RUN_CPU:-1}" \
-  --min-instances "${CLOUD_RUN_MIN_INSTANCES:-0}" \
-  --max-instances "${CLOUD_RUN_MAX_INSTANCES:-5}" \
+  --concurrency "${CLOUD_RUN_CONCURRENCY:-40}" \
+  --min-instances "${CLOUD_RUN_MIN_INSTANCES:-1}" \
+  --max-instances "${CLOUD_RUN_MAX_INSTANCES:-10}" \
   --port 8080

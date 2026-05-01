@@ -125,6 +125,24 @@ internal data class AuthEventSummary(
 )
 
 @Serializable
+internal data class AuthActiveStay(
+    val hotelId: String,
+    val hotelDisplayName: String,
+    val guestId: String,
+    val guestName: String,
+    val stayId: String,
+    val roomId: String? = null,
+    val stayStatus: String,
+    val startsAtIso: String,
+    val endsAtIso: String,
+)
+
+@Serializable
+internal data class AuthActiveStayResponse(
+    val activeStay: AuthActiveStay? = null,
+)
+
+@Serializable
 internal data class AuthInvitationResponseRequest(
     val response: String,
 )

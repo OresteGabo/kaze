@@ -408,8 +408,8 @@ private fun temporaryVenueMapDrawable(
     floorId: String,
     isDark: Boolean,
 ): DrawableResource = when {
-    // TODO Replace these temporary rasterized KotlinConf floor plans with hotel-provided
-    // SVG-backed venue assets once Kaze receives its own branded architectural exports.
+    // TODO [PENDING] Replace these temporary rasterized KotlinConf floor plans with
+    // hotel-provided SVG-backed venue assets once Kaze receives its own branded architectural exports.
     floorId == "l9" && isDark -> Res.drawable.kotlinconf_first_floor_dark_raster
     floorId == "l9" -> Res.drawable.kotlinconf_first_floor_light_raster
     isDark -> Res.drawable.kotlinconf_ground_floor_dark_raster

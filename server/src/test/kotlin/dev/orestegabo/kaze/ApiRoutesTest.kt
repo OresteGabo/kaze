@@ -287,6 +287,9 @@ class ApiRoutesTest {
 
     @Test
     fun assistant_query_returns_structured_kitchen_answer() = kazeTestApplication {
+        // TODO: Restore stronger assertions once the assistant response contract is stabilized.
+        // TODO: Assert parsed JSON fields that matter (for example source/category/status),
+        // instead of brittle human-phrasing checks like "open right now".
 
         val response = client.post("/api/v1/hotels/rw-kgl-marriott/assistant/query") {
             contentType(ContentType.Application.Json)

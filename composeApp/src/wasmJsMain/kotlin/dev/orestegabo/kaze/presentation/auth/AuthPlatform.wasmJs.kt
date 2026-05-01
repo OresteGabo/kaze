@@ -25,3 +25,6 @@ internal actual fun createExternalUrlLauncher(): ExternalUrlLauncher =
             return true
         }
     }
+
+internal actual fun createNativeSocialAuthLauncher(): NativeSocialAuthLauncher =
+    NoopNativeSocialAuthLauncher

@@ -43,6 +43,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.clientAndroid)
+            implementation(libs.facebook.login)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -82,11 +83,18 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
+        val facebookAppId = providers.environmentVariable("FACEBOOK_APP_ID").orNull.orEmpty()
+        val facebookClientToken = providers.environmentVariable("FACEBOOK_CLIENT_TOKEN").orNull.orEmpty()
         applicationId = "dev.orestegabo.kaze"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        manifestPlaceholders["facebookAppId"] = facebookAppId
+        manifestPlaceholders["facebookClientToken"] = facebookClientToken
+        resValue("string", "facebook_app_id", facebookAppId)
+        resValue("string", "facebook_client_token", facebookClientToken)
+        resValue("string", "fb_login_protocol_scheme", "fb$facebookAppId")
     }
     packaging {
         resources {

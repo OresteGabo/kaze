@@ -129,7 +129,8 @@ internal fun InvitationsScreen(
         return
     }
 
-    // TODO replace demo invitations with database records and websocket updates when realtime invites are wired.
+    // TODO [IN-PROGRESS] Authenticated invitations are database-backed; guest mode still shows
+    // demo invitations, and realtime websocket updates are not wired yet.
     Column(
         modifier = modifier
             .fillMaxSize()

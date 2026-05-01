@@ -191,6 +191,22 @@ internal fun Application.configureHttp(authService: AuthService) {
                 else -> ValidationResult.Valid
             }
         }
+        validate<ReservationDraftSubmissionRequest> { request ->
+            when {
+                request.placeId.isBlank() -> ValidationResult.Invalid("placeId is required")
+                request.eventName.isBlank() -> ValidationResult.Invalid("eventName is required")
+                request.eventName.length > RESERVATION_EVENT_NAME_MAX_LENGTH ->
+                    ValidationResult.Invalid("eventName must be $RESERVATION_EVENT_NAME_MAX_LENGTH characters or fewer")
+                request.preferredDateLabel.isBlank() -> ValidationResult.Invalid("preferredDateLabel is required")
+                request.guestCount !in 1..RESERVATION_GUEST_MAX_COUNT ->
+                    ValidationResult.Invalid("guestCount must be between 1 and $RESERVATION_GUEST_MAX_COUNT")
+                request.packageLabel.isBlank() -> ValidationResult.Invalid("packageLabel is required")
+                request.paymentMethod.isBlank() -> ValidationResult.Invalid("paymentMethod is required")
+                request.note != null && request.note.length > RESERVATION_NOTE_MAX_LENGTH ->
+                    ValidationResult.Invalid("note must be $RESERVATION_NOTE_MAX_LENGTH characters or fewer")
+                else -> ValidationResult.Valid
+            }
+        }
         validate<AssistantQueryRequest> { request ->
             when {
                 request.question.isBlank() -> ValidationResult.Invalid("question is required")
@@ -277,6 +293,9 @@ private const val API_COMPRESSION_MIN_BYTES = 64L
 private const val AUTH_PASSWORD_MIN_LENGTH = 8
 private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
 private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500
+private const val RESERVATION_EVENT_NAME_MAX_LENGTH = 240
+private const val RESERVATION_GUEST_MAX_COUNT = 50_000
+private const val RESERVATION_NOTE_MAX_LENGTH = 1_500
 private const val CORS_PREFLIGHT_CACHE_SECONDS = 3_600L
 private const val DOCS_CACHE_SECONDS = 300
 private val AUTH_USERNAME_REGEX = Regex("^[a-z0-9._]{3,32}$")

@@ -51,6 +51,7 @@ internal fun StayHomeScreen(
     modifier: Modifier = Modifier,
     hotelDisplayName: String,
     guestName: String,
+    assignedRoomLabel: String,
     accessProfileLabel: String,
     accessStatusLabel: String,
     accessCard: DigitalAccessCard?,
@@ -92,6 +93,7 @@ internal fun StayHomeScreen(
             onBack = onBackToStayHome,
             onDraftChange = onServiceRequestDraftChange,
             onSubmit = { onServiceRequestSubmit(serviceRequestDraft) },
+            assignedRoomLabel = assignedRoomLabel,
             bottomContentPadding = bottomContentPadding,
         )
         return

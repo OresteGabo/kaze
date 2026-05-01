@@ -450,43 +450,43 @@ internal val paymentOptions = PaymentOption.entries
 internal val followUpOptions = FollowUpOption.entries
 
 internal val eventDays = listOf(
-    EventDay("day1", "Fri 3 Apr"),
-    EventDay("day2", "Sat 4 Apr"),
-    EventDay("day3", "Sun 5 Apr"),
+    EventDay("day_marriott_20260424", "Thu 24 Apr"),
+    EventDay("day_marriott_20260425", "Fri 25 Apr"),
+    EventDay("day_marriott_20260426", "Sat 26 Apr"),
 )
 
 internal val eventSchedule = listOf(
     EventSession(
-        day = "day1",
-        time = "16:00 - 17:00",
-        title = "Welcome reception",
-        description = "Arrival gathering for summit delegates with lounge music and light bites.",
-        room = "Sky Lobby",
-        host = "Guest Relations",
-    ),
-    EventSession(
-        day = "day2",
-        time = "08:00 - 09:15",
-        title = "Opening keynote",
-        description = "Main plenary session in the Great Rift Ballroom, with map route and speaker details available from the card.",
+        day = "day_marriott_20260424",
+        time = "08:45 - 10:00",
+        title = "East Africa Fintech Forum opening session",
+        description = "Regional founders, operators, and regulators open the forum with a Kigali market outlook and product showcase.",
         room = "Great Rift Ballroom",
-        host = "Finance Summit",
+        host = "Kaze x Rwanda Fintech Community",
     ),
     EventSession(
-        day = "day2",
+        day = "day_marriott_20260424",
         time = "11:00 - 12:00",
-        title = "Private investor roundtable",
-        description = "Invitation-only gathering with live occupancy and room lookup support.",
-        room = "Virunga Room",
-        host = "Executive Office",
+        title = "Payments infrastructure roundtable",
+        description = "Closed-door conversation on interoperability, merchant onboarding, and settlement pain points in East Africa.",
+        room = "Akagera Salon",
+        host = "Patrick Bosco",
     ),
     EventSession(
-        day = "day3",
-        time = "10:00 - 11:30",
-        title = "Farewell brunch",
-        description = "Closing brunch for delegates and hotel guests who opted into the event program.",
-        room = "Kivu Terrace",
-        host = "Events Team",
+        day = "day_marriott_20260425",
+        time = "09:30 - 11:00",
+        title = "Product design clinic",
+        description = "Hands-on critique sessions for startup teams preparing live demos and investor meetings.",
+        room = "Virunga Room",
+        host = "Grace Umutoni",
+    ),
+    EventSession(
+        day = "day_marriott_20260426",
+        time = "07:30 - 09:00",
+        title = "Closing breakfast with investors",
+        description = "Final networking breakfast with investors, ecosystem builders, and invited founders.",
+        room = "Muryango Terrace",
+        host = "Jean-Paul Habimana",
     ),
 )
 

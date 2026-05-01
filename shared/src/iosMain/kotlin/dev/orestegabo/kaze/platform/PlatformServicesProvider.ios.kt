@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze.platform
 
-import platform.Foundation.NSUserDefaults
+import com.russhwolf.settings.ExperimentalSettingsImplementation
+import com.russhwolf.settings.KeychainSettings
 
 actual object PlatformServicesProvider {
     actual fun create(): PlatformServices = PlatformServices(
@@ -13,21 +14,29 @@ actual object PlatformServicesProvider {
         qrScannerService = object : QrScannerService {
             override suspend fun scan(): QrScanResult? = null
         },
-        hapticsService = object : HapticsService {
-            override fun perform(effect: HapticEffect) = Unit
-        },
-        secureStore = object : SecureStore {
-            private val defaults = NSUserDefaults.standardUserDefaults
-
-            override suspend fun put(key: String, value: String) {
-                defaults.setObject(value, forKey = key)
-            }
-
-            override suspend fun get(key: String): String? = defaults.stringForKey(key)
-
-            override suspend fun remove(key: String) {
-                defaults.removeObjectForKey(key)
-            }
-        },
+        hapticsService = HapticServiceNoop,
+        secureStore = IosKeychainSecureStore(),
     )
 }
+
+@OptIn(ExperimentalSettingsImplementation::class)
+private class IosKeychainSecureStore : SecureStore {
+    private val settings = KeychainSettings(service = KEYCHAIN_SERVICE)
+
+    override suspend fun put(key: String, value: String) {
+        settings.putString(key, value)
+    }
+
+    override suspend fun get(key: String): String? =
+        settings.getStringOrNull(key)
+
+    override suspend fun remove(key: String) {
+        settings.remove(key)
+    }
+}
+
+private object HapticServiceNoop : HapticsService {
+    override fun perform(effect: HapticEffect) = Unit
+}
+
+private const val KEYCHAIN_SERVICE = "dev.orestegabo.kaze.secure-store"

@@ -2,6 +2,7 @@ package dev.orestegabo.kaze.api
 
 import dev.orestegabo.kaze.application.AmenityStatus
 import dev.orestegabo.kaze.application.GuestProfile
+import dev.orestegabo.kaze.application.VenueReservation
 import dev.orestegabo.kaze.domain.Hotel
 import dev.orestegabo.kaze.domain.Itinerary
 import dev.orestegabo.kaze.domain.ItineraryItem
@@ -156,4 +157,21 @@ internal fun ServiceRequestReceipt.toDto(): ServiceRequestReceiptDto = ServiceRe
     type = type.name,
     status = status.name,
     note = note,
+)
+
+internal fun VenueReservation.toDto(): ReservationResponseDto = ReservationResponseDto(
+    id = id,
+    reservationCode = reservationCode,
+    eventId = eventId,
+    placeId = placeId,
+    placeName = placeName,
+    serviceId = serviceId,
+    status = status,
+    eventName = eventName,
+    preferredDateLabel = preferredDateLabel,
+    guestCount = guestCount,
+    packageLabel = packageLabel,
+    addOns = addOns,
+    paymentMethod = paymentMethod,
+    createdAtIso = createdAt.toString(),
 )

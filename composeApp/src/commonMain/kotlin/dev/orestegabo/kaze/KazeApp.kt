@@ -31,6 +31,7 @@ import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import dev.orestegabo.kaze.presentation.di.rememberKazeDependencies
 import dev.orestegabo.kaze.presentation.app.KazeSessionMode
 import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
+import dev.orestegabo.kaze.domain.guest.GuestIdentity
 import dev.orestegabo.kaze.presentation.events.EventsActionResult
 import dev.orestegabo.kaze.presentation.events.EventsViewModel
 import dev.orestegabo.kaze.presentation.explore.ExploreActionResult
@@ -82,11 +83,7 @@ fun App() {
         val stayViewModel = viewModel {
             StayViewModel(
                 hotelId = dependencies.hotelId,
-                guestIdentity = dev.orestegabo.kaze.domain.guest.GuestIdentity(
-                    hotelId = dependencies.hotelId,
-                    guestId = "guest_aline",
-                    stayId = "stay_001",
-                ),
+                guestIdentity = null,
                 observeHotelContext = dependencies.observeHotelContext,
                 stayRepository = dependencies.stayRepository,
                 submitLateCheckoutUseCase = dependencies.submitLateCheckout,
@@ -115,11 +112,27 @@ fun App() {
         val eventsUiState = eventsViewModel.uiState
         val exploreUiState = exploreViewModel.uiState
         val mapUiState = mapViewModel.uiState
+        LaunchedEffect(uiState.sessionActiveStay) {
+            val activeStay = uiState.sessionActiveStay
+            stayViewModel.applyActiveStay(
+                guestIdentity = activeStay?.let {
+                    GuestIdentity(
+                        hotelId = it.hotelId,
+                        guestId = it.guestId,
+                        stayId = it.stayId,
+                        roomId = it.roomId,
+                    )
+                },
+                hotelDisplayName = activeStay?.hotelDisplayName,
+                guestName = activeStay?.guestName,
+            )
+        }
         val isGuestMode = uiState.sessionMode == KazeSessionMode.GUEST
         val needsProfileCompletion = uiState.sessionMode == KazeSessionMode.AUTHENTICATED &&
             (uiState.sessionDisplayName.isBlank() || uiState.sessionPhoneNumber.isBlank())
         val resolvedGuestName = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> uiState.sessionDisplayName
+                .ifBlank { uiState.sessionActiveStay?.guestName.orEmpty() }
                 .takeIf { it.isNotBlank() }
                 ?: uiState.sessionEmail.toDisplayNameFromEmail()
             KazeSessionMode.GUEST, null -> stayUiState.guestName
@@ -377,6 +390,7 @@ fun App() {
                                                 modifier = Modifier.weight(1f),
                                                 hotelDisplayName = stayUiState.hotelDisplayName,
                                                 guestName = resolvedGuestName,
+                                                assignedRoomLabel = stayUiState.assignedRoomLabel,
                                                 accessProfileLabel = stayUiState.accessProfileLabel,
                                                 accessStatusLabel = stayUiState.accessStatusLabel,
                                                 accessCard = stayUiState.accessCard,
@@ -400,6 +414,7 @@ fun App() {
                                                 onEnterCode = ::handleJoinCode,
                                                 onOpenInvitation = ::openInvitation,
                                                 onSeeAllInvitations = ::openInvitations,
+                                                onSubmitReservation = appViewModel::submitReservation,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
 
@@ -407,6 +422,7 @@ fun App() {
                                                 modifier = Modifier.weight(1f),
                                                 hotelDisplayName = stayUiState.hotelDisplayName,
                                                 guestName = resolvedGuestName,
+                                                assignedRoomLabel = stayUiState.assignedRoomLabel,
                                                 accessProfileLabel = stayUiState.accessProfileLabel,
                                                 accessStatusLabel = stayUiState.accessStatusLabel,
                                                 accessCard = stayUiState.accessCard,
@@ -539,6 +555,7 @@ fun App() {
                                             modifier = Modifier.weight(1f),
                                             hotelDisplayName = stayUiState.hotelDisplayName,
                                             guestName = resolvedGuestName,
+                                            assignedRoomLabel = stayUiState.assignedRoomLabel,
                                             accessProfileLabel = stayUiState.accessProfileLabel,
                                             accessStatusLabel = stayUiState.accessStatusLabel,
                                             accessCard = stayUiState.accessCard,
@@ -562,6 +579,7 @@ fun App() {
                                             onEnterCode = ::handleJoinCode,
                                             onOpenInvitation = ::openInvitation,
                                             onSeeAllInvitations = ::openInvitations,
+                                            onSubmitReservation = appViewModel::submitReservation,
                                             bottomContentPadding = bottomContentPadding,
                                         )
 
@@ -569,6 +587,7 @@ fun App() {
                                             modifier = Modifier.weight(1f),
                                             hotelDisplayName = stayUiState.hotelDisplayName,
                                             guestName = resolvedGuestName,
+                                            assignedRoomLabel = stayUiState.assignedRoomLabel,
                                             accessProfileLabel = stayUiState.accessProfileLabel,
                                             accessStatusLabel = stayUiState.accessStatusLabel,
                                             accessCard = stayUiState.accessCard,

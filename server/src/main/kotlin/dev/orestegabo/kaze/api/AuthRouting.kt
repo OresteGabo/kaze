@@ -48,6 +48,10 @@ internal fun Route.registerAuthRoutes(
             call.respond<AuthResponseDto>(authService.signinWithApple(call.receive<SocialSigninRequest>()))
         }
 
+        post("/facebook") {
+            call.respond<AuthResponseDto>(authService.signinWithFacebook(call.receive<SocialSigninRequest>()))
+        }
+
         get("/{provider}/start") {
             call.respond<AuthStartResponseDto>(
                 authService.createAuthorizationRequest(

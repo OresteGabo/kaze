@@ -16,6 +16,7 @@ import dev.orestegabo.kaze.application.ExperienceQueryService
 import dev.orestegabo.kaze.application.GuestStayService
 import dev.orestegabo.kaze.application.HotelQueryService
 import dev.orestegabo.kaze.application.MapQueryService
+import dev.orestegabo.kaze.application.ReservationService
 import dev.orestegabo.kaze.application.ServerDependencies
 import dev.orestegabo.kaze.data.repository.ExperienceRepository
 import dev.orestegabo.kaze.data.repository.HotelRepository
@@ -28,6 +29,7 @@ import dev.orestegabo.kaze.infrastructure.DatabaseConfig
 import dev.orestegabo.kaze.infrastructure.JdbcExperienceRepository
 import dev.orestegabo.kaze.infrastructure.JdbcHotelRepository
 import dev.orestegabo.kaze.infrastructure.JdbcMapRepository
+import dev.orestegabo.kaze.infrastructure.JdbcReservationRepository
 import dev.orestegabo.kaze.infrastructure.JdbcStayRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -85,12 +87,14 @@ internal fun serverModule(
     single { GuestRepository(get()) }
     single<StayRepository> { JdbcStayRepository(get()) }
     single { AmenityKnowledgeRepository(get()) }
+    single { JdbcReservationRepository(get()) }
 
     single { HotelQueryService(get()) }
     single { GuestStayService(get(), get()) }
     single { ExperienceQueryService(get()) }
     single { MapQueryService(get()) }
     single { AssistantService(get()) }
+    single { ReservationService(get()) }
 
     single {
         ServerDependencies(
@@ -99,6 +103,7 @@ internal fun serverModule(
             experienceService = get(),
             mapService = get(),
             assistantService = get(),
+            reservationService = get(),
         )
     }
 }

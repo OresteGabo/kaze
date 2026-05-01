@@ -10,6 +10,7 @@ import dev.orestegabo.kaze.domain.guest.GuestIdentity
 import dev.orestegabo.kaze.domain.guest.LateCheckoutSelection
 import dev.orestegabo.kaze.domain.guest.PaymentPreference
 import dev.orestegabo.kaze.domain.guest.ServiceRequestDraft
+import dev.orestegabo.kaze.domain.guest.ServiceRequestStatus
 import dev.orestegabo.kaze.domain.guest.ServiceRequestType
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutDraft
 import dev.orestegabo.kaze.presentation.demo.LateCheckoutRequest
@@ -31,12 +32,13 @@ import dev.orestegabo.kaze.usecase.SubmitLateCheckoutUseCase
 
 internal class StayViewModel(
     private val hotelId: String,
-    private val guestIdentity: GuestIdentity,
+    private val guestIdentity: GuestIdentity?,
     private val observeHotelContext: ObserveHotelContextUseCase,
     private val stayRepository: StayRepository,
     private val submitLateCheckoutUseCase: SubmitLateCheckoutUseCase,
 ) : ViewModel() {
     private val initialAccessContext = demoAccessContexts.firstOrNull()
+    private var currentGuestIdentity: GuestIdentity? = guestIdentity
 
     var uiState by mutableStateOf(
         StayUiState(
@@ -50,9 +52,24 @@ internal class StayViewModel(
             requestOptions = initialAccessContext?.toServiceOptions().orEmpty(),
             suggestionActivities = initialAccessContext?.suggestions.orEmpty(),
             guestName = "Aline",
+            assignedRoomLabel = currentGuestIdentity?.roomId?.let { "Room $it" }.orEmpty(),
         ),
     )
         private set
+
+    fun applyActiveStay(
+        guestIdentity: GuestIdentity?,
+        hotelDisplayName: String?,
+        guestName: String?,
+    ) {
+        currentGuestIdentity = guestIdentity
+        uiState = uiState.copy(
+            hotelDisplayName = hotelDisplayName?.takeIf { it.isNotBlank() } ?: uiState.hotelDisplayName,
+            guestName = guestName?.takeIf { it.isNotBlank() } ?: uiState.guestName,
+            assignedRoomLabel = guestIdentity?.roomId?.let { "Room $it" }.orEmpty(),
+            accessStatusLabel = if (guestIdentity != null) "Active stay linked" else uiState.accessStatusLabel,
+        )
+    }
 
     fun applyPresentationContext(
         showSharedDemoAccess: Boolean,
@@ -107,10 +124,13 @@ internal class StayViewModel(
     }
 
     fun submitLateCheckout(draft: LateCheckoutDraft): StayActionResult.Feedback {
+        val activeGuest = currentGuestIdentity ?: return StayActionResult.Feedback(
+            "Your active stay is not linked yet. Sign in with a hotel stay before requesting late checkout.",
+        )
         val decision = runImmediateSuspend {
             submitLateCheckoutUseCase(
                 dev.orestegabo.kaze.domain.guest.LateCheckoutSubmission(
-                    guest = guestIdentity,
+                    guest = activeGuest,
                     selection = LateCheckoutSelection(
                         checkoutTimeIso = draft.option.checkoutTimeLabel,
                         feeAmountMinor = draft.option.feeLabel.filter(Char::isDigit).toLongOrNull()?.times(100) ?: 0L,
@@ -145,10 +165,13 @@ internal class StayViewModel(
     }
 
     fun submitServiceRequest(draft: ServiceRequestDraftUi): StayActionResult.Feedback {
+        val activeGuest = currentGuestIdentity ?: return StayActionResult.Feedback(
+            "Your active stay is not linked yet. Sign in with a hotel stay before sending room requests.",
+        )
         val receipt = runImmediateSuspend {
             stayRepository.submitServiceRequest(
                 ServiceRequestDraft(
-                    guest = guestIdentity,
+                    guest = activeGuest,
                     type = draft.option.toDomainRequestType(),
                     note = buildString {
                         if (draft.option.isCustom && draft.customRequest.isNotBlank()) {
@@ -163,11 +186,10 @@ internal class StayViewModel(
             )
         }
 
-        // TODO replace local request records with repository-backed request history once real APIs are wired.
         val requestRecord = ServiceRequestRecord(
-            id = "req_${uiState.submittedServiceRequests.size + 1}",
+            id = receipt.requestId,
             option = draft.option,
-            status = "Pending hotel confirmation",
+            status = receipt.status.toDisplayLabel(),
             requestedAt = "Requested just now",
             window = draft.window,
             followUp = draft.followUp,
@@ -270,6 +292,15 @@ internal class StayViewModel(
             "Airport transfer" -> ServiceRequestType.CONCIERGE
             "Wake-up call" -> ServiceRequestType.CONCIERGE
             else -> ServiceRequestType.HOUSEKEEPING
+        }
+
+    private fun ServiceRequestStatus.toDisplayLabel(): String =
+        when (this) {
+            ServiceRequestStatus.PENDING -> "Pending hotel confirmation"
+            ServiceRequestStatus.ACCEPTED -> "Accepted by hotel team"
+            ServiceRequestStatus.IN_PROGRESS -> "In progress"
+            ServiceRequestStatus.COMPLETED -> "Completed"
+            ServiceRequestStatus.DECLINED -> "Declined"
         }
 
     private fun AccessContextUi.toServiceOptions(): List<ServiceOption> {

@@ -31,6 +31,7 @@ internal fun kazeTestApplication(
         )
         add("kaze.database.schema.mode" to "create")
         add("kaze.database.seed.mode" to "dev")
+        add("kaze.security.jwt.requireForApi" to "false")
         addAll(extraConfig)
     }
 

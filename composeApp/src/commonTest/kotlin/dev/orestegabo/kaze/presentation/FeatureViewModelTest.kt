@@ -3,6 +3,15 @@ package dev.orestegabo.kaze.presentation
 import dev.orestegabo.kaze.platform.SecureStore
 import dev.orestegabo.kaze.presentation.app.KazeSessionMode
 import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
+import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
+import dev.orestegabo.kaze.presentation.auth.AuthEventSummary
+import dev.orestegabo.kaze.presentation.auth.AuthGateway
+import dev.orestegabo.kaze.presentation.auth.AuthInvitationSummary
+import dev.orestegabo.kaze.presentation.auth.AuthSession
+import dev.orestegabo.kaze.presentation.auth.AuthStartResponse
+import dev.orestegabo.kaze.presentation.auth.AuthUser
+import dev.orestegabo.kaze.presentation.auth.SocialAuthCredentialType
+import dev.orestegabo.kaze.presentation.auth.SocialAuthProvider
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.demo.repository.DemoExperienceRepository
 import dev.orestegabo.kaze.presentation.demo.repository.DemoMapRepository
@@ -127,7 +136,10 @@ class FeatureViewModelTest {
     @Test
     fun app_view_model_starts_authenticated_session_for_login() = runTest(testDispatcher) {
         val secureStore = RecordingSecureStore()
-        val viewModel = KazeAppViewModel(secureStore)
+        val viewModel = KazeAppViewModel(
+            secureStore = secureStore,
+            authGateway = RecordingAuthGateway(),
+        )
         advanceUntilIdle()
 
         viewModel.signIn(" Aline@Example.com ", "Password123!")
@@ -137,7 +149,7 @@ class FeatureViewModelTest {
         assertEquals("aline@example.com", viewModel.uiState.sessionEmail)
         assertEquals(KazeSessionMode.AUTHENTICATED.name, secureStore.values["app.session_mode"])
         assertEquals("aline@example.com", secureStore.values["app.session_email"])
-        assertEquals("demo-local-session", secureStore.values["auth.access_token"])
+        assertEquals("test-access-token", secureStore.values["auth.access_token"])
     }
 
     @Test
@@ -260,5 +272,76 @@ class FeatureViewModelTest {
         override suspend fun remove(key: String) {
             values.remove(key)
         }
+    }
+
+    private class RecordingAuthGateway : AuthGateway {
+        override suspend fun signIn(email: String, password: String): AuthSession =
+            AuthSession(
+                userId = "user_aline",
+                accessToken = "test-access-token",
+                refreshToken = "test-refresh-token",
+                email = email,
+                displayName = "Aline",
+            )
+
+        override suspend fun createAccount(email: String, password: String): AuthSession =
+            signIn(email, password)
+
+        override suspend fun signInWithCredential(
+            provider: SocialAuthProvider,
+            credential: String,
+            credentialType: SocialAuthCredentialType,
+            displayName: String?,
+        ): AuthSession = signIn("aline@example.com", "ignored")
+
+        override suspend fun getProfile(accessToken: String): AuthUser =
+            AuthUser(
+                id = "user_aline",
+                email = "aline@example.com",
+                displayName = "Aline",
+            )
+
+        override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = emptyList()
+
+        override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = emptyList()
+
+        override suspend fun respondToInvitation(
+            accessToken: String,
+            invitationId: String,
+            response: String,
+        ): AuthInvitationSummary {
+            error("Not needed in this test.")
+        }
+
+        override suspend fun updateProfile(
+            accessToken: String,
+            displayName: String,
+            username: String?,
+            phoneNumber: String?,
+            privacyConsent: KazePrivacyConsent?,
+        ): AuthUser {
+            error("Not needed in this test.")
+        }
+
+        override suspend fun updatePrivacyConsent(
+            accessToken: String,
+            privacyConsent: KazePrivacyConsent,
+        ): AuthUser {
+            error("Not needed in this test.")
+        }
+
+        override suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse {
+            error("Not needed in this test.")
+        }
+
+        override suspend fun claimSession(loginToken: String): AuthSession {
+            error("Not needed in this test.")
+        }
+
+        override suspend fun refresh(refreshToken: String): AuthSession {
+            error("Not needed in this test.")
+        }
+
+        override suspend fun logout(accessToken: String?, refreshToken: String?) = Unit
     }
 }

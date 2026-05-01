@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze.api
 
 import dev.orestegabo.kaze.auth.AuthResponseDto
+import dev.orestegabo.kaze.auth.AuthActiveStayResponseDto
 import dev.orestegabo.kaze.auth.AuthProvider
 import dev.orestegabo.kaze.auth.AuthRefreshRequest
 import dev.orestegabo.kaze.auth.AuthLogoutResponseDto
@@ -117,6 +118,12 @@ internal fun Route.registerAuthRoutes(
                 val principal = call.principal<JWTPrincipal>()
                     ?: throw IllegalArgumentException("Missing JWT principal")
                 call.respond(authService.currentUserEvents(principal.payload.subject))
+            }
+
+            get("/me/active-stay") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.respond(AuthActiveStayResponseDto(authService.currentUserActiveStay(principal.payload.subject)))
             }
 
             patch("/me/invitations/{invitationId}") {

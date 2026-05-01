@@ -1,0 +1,1879 @@
+\documentclass[11pt,a4paper]{article}
+\input{kaze-theme.tex}
+\usepackage{listings}
+\usepackage{upquote}
+
+\definecolor{CodeBg}{HTML}{F4F1EA}
+\definecolor{CodeRule}{HTML}{D8CCBC}
+\definecolor{CodeComment}{HTML}{6A737D}
+\definecolor{CodeKeyword}{HTML}{284F58}
+\definecolor{CodeString}{HTML}{8A6538}
+
+\lstdefinestyle{kazekotlin}{
+    language={},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{CodeKeyword}\bfseries,
+    commentstyle=\color{CodeComment},
+    stringstyle=\color{CodeString},
+    showstringspaces=false,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{CodeRule},
+    backgroundcolor=\color{CodeBg},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    aboveskip=0.8em,
+    belowskip=0.8em
+}
+
+\begin{document}
+
+\KazeCover
+  {Ktor Course Notes for Kaze}
+  {A beginner-first course for learning APIs and Ktor from scratch}
+  {April 2026}
+  {Developer learning workbook}
+
+\KazePageTitle{Ktor Course Notes}
+\KazeDocumentNotice
+
+\section{Before Chapter 1: What An API Is}
+
+Because you said you have coded in C++ and Java but have never built an API, we should begin one step before Ktor.
+
+\subsection{What Is An API?}
+
+An API is a contract that lets one program talk to another program.
+
+When your mobile app asks a server:
+\begin{itemize}
+    \item ``please sign this user in''
+    \item ``please give me the list of hotels''
+    \item ``please store this late checkout request''
+\end{itemize}
+
+that conversation is happening through an API.
+
+In practice, most modern app backends expose an HTTP API. That means the client sends HTTP requests such as:
+\begin{itemize}
+    \item \texttt{GET /hotels}
+    \item \texttt{POST /auth/signin}
+    \item \texttt{GET /auth/me}
+\end{itemize}
+
+and the server sends HTTP responses back, usually in JSON.
+
+\subsection{A Good Beginner Analogy}
+
+Think of:
+\begin{itemize}
+    \item the mobile app as a customer
+    \item the API as the waiter
+    \item the backend logic and database as the kitchen and storage
+\end{itemize}
+
+The customer does not walk into the kitchen and grab ingredients directly.
+The customer makes a request through the waiter.
+The waiter knows what requests are valid, forwards the work, then brings back the result.
+
+That is exactly what your Ktor server is doing.
+
+\subsection{What Ktor Is In That Story}
+
+Ktor is the framework that helps you build the waiter:
+\begin{itemize}
+    \item it listens for requests
+    \item it matches them to handlers
+    \item it helps parse input
+    \item it helps format output
+    \item it lets you add cross-cutting behavior like auth, validation, logging, and rate limiting
+\end{itemize}
+
+\begin{kazecalloutbox}[How To Read The Rest]
+If a chapter feels abstract, keep returning to this question: what is the client asking the server to do, and how does the server safely answer?
+\end{kazecalloutbox}
+
+\subsection{Important Technical Words You Will See Repeatedly}
+
+Because this guide is for a beginner, here are some words that appear often in backend discussions.
+
+\textbf{Server}
+
+The program running on a machine that listens for requests and sends responses.
+
+\textbf{Client}
+
+The program that sends requests to the server. In your project, the mobile or web app is usually the client.
+
+\textbf{Request}
+
+A message sent by the client asking the server to do something.
+
+\textbf{Response}
+
+The answer sent back by the server.
+
+\textbf{Endpoint}
+
+A specific API address plus HTTP method, such as \texttt{GET /auth/me}.
+
+\textbf{Route}
+
+The Ktor code that handles an endpoint.
+
+\textbf{JSON}
+
+A text format used to exchange structured data between client and server.
+
+\textbf{Plugin}
+
+Reusable behavior added to the Ktor request/response pipeline, such as auth, JSON handling, or rate limiting.
+
+\textbf{Middleware}
+
+A more general web term for code that runs around request handling. In Ktor, the closest idea is usually a plugin.
+
+\textbf{Dependency}
+
+Anything a piece of code needs in order to do its job.
+
+Examples:
+\begin{itemize}
+    \item a service depends on a repository
+    \item a repository depends on a data source
+    \item your project depends on Ktor or Koin libraries
+\end{itemize}
+
+\textbf{Dependency Injection}
+
+A way of giving a class the things it needs from the outside instead of letting it build everything by itself.
+
+\textbf{Coupling}
+
+How tightly one piece of code is tied to another.
+
+High coupling usually means code is harder to replace, test, or refactor.
+
+\textbf{DTO}
+
+Data Transfer Object. A class used to move data across a boundary such as HTTP.
+
+\textbf{Business Logic}
+
+The rules of the application itself, separate from HTTP details and database details.
+
+\textbf{Header}
+
+Extra metadata sent with a request or response, such as \texttt{Authorization} or \texttt{Content-Type}.
+
+\textbf{Body}
+
+The main content of a request or response. JSON is usually sent in the body.
+
+\textbf{Status Code}
+
+The numeric result of an HTTP response, such as:
+\begin{itemize}
+    \item \texttt{200 OK}
+    \item \texttt{201 Created}
+    \item \texttt{400 Bad Request}
+    \item \texttt{401 Unauthorized}
+    \item \texttt{404 Not Found}
+    \item \texttt{500 Internal Server Error}
+\end{itemize}
+
+\textbf{Principal}
+
+The authenticated identity attached to a request after auth succeeds.
+
+\textbf{JWT Claim}
+
+A piece of data stored inside a JWT, such as user id, email, or roles.
+
+\textbf{Data Source}
+
+An object that provides database connections to your application.
+
+\textbf{Connection Pool}
+
+A managed set of reusable database connections.
+
+\textbf{Transaction}
+
+A group of database operations that should succeed or fail together.
+
+\textbf{Validation}
+
+Checking whether incoming data is acceptable before deeper processing.
+
+\textbf{Serialization}
+
+Turning a Kotlin object into a transfer format such as JSON.
+
+\textbf{Deserialization}
+
+Turning JSON or another transfer format back into a Kotlin object.
+
+\textbf{CORS}
+
+Cross-Origin Resource Sharing. Browser rules that control which frontends are allowed to call your API.
+
+\section{Course Project: A Tiny Library API You Can Imagine Building}
+
+To make this document feel more like a course, we need one small project idea that keeps returning throughout the chapters.
+
+Imagine we are building a tiny API for a library app.
+
+The client app should be able to:
+\begin{itemize}
+    \item list books
+    \item view one book
+    \item add a new book
+    \item sign a user in
+    \item protect librarian-only actions
+\end{itemize}
+
+We will not fully implement the whole project in this document, but we will use it as the running teaching example.
+
+\subsection{Why A Running Example Helps}
+
+When you learn backend concepts in isolation, they can feel disconnected.
+
+A mini project ties them together:
+\begin{itemize}
+    \item routing decides how \texttt{/books} requests are handled
+    \item serialization decides how \texttt{BookDto} becomes JSON
+    \item plugins handle validation, auth, and rate limiting
+    \item repositories read and write books from storage
+    \item tests verify the routes
+    \item deployment makes the API available outside your machine
+\end{itemize}
+
+\subsection{The Minimal Shape Of The Example API}
+
+\begin{longtable}{p{0.28\textwidth} p{0.64\textwidth}}
+\textbf{Endpoint} & \textbf{Purpose} \\
+\texttt{GET /books} & List books \\
+\texttt{GET /books/\{id\}} & Get one book \\
+\texttt{POST /books} & Create a book \\
+\texttt{POST /auth/signin} & Sign a user in \\
+\texttt{GET /auth/me} & Return the current signed-in user \\
+\end{longtable}
+
+\subsection{Why This Particular Example}
+
+It is small enough for learning, but rich enough to include:
+\begin{itemize}
+    \item reading endpoints
+    \item writing endpoints
+    \item JSON
+    \item validation
+    \item database access
+    \item authentication
+    \item tests
+\end{itemize}
+
+That makes it a good beginner practice API.
+
+\section{Chapter 1: Foundations \& Project Setup}
+
+\subsection{What Ktor Is}
+
+Ktor is a Kotlin framework for writing network applications. In this guide we focus on Ktor server, which means backend code that answers HTTP requests.
+
+Ktor is not your database.
+Ktor is not your business logic.
+Ktor is not your app UI.
+
+Ktor is the layer that receives requests, coordinates the pipeline, and returns responses.
+
+\subsection{The Smallest Useful Server}
+
+Here is a minimal Ktor application:
+
+\begin{lstlisting}[style=kazekotlin]
+fun main() {
+    embeddedServer(Netty, port = 8080, module = Application::module)
+        .start(wait = true)
+}
+
+fun Application.module() {
+    routing {
+        get("/") {
+            call.respondText("Hello from Ktor")
+        }
+    }
+}
+\end{lstlisting}
+
+Let us explain this like a course, line by line in concept:
+\begin{itemize}
+    \item \texttt{main()} is the JVM entry point
+    \item \texttt{embeddedServer(...)} creates the web server
+    \item \texttt{Netty} is the engine that actually handles network traffic
+    \item \texttt{port = 8080} means the server listens on port 8080
+    \item \texttt{Application::module} tells Ktor which function contains the app setup
+    \item \texttt{start(wait = true)} starts the server and keeps it running
+\end{itemize}
+
+\subsection{What The Application Module Is}
+
+The \texttt{module()} function is where you configure the app.
+
+That usually includes:
+\begin{itemize}
+    \item installing plugins
+    \item registering routes
+    \item wiring dependencies
+    \item connecting to the database
+    \item loading configuration
+\end{itemize}
+
+So when you open a Ktor project and do not know where to begin, the application module is usually the best first stop.
+
+\subsection{What Happens When A Request Arrives}
+
+Suppose the browser or app requests \texttt{GET /}.
+
+Ktor roughly does this:
+\begin{enumerate}
+    \item the server receives the request
+    \item the application pipeline runs
+    \item installed plugins may inspect or modify the request/response flow
+    \item routing finds the matching route
+    \item your handler code runs
+    \item a response is sent back
+\end{enumerate}
+
+That means a Ktor app is not just ``route code.'' There is a full pipeline around the route.
+
+\subsection{What To Pay Attention To As A Beginner}
+
+\begin{itemize}
+    \item Find the entry point first.
+    \item Find the application module second.
+    \item Separate setup code from business code.
+    \item Notice what Ktor does for you automatically and what your own code is doing manually.
+\end{itemize}
+
+\subsection{If You Did Not Use A Framework}
+
+Without Ktor, you would need to manually:
+\begin{itemize}
+    \item open sockets
+    \item parse HTTP messages
+    \item route paths
+    \item parse headers and bodies
+    \item construct HTTP responses
+    \item manage pipeline behavior yourself
+\end{itemize}
+
+That is why frameworks exist.
+
+\subsection{How Kaze Uses This}
+
+Kaze's server startup file is \texttt{server/src/main/kotlin/dev/orestegabo/kaze/Application.kt}. It is more advanced than the tiny example, but it still follows the same idea: start the server, load configuration, install Koin, install Ktor features, then register routes.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item \texttt{Application::module} is a function reference.
+    \item \texttt{fun Application.module()} is an extension function.
+    \item \texttt{?:} is the Elvis operator, used for fallback values.
+\end{itemize}
+
+\section{Chapter 2: Routing \& Request Handling}
+
+\subsection{What Routing Is}
+
+Routing is how the server decides which code should run for a request.
+
+If a request comes in for:
+\begin{itemize}
+    \item \texttt{GET /books}
+    \item \texttt{GET /books/42}
+    \item \texttt{POST /books}
+\end{itemize}
+
+those are three different requests and may need three different handlers.
+
+Routing is the map from request to code.
+
+\subsection{A Minimal Example}
+
+\begin{lstlisting}[style=kazekotlin]
+fun Application.module() {
+    routing {
+        get("/books") {
+            call.respondText("List all books")
+        }
+
+        get("/books/{id}") {
+            val id = call.parameters["id"]
+            call.respondText("Book id = $id")
+        }
+
+        post("/books") {
+            call.respondText("Create a new book")
+        }
+    }
+}
+\end{lstlisting}
+
+This teaches two important things:
+\begin{itemize}
+    \item the HTTP method matters
+    \item the path matters
+\end{itemize}
+
+\texttt{GET /books} and \texttt{POST /books} are not the same action.
+
+\subsection{What The HTTP Methods Usually Mean}
+
+\begin{itemize}
+    \item \texttt{GET}: read data
+    \item \texttt{POST}: create something or trigger an action
+    \item \texttt{PUT}: replace or update something
+    \item \texttt{PATCH}: partially update something
+    \item \texttt{DELETE}: delete something
+\end{itemize}
+
+These are conventions, but they are very important conventions. Good APIs follow them because it makes behavior predictable.
+
+\subsection{What The \texttt{call} Object Is}
+
+Inside a route, Ktor gives you \texttt{call}. Think of it as ``the current HTTP conversation.''
+
+From \texttt{call}, you can access:
+\begin{itemize}
+    \item route parameters
+    \item query parameters
+    \item headers
+    \item request body
+    \item response helpers
+\end{itemize}
+
+Examples:
+
+\begin{lstlisting}[style=kazekotlin]
+val id = call.parameters["id"]
+val page = call.request.queryParameters["page"]
+val authHeader = call.request.headers["Authorization"]
+\end{lstlisting}
+
+\subsection{Path Parameters vs Query Parameters vs Request Body}
+
+Beginners often mix these up, so let us make them very clear.
+
+\textbf{Path parameters}
+
+These identify a resource inside the URL path.
+
+\begin{lstlisting}[style=kazekotlin]
+get("/books/{id}") {
+    val id = call.parameters["id"]
+}
+\end{lstlisting}
+
+Example request:
+\texttt{/books/42}
+
+\textbf{Query parameters}
+
+These modify or refine the request.
+
+\begin{lstlisting}[style=kazekotlin]
+get("/books") {
+    val sort = call.request.queryParameters["sort"]
+}
+\end{lstlisting}
+
+Example request:
+\texttt{/books?sort=title}
+
+\textbf{Request body}
+
+This is the structured data sent with a request, usually JSON.
+
+\begin{lstlisting}[style=kazekotlin]
+@Serializable
+data class CreateBookRequest(
+    val title: String,
+    val author: String
+)
+
+post("/books") {
+    val request = call.receive<CreateBookRequest>()
+}
+\end{lstlisting}
+
+Example JSON:
+
+\begin{lstlisting}[style=kazekotlin]
+{
+  "title": "Effective Kotlin",
+  "author": "Marcin Moskala"
+}
+\end{lstlisting}
+
+\subsection{How A Good Route Should Feel}
+
+A good route should usually be short.
+
+Its job is:
+\begin{enumerate}
+    \item read input
+    \item call a service
+    \item respond
+\end{enumerate}
+
+Its job is usually not:
+\begin{itemize}
+    \item writing SQL directly
+    \item containing complex business rules
+    \item doing everything itself
+\end{itemize}
+
+\subsection{What Happens If Routes Do Too Much}
+
+If routes contain too much logic:
+\begin{itemize}
+    \item they become hard to test
+    \item they become hard to reuse
+    \item business rules get mixed with HTTP details
+    \item the code becomes fragile and harder to refactor
+\end{itemize}
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item Keep routes thin.
+    \item Use clear route naming.
+    \item Prefer plural resource names for collections such as \texttt{/books}.
+    \item Use the right HTTP method for the job.
+    \item Separate public routes from protected ones.
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze groups routes under \texttt{/api/v1}, then further groups them by hotel, guest, and auth concerns. That is a good example of route structure following domain structure.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item The routing API is a DSL using lambdas with receivers.
+    \item \texttt{receive<Type>()} uses generics.
+    \item Helper functions on \texttt{ApplicationCall} are often written as extension functions.
+\end{itemize}
+
+\section{Chapter 3: Content Negotiation \& Serialization}
+
+\subsection{What Serialization Is}
+
+Inside your Kotlin code, you work with Kotlin objects.
+
+Across HTTP, clients and servers exchange text or bytes, usually JSON.
+
+Serialization means:
+\begin{quote}
+turning a Kotlin object into JSON
+\end{quote}
+
+Deserialization means:
+\begin{quote}
+turning JSON into a Kotlin object
+\end{quote}
+
+\subsection{Why This Exists}
+
+If your server returns a Kotlin data class directly, the client cannot magically understand the in-memory object.
+The object has to be encoded into a format both sides agree on.
+
+That is what JSON does.
+
+\subsection{What Content Negotiation Means}
+
+Content negotiation is the logic that helps decide how to encode and decode request and response bodies.
+
+In simple terms:
+\begin{itemize}
+    \item the client says what kind of content it is sending or expects
+    \item the server chooses the appropriate serializer/deserializer
+\end{itemize}
+
+In many Ktor apps, that mainly means JSON.
+
+\subsection{Minimal Setup}
+
+\begin{lstlisting}[style=kazekotlin]
+install(ContentNegotiation) {
+    json()
+}
+\end{lstlisting}
+
+Once this is installed, you can do:
+
+\begin{lstlisting}[style=kazekotlin]
+@Serializable
+data class BookDto(
+    val id: String,
+    val title: String
+)
+
+get("/books/1") {
+    call.respond(BookDto("1", "Ktor Basics"))
+}
+\end{lstlisting}
+
+Ktor will serialize the \texttt{BookDto} to JSON for you.
+
+\subsection{Why \texttt{@Serializable} Is Needed}
+
+\texttt{@Serializable} tells Kotlin's serialization library that the class should be encodable and decodable.
+
+Without it, Ktor usually will not know how to serialize or deserialize the class properly.
+
+\subsection{Receiving JSON}
+
+\begin{lstlisting}[style=kazekotlin]
+@Serializable
+data class CreateBookRequest(
+    val title: String,
+    val author: String
+)
+
+post("/books") {
+    val request = call.receive<CreateBookRequest>()
+    call.respondText("Created ${request.title}")
+}
+\end{lstlisting}
+
+What happens here:
+\begin{enumerate}
+    \item the client sends JSON
+    \item Ktor reads the body
+    \item Ktor deserializes the JSON into \texttt{CreateBookRequest}
+    \item your route receives a normal Kotlin object
+\end{enumerate}
+
+\subsection{What Happens If You Do Not Install Content Negotiation}
+
+Without this plugin:
+\begin{itemize}
+    \item you may need to manually read request bodies
+    \item you may need to manually build JSON strings
+    \item your code becomes more repetitive and error-prone
+\end{itemize}
+
+\subsection{DTOs and Why They Matter}
+
+DTO means Data Transfer Object.
+
+These are classes made specifically for moving data across boundaries such as HTTP.
+
+Why use DTOs:
+\begin{itemize}
+    \item not every internal field should be exposed
+    \item request shape and domain shape are often different
+    \item API contracts should be explicit
+\end{itemize}
+
+Best practice:
+\begin{itemize}
+    \item use request DTOs for incoming JSON
+    \item use response DTOs for outgoing JSON
+    \item keep domain models separate when needed
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze installs \texttt{ContentNegotiation} in \texttt{ApiSupport.kt} and uses DTO-based request and response handling across auth and business routes.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item Data classes are especially good for DTOs.
+    \item Builders like \texttt{Json \{ ... \}} are Kotlin DSLs.
+    \item Generic APIs like \texttt{receive<Type>()} are a common Kotlin technique.
+\end{itemize}
+
+\section{Chapter 4: Plugins, Middleware \& Rate Limiting}
+
+\subsection{What A Plugin Is}
+
+This chapter is one of the most important because you specifically asked about plugins, middleware, and rate limiting.
+
+In Ktor, a plugin is reusable behavior that plugs into the request/response pipeline.
+
+Plain-language version:
+\begin{quote}
+A plugin is code that runs around your routes to handle common concerns.
+\end{quote}
+
+Examples of common concerns:
+\begin{itemize}
+    \item logging
+    \item authentication
+    \item JSON handling
+    \item validation
+    \item error formatting
+    \item response compression
+    \item rate limiting
+\end{itemize}
+
+\subsection{What Middleware Means}
+
+Different ecosystems use different words.
+
+In many web frameworks, people say \textbf{middleware}.
+In Ktor, the official word is usually \textbf{plugin}.
+
+The ideas are very close:
+\begin{itemize}
+    \item code runs before the route
+    \item code may run after the route
+    \item code may inspect, reject, modify, or enrich the request/response process
+\end{itemize}
+
+So if you hear someone say ``middleware'' while discussing Ktor, they usually mean plugin-like pipeline behavior.
+
+\subsection{How To Mentally Picture Plugins}
+
+Imagine a request entering the server like a package moving through checkpoints:
+\begin{enumerate}
+    \item logging checkpoint
+    \item CORS checkpoint
+    \item authentication checkpoint
+    \item validation checkpoint
+    \item route handler
+    \item error handling / response formatting checkpoint
+\end{enumerate}
+
+That is not the exact internal Ktor implementation, but it is a very good beginner mental model.
+
+\subsection{Why Plugins Exist}
+
+Without plugins, every route would need to repeat the same work:
+\begin{itemize}
+    \item log the request
+    \item catch exceptions
+    \item check auth
+    \item validate input
+    \item compress output
+\end{itemize}
+
+That would make the code repetitive and inconsistent.
+
+Plugins centralize those repeated concerns.
+
+\subsection{Common Plugins And What They Do}
+
+\textbf{ContentNegotiation}
+
+Handles JSON serialization/deserialization.
+
+\textbf{CallLogging}
+
+Logs requests so you can see what the server is doing.
+
+\textbf{StatusPages}
+
+Transforms exceptions into clean HTTP responses.
+
+\textbf{Authentication}
+
+Protects routes and identifies the caller.
+
+\textbf{RequestValidation}
+
+Rejects bad inputs early.
+
+\textbf{Compression}
+
+Compresses responses to save bandwidth.
+
+\textbf{CORS}
+
+Controls which browser origins are allowed to call the API.
+
+\textbf{RateLimit}
+
+Restricts how many requests a client can make in a time window.
+
+\subsection{What Rate Limiting Is}
+
+Rate limiting is a protective rule like:
+\begin{quote}
+this client can only make 100 requests per minute
+\end{quote}
+
+Why this matters:
+\begin{itemize}
+    \item stops accidental spam from buggy clients
+    \item slows abuse
+    \item helps protect infrastructure
+    \item is useful on login and sensitive endpoints
+\end{itemize}
+
+\subsection{How Rate Limiting Works Conceptually}
+
+Any rate limiter needs at least two decisions:
+\begin{itemize}
+    \item \textbf{who} are we counting requests for
+    \item \textbf{how many} requests are allowed in what period
+\end{itemize}
+
+The ``who'' is usually a key such as:
+\begin{itemize}
+    \item IP address
+    \item user id
+    \item API key
+    \item session id
+\end{itemize}
+
+The ``how many'' is usually a limit and a window such as:
+\begin{itemize}
+    \item 60 requests per minute
+    \item 1000 requests per hour
+\end{itemize}
+
+\subsection{What Happens If You Do Not Use Rate Limiting}
+
+Without rate limiting:
+\begin{itemize}
+    \item a broken client may hammer your API
+    \item brute-force login attempts are easier
+    \item expensive endpoints can be abused
+    \item one client can consume unfair resources
+\end{itemize}
+
+\subsection{What To Pay Attention To}
+
+\begin{itemize}
+    \item Choose the right key. IP-based limits are simple but imperfect.
+    \item Choose limits that protect the app without hurting normal users.
+    \item Apply stricter limits to sensitive routes like auth.
+    \item Remember that rate limiting is protection, not a substitute for proper auth or validation.
+\end{itemize}
+
+\subsection{Best Practices For Plugins}
+
+\begin{itemize}
+    \item Put cross-cutting concerns in plugins, not inside every route.
+    \item Keep plugin setup centralized when possible.
+    \item Validate inputs early.
+    \item Translate exceptions centrally.
+    \item Do not over-install things you do not understand; know why each plugin exists.
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze installs many plugins in \texttt{ApiSupport.kt}: content negotiation, authentication, request validation, rate limiting, compression, and status pages. Once you know the concepts, that file becomes much easier to read because you can say ``this is the shared pipeline behavior'' instead of seeing it as random setup code.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item Plugin configuration uses lambdas and builder DSLs.
+    \item Small utilities like \texttt{takeIf} and safe calls are common in config code.
+    \item Centralized config objects are often immutable data classes.
+\end{itemize}
+
+\begin{kazehighlightbox}
+\textbf{Learning goal for this chapter:} a route is not the whole story. Plugins are the shared behavior around routes, and rate limiting is one example of defensive shared behavior.
+\end{kazehighlightbox}
+
+\section{Chapter 5: Advanced Database Integration}
+
+\subsection{What The Backend Needs From Storage}
+
+Most useful APIs need persistence. That means the server must be able to store and retrieve data.
+
+Typical needs:
+\begin{itemize}
+    \item users
+    \item sessions
+    \item business objects such as hotels, events, and bookings
+    \item logs or audit information
+\end{itemize}
+
+\subsection{Why Ktor Does Not ``Do The Database'' For You}
+
+Ktor is a web framework, not a database framework.
+
+That means you combine it with other libraries and patterns for storage:
+\begin{itemize}
+    \item JDBC
+    \item Exposed
+    \item JPA/Hibernate
+    \item jOOQ
+    \item custom repositories
+\end{itemize}
+
+\subsection{The Repository Pattern}
+
+Think of a repository as the storage translator for the rest of your app.
+
+Routes should not know SQL.
+Services should ideally not care about low-level JDBC details.
+
+Example interface:
+
+\begin{lstlisting}[style=kazekotlin]
+interface BookRepository {
+    suspend fun listBooks(): List<Book>
+    suspend fun findBook(id: String): Book?
+    suspend fun saveBook(book: Book): Book
+}
+\end{lstlisting}
+
+\subsection{Why Connection Pools Matter}
+
+Databases are expensive resources.
+
+You do not want to open a brand new database connection from scratch for every request and throw it away carelessly.
+
+A connection pool:
+\begin{itemize}
+    \item keeps reusable connections available
+    \item improves performance
+    \item avoids too many simultaneous connection creations
+    \item gives centralized timeout and pool settings
+\end{itemize}
+
+Kaze uses HikariCP for this.
+
+\subsection{What JDBC Looks Like}
+
+If you have not worked with backend storage much, raw JDBC can look noisy. That is normal.
+
+Basic JDBC flow:
+\begin{enumerate}
+    \item get a connection
+    \item prepare a statement
+    \item bind parameters
+    \item execute query or update
+    \item read results
+    \item close resources
+\end{enumerate}
+
+Example:
+
+\begin{lstlisting}[style=kazekotlin]
+dataSource.connection.use { connection ->
+    connection.prepareStatement(
+        "SELECT id, title FROM books WHERE id = ?"
+    ).use { statement ->
+        statement.setString(1, bookId)
+        statement.executeQuery().use { result ->
+            if (result.next()) {
+                Book(
+                    id = result.getString("id"),
+                    title = result.getString("title")
+                )
+            } else null
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Why Prepared Statements Matter}
+
+Prepared statements are important because they:
+\begin{itemize}
+    \item reduce SQL injection risk
+    \item separate SQL structure from parameter values
+    \item are the standard safe way to pass user input into queries
+\end{itemize}
+
+\subsection{What Happens If You Mix SQL Into Routes}
+
+If routes directly contain database code:
+\begin{itemize}
+    \item your HTTP layer becomes tightly coupled to storage
+    \item testing becomes harder
+    \item reuse gets worse
+    \item the code becomes harder to organize
+\end{itemize}
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item Keep SQL or storage details in repositories.
+    \item Use prepared statements.
+    \item Use connection pooling.
+    \item Think carefully about transactions for multi-step writes.
+    \item Keep database setup and migration strategy explicit.
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze loads database config, creates a Hikari-backed data source, initializes schema and seed data, and uses JDBC-heavy repositories to access PostgreSQL data.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item \texttt{use \{ ... \}} handles resource cleanup.
+    \item \texttt{buildList \{ ... \}} is useful for building immutable result lists.
+    \item \texttt{suspend} on repository methods does not automatically make blocking JDBC non-blocking.
+\end{itemize}
+
+\section{Chapter 6: Authentication \& JWT Security (Current)}
+
+\subsection{What Authentication Is}
+
+Authentication means proving identity.
+
+Examples:
+\begin{itemize}
+    \item email and password
+    \item Google sign-in
+    \item Apple sign-in
+    \item API key
+\end{itemize}
+
+The main question is:
+\begin{quote}
+who is making this request?
+\end{quote}
+
+\subsection{What Authorization Is}
+
+Authorization is different:
+\begin{quote}
+now that we know who you are, what are you allowed to do?
+\end{quote}
+
+Example:
+\begin{itemize}
+    \item any signed-in user can read their own profile
+    \item only admins can view admin routes
+    \item only invited users can access some event data
+\end{itemize}
+
+\subsection{What A JWT Is}
+
+JWT means JSON Web Token.
+
+It is a signed token that can carry claims, such as:
+\begin{itemize}
+    \item user id
+    \item email
+    \item roles
+    \item expiration time
+\end{itemize}
+
+The key idea:
+\begin{itemize}
+    \item the server signs the token
+    \item later, the server can verify that the token was not tampered with
+\end{itemize}
+
+\subsection{Why JWTs Are Common In Mobile/API Systems}
+
+JWTs are popular because:
+\begin{itemize}
+    \item clients can store them and send them as bearer tokens
+    \item the server can verify them efficiently
+    \item they fit well with HTTP APIs
+\end{itemize}
+
+But they are not automatically secure just because they are JWTs. Design still matters.
+
+\subsection{Access Tokens And Refresh Tokens}
+
+Best practice is often:
+\begin{itemize}
+    \item short-lived access token
+    \item longer-lived refresh token
+\end{itemize}
+
+Why:
+\begin{itemize}
+    \item if an access token is stolen, its lifetime is limited
+    \item refresh tokens let the client renew the session without forcing frequent logins
+\end{itemize}
+
+\subsection{How Ktor Protects Routes}
+
+Ktor uses the \texttt{Authentication} plugin.
+
+Basic flow:
+\begin{enumerate}
+    \item install the auth mechanism
+    \item wrap protected routes in \texttt{authenticate \{ ... \}}
+    \item read the principal inside the route
+\end{enumerate}
+
+Conceptual example:
+
+\begin{lstlisting}[style=kazekotlin]
+authenticate("auth-jwt") {
+    get("/me") {
+        val principal = call.principal<JWTPrincipal>()
+        call.respondText("User = ${principal?.payload?.subject}")
+    }
+}
+\end{lstlisting}
+
+\subsection{What Happens If You Do Not Protect Sensitive Routes}
+
+If you forget auth or authorization:
+\begin{itemize}
+    \item private data may leak
+    \item users may modify things they should not
+    \item your API becomes unsafe even if the code ``works''
+\end{itemize}
+
+\subsection{Password Hashing}
+
+Never store plain passwords.
+
+Use password hashing such as bcrypt. Kaze uses bcrypt. That means:
+\begin{itemize}
+    \item the server stores a hash, not the original password
+    \item login checks the password against the hash
+\end{itemize}
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item Keep access tokens short-lived.
+    \item Store refresh tokens carefully.
+    \item Hash passwords.
+    \item Separate authentication from authorization in your thinking.
+    \item Protect only the routes that need protection, but do not forget sensitive ones.
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze currently supports password auth, social sign-in, JWT access tokens, refresh tokens, and protected routes such as \texttt{/auth/me}. That makes it a strong real example after you understand the principles.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item Kotlin null-safe chains are common in auth normalization.
+    \item \texttt{when} is often used as a clean branching expression.
+    \item Custom properties with getters can lazily resolve dependencies.
+\end{itemize}
+
+\section{Chapter 7: Dependency Injection With Koin}
+
+\subsection{What A Dependency Is}
+
+This is one of the most important words in backend development, so it is worth defining very clearly.
+
+A dependency is anything a piece of code needs in order to work.
+
+Examples:
+\begin{itemize}
+    \item a service may need a repository
+    \item a repository may need a database connection or data source
+    \item an auth service may need JWT configuration
+    \item your whole project may need external libraries such as Ktor, Koin, or the PostgreSQL driver
+\end{itemize}
+
+So if a class cannot do its work alone and needs another object, config, or library, that thing is a dependency.
+
+\subsection{Two Meanings Of Dependency}
+
+You will hear the word ``dependency'' in two slightly different ways.
+
+\textbf{1. Code dependency}
+
+This means one class or component needs another class or component.
+
+Example:
+
+\begin{lstlisting}[style=kazekotlin]
+class BookService(
+    private val repository: BookRepository
+)
+\end{lstlisting}
+
+Here, \texttt{BookService} depends on \texttt{BookRepository}.
+
+\textbf{2. Project or library dependency}
+
+This means your project needs an external library in order to compile or run.
+
+Examples in Gradle:
+
+\begin{lstlisting}[style=kazekotlin]
+implementation(libs.ktor.serverCore)
+implementation(libs.koin.ktor)
+implementation(libs.postgresql)
+\end{lstlisting}
+
+These are library dependencies.
+
+\subsection{Why Dependencies Are Needed}
+
+Real applications are built from smaller pieces with different responsibilities.
+
+For example:
+\begin{itemize}
+    \item routes handle HTTP
+    \item services handle business logic
+    \item repositories handle storage
+    \item config objects hold configuration
+\end{itemize}
+
+Because one layer needs help from another layer, dependencies naturally appear.
+
+That is not a problem. In fact, it is normal and healthy.
+
+The real question is not:
+\begin{quote}
+can we avoid dependencies completely?
+\end{quote}
+
+The real question is:
+\begin{quote}
+are dependencies organized clearly and safely?
+\end{quote}
+
+\subsection{What Goes Wrong When Dependencies Are Poorly Managed}
+
+If a class creates everything by itself, several problems appear:
+\begin{itemize}
+    \item the class does too much
+    \item the class becomes harder to test
+    \item replacing one part becomes difficult
+    \item code gets tightly coupled
+\end{itemize}
+
+Example of a class doing too much:
+
+\begin{lstlisting}[style=kazekotlin]
+class BookService {
+    fun listBooks(): List<Book> {
+        val dataSource = createDataSource()
+        val repository = JdbcBookRepository(dataSource)
+        return repository.listBooks()
+    }
+}
+\end{lstlisting}
+
+This works, but it mixes object creation with business behavior.
+
+Better:
+
+\begin{lstlisting}[style=kazekotlin]
+class BookService(
+    private val repository: BookRepository
+) {
+    fun listBooks(): List<Book> = repository.listBooks()
+}
+\end{lstlisting}
+
+Now the service focuses on its real job.
+
+\subsection{What Coupling Means}
+
+Coupling describes how tightly one piece of code is tied to another.
+
+If a class is tightly coupled to a specific implementation, it becomes harder to:
+\begin{itemize}
+    \item replace that implementation
+    \item test the class in isolation
+    \item reuse the class elsewhere
+\end{itemize}
+
+So when we talk about dependency injection, one big goal is reducing unnecessary coupling.
+
+\subsection{What Dependency Injection Really Means}
+
+Dependency injection sounds fancy, but the core idea is simple:
+
+\begin{quote}
+objects should receive the things they need instead of creating everything by themselves
+\end{quote}
+
+If a service needs a repository, it should usually be given that repository rather than constructing it internally.
+
+\subsection{Why This Matters}
+
+Without DI:
+\begin{itemize}
+    \item classes become tightly coupled
+    \item object creation gets repeated everywhere
+    \item testing gets harder
+    \item wiring gets hidden inside business code
+\end{itemize}
+
+With DI:
+\begin{itemize}
+    \item wiring is centralized
+    \item classes state their dependencies clearly
+    \item test doubles become easier
+    \item architecture becomes easier to reason about
+\end{itemize}
+
+\subsection{Constructor Injection}
+
+This is the clean beginner-friendly pattern:
+
+\begin{lstlisting}[style=kazekotlin]
+class BookService(
+    private val repository: BookRepository
+)
+\end{lstlisting}
+
+The service says plainly what it depends on.
+
+\subsection{What Koin Does}
+
+Koin is a DI framework for Kotlin. It helps you register objects and ask for them later.
+
+Conceptual example:
+
+\begin{lstlisting}[style=kazekotlin]
+val appModule = module {
+    single<BookRepository> { JdbcBookRepository(get()) }
+    single { BookService(get()) }
+}
+\end{lstlisting}
+
+Meaning:
+\begin{itemize}
+    \item create one shared \texttt{BookRepository}
+    \item create one shared \texttt{BookService}
+    \item if a constructor needs another object, resolve it with \texttt{get()}
+\end{itemize}
+
+\subsection{What Happens If You Do Not Use DI}
+
+You do not absolutely need a DI framework for every project.
+
+But as projects grow, without some DI pattern you often get:
+\begin{itemize}
+    \item scattered setup logic
+    \item repeated manual object construction
+    \item harder testing
+    \item hidden dependencies
+\end{itemize}
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item Prefer constructor injection.
+    \item Keep wiring centralized.
+    \item Depend on interfaces where useful.
+    \item Do not use DI to hide bad design; use it to clarify assembly.
+    \item Separate object creation from business behavior.
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze installs Koin in the server module and registers config, data source, repositories, auth helpers, services, and grouped server dependencies.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item Koin uses DSL-style builders.
+    \item Generic bindings let interfaces point to concrete implementations.
+    \item Constructor injection reads especially cleanly in Kotlin.
+\end{itemize}
+
+\section{Chapter 8: Testing \& Error Handling}
+
+\subsection{Why Testing A Backend Is Different}
+
+In backend work, you are not only testing functions. You are also testing:
+\begin{itemize}
+    \item HTTP behavior
+    \item route registration
+    \item auth rules
+    \item validation
+    \item status codes
+    \item integration with storage or configuration
+\end{itemize}
+
+\subsection{What Ktor Testing Gives You}
+
+Ktor lets you start the application in a test environment and send requests to it.
+
+Conceptually:
+
+\begin{lstlisting}[style=kazekotlin]
+testApplication {
+    application { module() }
+
+    val response = client.get("/health")
+    assertEquals(HttpStatusCode.OK, response.status)
+}
+\end{lstlisting}
+
+This is extremely useful because it tests the app close to how it really behaves.
+
+\subsection{What Error Handling Means On A Server}
+
+Good server error handling means:
+\begin{itemize}
+    \item bad client input gets a clear client error
+    \item unauthorized access gets the proper auth error
+    \item missing resources get not-found responses
+    \item unexpected failures get safe server errors
+\end{itemize}
+
+This is important because APIs are contracts. They should fail in understandable ways, not with random stack traces or vague broken behavior.
+
+\subsection{Status Pages}
+
+Ktor's \texttt{StatusPages} plugin is the central place for translating exceptions into responses.
+
+Why that is good:
+\begin{itemize}
+    \item routes stay cleaner
+    \item error responses stay consistent
+    \item you avoid repetitive try/catch blocks everywhere
+\end{itemize}
+
+\subsection{What Happens If You Ignore Error Handling}
+
+Without deliberate error handling:
+\begin{itemize}
+    \item clients get inconsistent responses
+    \item debugging gets harder
+    \item sensitive internal details might leak
+    \item the API becomes unpleasant to use
+\end{itemize}
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item Test happy paths and failure paths.
+    \item Test authentication and validation behavior, not only business success cases.
+    \item Keep error responses consistent.
+    \item Use centralized exception translation.
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze tests health checks, Swagger, auth rules, validation failures, rate limiting, and compression. It also uses \texttt{StatusPages} to convert exceptions into structured API error responses.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item Test builders often use suspending lambdas with receivers.
+    \item \texttt{vararg} is useful for flexible test config helpers.
+    \item Companion objects keep local test constants tidy.
+\end{itemize}
+
+\section{Chapter 9: Deployment, Docker, and KMP Integration}
+
+\subsection{Why Deployment Is Part Of Learning Backend}
+
+If your code only runs in your IDE, you have learned only part of backend development.
+
+A real backend must also be:
+\begin{itemize}
+    \item built
+    \item configured
+    \item packaged
+    \item deployed
+    \item run in another environment
+\end{itemize}
+
+\subsection{What Docker Solves}
+
+Docker packages the application with its runtime environment into a container image.
+
+Why people use it:
+\begin{itemize}
+    \item consistent runtime environment
+    \item easier deployment
+    \item cleaner separation between build stage and runtime stage
+    \item fewer machine-specific surprises
+\end{itemize}
+
+Kaze uses a multi-stage Docker build, which is a strong production pattern.
+
+\subsection{What Configuration Means In Deployment}
+
+A backend needs runtime configuration such as:
+\begin{itemize}
+    \item database URL
+    \item credentials
+    \item JWT secret
+    \item OAuth secrets
+    \item host or CORS settings
+\end{itemize}
+
+That is why environment variables matter so much.
+
+\subsection{What KMP Changes}
+
+Kotlin Multiplatform means your project can share some Kotlin code across platforms.
+
+But that does \emph{not} mean the backend and app are the same thing.
+
+In Kaze:
+\begin{itemize}
+    \item the server is a Ktor JVM module
+    \item the shared module contains common logic and models
+    \item the Compose app is the client
+\end{itemize}
+
+\subsection{What To Pay Attention To}
+
+\begin{itemize}
+    \item shared language does not remove the network boundary
+    \item clients and servers still communicate through contracts
+    \item deployment of the server is separate from shipping the mobile app
+\end{itemize}
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item keep secrets out of source code
+    \item make config explicit
+    \item use stable deployment scripts
+    \item keep the backend independently runnable
+\end{itemize}
+
+\subsection{How Kaze Uses This}
+
+Kaze packages the backend in Docker and deploys it with a Cloud Run script that passes environment configuration. On the client side, the Compose app uses a Ktor HTTP client for auth calls. That is a clean example of a real KMP app talking to a real Ktor backend.
+
+\subsection{Advanced Kotlin Concepts Used Here}
+
+\begin{itemize}
+    \item KMP uses \texttt{expect}/\texttt{actual} for platform-specific implementations.
+    \item Mapping helpers convert transport-layer objects into app-layer models.
+    \item Immutable config objects are common in deployment-aware code.
+\end{itemize}
+
+\section{Final Advice For Studying Kaze}
+
+Do not start by reading the whole Kaze backend end-to-end.
+
+Instead:
+\begin{enumerate}
+    \item understand what an API is
+    \item understand routes
+    \item understand JSON request/response handling
+    \item understand plugins
+    \item understand auth and storage separately
+    \item only then read the bigger project files
+\end{enumerate}
+
+Best reading order in the project after this guide:
+\begin{enumerate}
+    \item \texttt{Application.kt}
+    \item \texttt{ApiSupport.kt}
+    \item \texttt{ApiRouting.kt}
+    \item \texttt{AuthRouting.kt}
+    \item \texttt{AuthService.kt}
+    \item \texttt{ServerModules.kt}
+    \item \texttt{DatabaseConfig.kt}
+    \item \texttt{JdbcRepositories.kt}
+    \item \texttt{ApiRoutesTest.kt}
+\end{enumerate}
+
+\begin{kazehighlightbox}
+\textbf{Most important thing to remember:} Ktor is not hard because of syntax. It feels hard when too many backend concepts arrive at the same time. Once you separate the ideas --- routing, JSON, plugins, auth, database, DI, testing, deployment --- the code becomes far more understandable.
+\end{kazehighlightbox}
+
+\section{Visual Mental Models}
+
+This section is here to make the concepts easier to picture.
+
+\subsection{The Basic Request Flow}
+
+\begin{longtable}{p{0.2\textwidth} p{0.72\textwidth}}
+\textbf{Step 1} & Client sends an HTTP request such as \texttt{GET /books}. \\
+\textbf{Step 2} & Ktor server receives the request. \\
+\textbf{Step 3} & Plugins may inspect or modify the request pipeline. \\
+\textbf{Step 4} & Routing matches the request to a route handler. \\
+\textbf{Step 5} & The route calls services and repositories as needed. \\
+\textbf{Step 6} & The route creates or receives a result. \\
+\textbf{Step 7} & Ktor serializes the response and sends it back. \\
+\end{longtable}
+
+Short version:
+
+\begin{quote}
+Client -> Ktor pipeline -> Route -> Service -> Repository -> Database -> back to client
+\end{quote}
+
+\subsection{The Plugin Mental Model}
+
+\begin{longtable}{p{0.2\textwidth} p{0.72\textwidth}}
+\textbf{Before Route} & Logging, CORS, authentication checks, request validation may happen before your route code runs. \\
+\textbf{Route} & Your route reads input and coordinates the main action. \\
+\textbf{After Route} & Serialization, compression, response headers, and centralized error formatting may affect the outgoing response. \\
+\end{longtable}
+
+\subsection{The Login Flow Mental Model}
+
+\begin{longtable}{p{0.2\textwidth} p{0.72\textwidth}}
+\textbf{Step 1} & Client sends credentials to a sign-in endpoint. \\
+\textbf{Step 2} & Server verifies identity. \\
+\textbf{Step 3} & Server creates a token or session. \\
+\textbf{Step 4} & Client stores the access token. \\
+\textbf{Step 5} & Client sends the token on future protected requests. \\
+\textbf{Step 6} & Server validates the token before allowing the route. \\
+\end{longtable}
+
+\subsection{The Refresh Token Mental Model}
+
+\begin{longtable}{p{0.2\textwidth} p{0.72\textwidth}}
+\textbf{Step 1} & Access token expires. \\
+\textbf{Step 2} & Client sends refresh token to a refresh endpoint. \\
+\textbf{Step 3} & Server checks whether the refresh token is still valid. \\
+\textbf{Step 4} & Server issues a new access token, and often a replacement refresh token. \\
+\textbf{Step 5} & Client continues using the new access token. \\
+\end{longtable}
+
+\section{Common Mistakes, Symptoms, and Debugging Hints}
+
+Beginners usually learn fastest when they can connect mistakes to symptoms.
+
+\subsection{Routing Mistakes}
+
+\begin{longtable}{p{0.26\textwidth} p{0.28\textwidth} p{0.36\textwidth}}
+\textbf{Mistake} & \textbf{Symptom} & \textbf{What To Check} \\
+Wrong HTTP method & \texttt{404} or route not reached & Check whether the route is \texttt{GET}, \texttt{POST}, etc. \\
+Wrong path & \texttt{404} & Check exact path spelling and prefixes like \texttt{/api/v1}. \\
+Missing path parameter & \texttt{400} or crash & Check route template and parameter extraction. \\
+\end{longtable}
+
+\subsection{Serialization Mistakes}
+
+\begin{longtable}{p{0.26\textwidth} p{0.28\textwidth} p{0.36\textwidth}}
+\textbf{Mistake} & \textbf{Symptom} & \textbf{What To Check} \\
+Forgot \texttt{ContentNegotiation} & JSON handling fails or feels manual & Verify the plugin is installed. \\
+Forgot \texttt{@Serializable} & Serialization or deserialization errors & Add the annotation to DTO classes. \\
+Wrong request JSON shape & \texttt{400} or parsing failure & Compare client JSON fields with DTO fields. \\
+\end{longtable}
+
+\subsection{Plugin and Auth Mistakes}
+
+\begin{longtable}{p{0.26\textwidth} p{0.28\textwidth} p{0.36\textwidth}}
+\textbf{Mistake} & \textbf{Symptom} & \textbf{What To Check} \\
+Protected route not wrapped in \texttt{authenticate} & Route is accidentally public & Check route grouping. \\
+Bad or missing token & \texttt{401 Unauthorized} & Check header name, token value, and verifier config. \\
+Validation missing & Bad data reaches services & Add \texttt{RequestValidation} or route-level checks. \\
+\end{longtable}
+
+\subsection{Database Mistakes}
+
+\begin{longtable}{p{0.26\textwidth} p{0.28\textwidth} p{0.36\textwidth}}
+\textbf{Mistake} & \textbf{Symptom} & \textbf{What To Check} \\
+Wrong DB config & Startup or query failures & Check URL, user, password, and environment variables. \\
+Mixing SQL into routes & Messy route code & Move storage logic into repositories. \\
+Unsafe SQL building & Security risk or broken queries & Use prepared statements. \\
+\end{longtable}
+
+\subsection{A Debugging Habit That Helps}
+
+When something breaks, ask these questions in order:
+\begin{enumerate}
+    \item Did the request reach the correct route?
+    \item Was the request data parsed correctly?
+    \item Did a plugin reject it first?
+    \item Did the service logic fail?
+    \item Did the repository or database fail?
+    \item Was the response serialized correctly?
+\end{enumerate}
+
+\section{Exercises}
+
+These are intentionally small. The goal is to make you think like a backend developer without overwhelming you.
+
+\subsection{After Chapter 1}
+
+\begin{itemize}
+    \item Write the smallest Ktor server you can that returns \texttt{"hello"} on \texttt{GET /}.
+    \item Change the port from \texttt{8080} to another number and explain what changed.
+\end{itemize}
+
+\subsection{After Chapter 2}
+
+\begin{itemize}
+    \item Design three routes for a movie API.
+    \item Add one path parameter route and one query parameter route.
+    \item Explain in your own words when to use request body data instead of query parameters.
+\end{itemize}
+
+\subsection{After Chapter 3}
+
+\begin{itemize}
+    \item Create a \texttt{BookDto} class with \texttt{@Serializable}.
+    \item Write a route that returns one \texttt{BookDto}.
+    \item Write a request DTO for creating a book.
+\end{itemize}
+
+\subsection{After Chapter 4}
+
+\begin{itemize}
+    \item List three concerns that belong in plugins instead of route code.
+    \item Explain rate limiting in one sentence and give one route that should probably be rate-limited.
+    \item Explain what would happen if a backend had no validation and no status-page style error handling.
+\end{itemize}
+
+\subsection{After Chapter 5}
+
+\begin{itemize}
+    \item Write a repository interface for books or tasks.
+    \item Explain why prepared statements are safer than SQL string concatenation.
+    \item Explain what a connection pool is in your own words.
+\end{itemize}
+
+\subsection{After Chapter 6}
+
+\begin{itemize}
+    \item Explain the difference between authentication and authorization.
+    \item Explain why access tokens are usually short-lived.
+    \item Explain why passwords should be hashed, not stored directly.
+\end{itemize}
+
+\subsection{After Chapter 7}
+
+\begin{itemize}
+    \item Identify one code dependency and one library dependency in your own words.
+    \item Rewrite a class constructor to receive a dependency instead of creating it internally.
+    \item Explain coupling in one short paragraph.
+\end{itemize}
+
+\subsection{After Chapter 8}
+
+\begin{itemize}
+    \item Write a simple test idea for a \texttt{GET /health} endpoint.
+    \item List two failure cases you would test for an auth route.
+\end{itemize}
+
+\subsection{After Chapter 9}
+
+\begin{itemize}
+    \item Explain why environment variables are useful in deployment.
+    \item Explain why a mobile app and backend are still separate systems even if both are written in Kotlin.
+\end{itemize}
+
+\section{Java and Spring Bridges}
+
+Because you already know Java, it helps to connect Ktor ideas to a more traditional Java backend mindset.
+
+\begin{longtable}{p{0.28\textwidth} p{0.28\textwidth} p{0.34\textwidth}}
+\textbf{Ktor Idea} & \textbf{Rough Java/Spring Analogy} & \textbf{Important Difference} \\
+Route & Controller endpoint & Ktor often feels lighter and more DSL-driven. \\
+Plugin & Filter / interceptor / middleware-like behavior & Ktor uses pipeline/plugin vocabulary. \\
+Application module & Application setup / configuration class & Ktor often centralizes setup in functions instead of heavy annotations. \\
+Koin module & Spring bean configuration & Koin is lighter and more explicit in code. \\
+DTO & Request/response DTO & Same basic idea. \\
+Repository & Repository / DAO & Same basic architectural role. \\
+\end{longtable}
+
+\subsection{One Important Mindset Difference}
+
+Ktor often feels more explicit and less annotation-heavy than frameworks many Java developers first meet.
+
+That can feel unusual at first, but it is often helpful for learning because more of the setup is visible in code.
+
+\section{Kotlin for Backend Appendix}
+
+This appendix exists because backend Kotlin uses some features that may not be familiar if you mainly coded Java or C++.
+
+\subsection{Extension Functions}
+
+Example:
+
+\begin{lstlisting}[style=kazekotlin]
+fun Application.module() { ... }
+\end{lstlisting}
+
+This adds a function to an existing type without subclassing it.
+
+\subsection{Data Classes}
+
+These are concise classes often used for DTOs and config objects.
+
+\begin{lstlisting}[style=kazekotlin]
+data class BookDto(
+    val id: String,
+    val title: String
+)
+\end{lstlisting}
+
+\subsection{Null Safety}
+
+Kotlin makes null handling explicit with tools like:
+\begin{itemize}
+    \item safe call: \texttt{?.}
+    \item Elvis operator: \texttt{?:}
+    \item nullable types such as \texttt{String?}
+\end{itemize}
+
+\subsection{Lambdas With Receivers}
+
+Ktor and Koin DSLs use this heavily. That is why blocks like:
+
+\begin{lstlisting}[style=kazekotlin]
+routing {
+    get("/") { ... }
+}
+\end{lstlisting}
+
+read like mini languages.
+
+\subsection{Generics}
+
+You will see this in APIs like:
+
+\begin{lstlisting}[style=kazekotlin]
+call.receive<CreateBookRequest>()
+\end{lstlisting}
+
+The function works with different types.
+
+\subsection{\texttt{suspend}}
+
+\texttt{suspend} marks functions that can be called from coroutines. It is a key part of modern Kotlin backend programming, but remember: \texttt{suspend} does not automatically mean ``non-blocking'' for everything inside the function.
+
+\subsection{\texttt{object} and Companion Object}
+
+\texttt{object} creates a singleton-like declaration.
+
+\texttt{companion object} is often used for constants or factory-like helpers associated with a class.
+
+\section{Mapping The Concepts Back To Kaze}
+
+Now that the course material has taught the ideas separately, here is how they map back to your project.
+
+\begin{longtable}{p{0.28\textwidth} p{0.64\textwidth}}
+\textbf{Concept} & \textbf{Where To Look In Kaze} \\
+Server startup and application module & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/Application.kt} \\
+Ktor plugin setup & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/api/ApiSupport.kt} \\
+Main route structure & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/api/ApiRouting.kt} \\
+Auth-specific routes & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/api/AuthRouting.kt} \\
+Auth logic & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/auth/AuthService.kt} \\
+Dependency injection & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/di/ServerModules.kt} \\
+Database config and connection setup & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/infrastructure/DatabaseConfig.kt} and \texttt{DatabaseFactory.kt} \\
+Repository-style storage access & \texttt{server/src/main/kotlin/dev/orestegabo/kaze/infrastructure/JdbcRepositories.kt} \\
+Endpoint tests & \texttt{server/src/test/kotlin/dev/orestegabo/kaze/ApiRoutesTest.kt} \\
+Client talking to backend & \texttt{composeApp/src/commonMain/kotlin/dev/orestegabo/kaze/presentation/auth/AuthGateway.kt} \\
+\end{longtable}
+
+\subsection{Best Way To Re-read Kaze After This}
+
+Once the course concepts feel familiar, try re-reading the project with this sequence:
+\begin{enumerate}
+    \item startup
+    \item plugins
+    \item routes
+    \item auth
+    \item DI
+    \item database
+    \item tests
+\end{enumerate}
+
+That order is much easier than jumping directly into a large auth or repository file without a mental model.
+
+\section{Contact}
+
+\KazeContactBlock
+
+\end{document}

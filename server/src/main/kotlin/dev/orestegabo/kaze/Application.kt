@@ -5,6 +5,7 @@ import dev.orestegabo.kaze.api.registerApiRoutes
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.auth.loadJwtConfig
 import dev.orestegabo.kaze.application.ServerDependencies
+import dev.orestegabo.kaze.application.validateProductionSafety
 import dev.orestegabo.kaze.di.serverModule
 import dev.orestegabo.kaze.infrastructure.initializeDatabaseFactory
 import dev.orestegabo.kaze.infrastructure.initializeDatabaseSeed
@@ -27,6 +28,7 @@ fun main(args: Array<String>) {
 fun Application.module() {
     val databaseConfig = loadDatabaseConfig()
     val jwtConfig = loadJwtConfig()
+    validateProductionSafety(databaseConfig, jwtConfig)
     initializeDatabaseFactory(databaseConfig)
     initializeDatabaseSchema(databaseConfig)
     initializeDatabaseSeed(databaseConfig)

@@ -7,6 +7,7 @@ import io.ktor.client.request.head
 import io.ktor.client.request.header
 import io.ktor.client.request.options
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -183,6 +184,38 @@ class ApiRoutesTest {
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("\"email\": \"ange.uwase@kaze.dev\""))
         assertTrue(response.bodyAsText().contains("CUSTOMER"))
+        assertTrue(response.bodyAsText().contains("\"privacyConsent\""))
+    }
+
+    @Test
+    fun auth_profile_update_persists_privacy_consent() = kazeTestApplication(
+        "kaze.security.jwt.secret" to TEST_JWT_SECRET,
+    ) {
+
+        val response = client.put("/api/v1/auth/me") {
+            header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "displayName": "Ange Uwase",
+                  "username": "ange.uwase",
+                  "phoneNumber": "+250788123456",
+                  "privacyConsent": {
+                    "mapAndVenueActivityEnabled": false,
+                    "diagnosticsEnabled": true,
+                    "notificationsEnabled": false,
+                    "analyticsEnabled": true
+                  }
+                }
+                """.trimIndent(),
+            )
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("\"mapAndVenueActivityEnabled\": false"))
+        assertTrue(response.bodyAsText().contains("\"notificationsEnabled\": false"))
+        assertTrue(response.bodyAsText().contains("\"analyticsEnabled\": true"))
     }
 
     @Test
@@ -208,6 +241,18 @@ class ApiRoutesTest {
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
         assertTrue(response.bodyAsText().contains("google_auth_not_configured"))
+    }
+
+    @Test
+    fun facebook_signin_requires_configuration() = kazeTestApplication {
+
+        val response = client.post("/api/v1/auth/facebook") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"accessToken":"not-a-real-token"}""")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("facebook_auth_not_configured"))
     }
 
     @Test

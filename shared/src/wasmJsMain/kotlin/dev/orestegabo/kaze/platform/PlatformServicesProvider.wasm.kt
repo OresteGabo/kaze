@@ -1,6 +1,7 @@
 package dev.orestegabo.kaze.platform
 
 import kotlinx.browser.localStorage
+import kotlinx.browser.sessionStorage
 
 actual object PlatformServicesProvider {
     actual fun create(): PlatformServices = PlatformServices(
@@ -18,14 +19,17 @@ actual object PlatformServicesProvider {
         },
         secureStore = object : SecureStore {
             override suspend fun put(key: String, value: String) {
-                localStorage.setItem(key, value)
+                storageFor(key).setItem(key, value)
             }
 
-            override suspend fun get(key: String): String? = localStorage.getItem(key)
+            override suspend fun get(key: String): String? = storageFor(key).getItem(key)
 
             override suspend fun remove(key: String) {
-                localStorage.removeItem(key)
+                storageFor(key).removeItem(key)
             }
         },
     )
 }
+
+private fun storageFor(key: String) =
+    if (key.startsWith("auth.")) sessionStorage else localStorage

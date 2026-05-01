@@ -188,6 +188,14 @@ internal data class AuthActiveStayResponseDto(
 )
 
 @Serializable
+internal data class AuthSessionBootstrapDto(
+    val user: AuthUserDto,
+    val invitations: List<AuthInvitationSummaryDto> = emptyList(),
+    val events: List<AuthEventSummaryDto> = emptyList(),
+    val activeStay: AuthActiveStayDto? = null,
+)
+
+@Serializable
 internal data class AuthInvitationResponseRequest(
     val response: String,
 )

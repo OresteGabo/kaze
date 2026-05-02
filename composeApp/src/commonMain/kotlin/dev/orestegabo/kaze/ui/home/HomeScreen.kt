@@ -67,6 +67,7 @@ internal fun HomeScreen(
     onEnterCode: (String) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
     onSeeAllInvitations: () -> Unit,
+    onBrowseVenues: () -> Unit,
     onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
     bottomContentPadding: Dp = 20.dp,
 ) {
@@ -128,13 +129,13 @@ internal fun HomeScreen(
                 if (accessContexts.isEmpty() && accessCard == null && invitations.isEmpty()) {
                     KazeEmptyStateScreen(
                         modifier = Modifier.fillMaxWidth(),
-                        title = "Nothing here yet",
-                        subtitle = "Your pass, invitations, and event access will appear once you join something in Kaze.",
-                        actionLabel = "Open invites",
+                        title = "You have not joined anything yet",
+                        subtitle = "Browse venues or send a reservation request first. Your pass, invitations, and stay access will appear here after that.",
+                        actionLabel = "Browse venues",
                         eyebrow = "Home",
-                        tags = listOf("Pass", "Invites", "Access"),
+                        tags = listOf("Venues", "Reservations", "Pass"),
                         icon = Icons.Outlined.BookmarkBorder,
-                        onAction = onSeeAllInvitations,
+                        onAction = onBrowseVenues,
                     )
                 } else {
                     HomeStayDashboard(

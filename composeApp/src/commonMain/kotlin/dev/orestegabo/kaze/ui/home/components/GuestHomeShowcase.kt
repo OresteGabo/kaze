@@ -217,7 +217,7 @@ private fun GuestHomeHeroCard(
                             )
                             MetaPill(
                                 "${invitations.size} ready",
-                                leadingIcon = Icons.Default.AutoAwesome,
+                                leadingIcon = Icons.Default.VpnKey,
                             )
                         }
 

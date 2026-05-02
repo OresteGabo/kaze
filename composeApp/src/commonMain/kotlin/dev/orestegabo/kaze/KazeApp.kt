@@ -52,8 +52,6 @@ import dev.orestegabo.kaze.ui.explore.ExploreScreen
 import dev.orestegabo.kaze.ui.home.HomeScreen
 import dev.orestegabo.kaze.ui.home.components.HomeSettingsScreen
 import dev.orestegabo.kaze.ui.home.components.InvitationsScreen
-import dev.orestegabo.kaze.ui.home.invitations.InvitationThemeCategory
-import dev.orestegabo.kaze.ui.home.invitations.resolveInvitationTheme
 import dev.orestegabo.kaze.ui.home.settings.LegalDetailScreen
 import dev.orestegabo.kaze.ui.home.settings.LegalPage
 import dev.orestegabo.kaze.ui.map.MapScreen
@@ -207,6 +205,10 @@ fun App() {
             appViewModel.onDestinationSelected(destination)
         }
 
+        fun showMapPreviewUnavailable() {
+            appViewModel.showFeedback("Indoor venue maps are still being prepared for production. Browse the venue details for now.")
+        }
+
         fun handleStayResult(result: StayActionResult?) {
             when (result) {
                 null -> Unit
@@ -218,30 +220,18 @@ fun App() {
                     selectedEventInvitation = null
                     appViewModel.openEvents()
                 }
-                is StayActionResult.NavigateToMap -> appViewModel.openMapRoute(
-                    route = result.route,
-                    floorId = result.floorId,
-                    floorLabel = result.floorLabel,
-                )
+                is StayActionResult.NavigateToMap -> showMapPreviewUnavailable()
             }
         }
 
         fun handleEventResult(result: EventsActionResult.NavigateToMap) {
-            appViewModel.openMapRoute(
-                route = result.route,
-                floorId = result.floorId,
-                floorLabel = result.floorLabel,
-            )
+            showMapPreviewUnavailable()
         }
 
         fun handleExploreResult(result: ExploreActionResult) {
             when (result) {
                 is ExploreActionResult.Feedback -> appViewModel.showFeedback(result.message)
-                is ExploreActionResult.NavigateToMap -> appViewModel.openMapRoute(
-                    route = result.route,
-                    floorId = result.floorId,
-                    floorLabel = result.floorLabel,
-                )
+                is ExploreActionResult.NavigateToMap -> showMapPreviewUnavailable()
             }
         }
 
@@ -294,15 +284,6 @@ fun App() {
             appViewModel.showFeedback("${invitation.title} event details are open.")
         }
 
-        fun openVenueMap(venue: PublicVenuePreview) {
-            appViewModel.openMapRoute(
-                route = "Route to ${venue.name}",
-                floorId = "l1",
-                floorLabel = venue.locationLabel,
-            )
-            appViewModel.showFeedback("Opening the map for ${venue.name}.")
-        }
-
         fun openLegalPage(page: LegalPage) {
             selectedLegalPage = page
         }
@@ -323,8 +304,7 @@ fun App() {
             containerColor = MaterialTheme.colorScheme.background,
         ) { innerPadding ->
             val layoutDirection = LocalLayoutDirection.current
-            val immersiveWeddingEvent = uiState.currentDestination == KazeDestination.EVENTS &&
-                selectedEventInvitation?.resolveInvitationTheme()?.category == InvitationThemeCategory.WEDDING
+            val immersiveWeddingEvent = false
             Box(modifier = Modifier.fillMaxSize()) {
                 KazeAmbientBackground(modifier = Modifier.matchParentSize())
                 Box(
@@ -479,13 +459,7 @@ fun App() {
                                                     }
                                                 },
                                                 eventInvitation = selectedEventInvitation,
-                                                onVenueAction = {
-                                                    appViewModel.openMapRoute(
-                                                        route = "Route to Nyarutarama Garden",
-                                                        floorId = "l1",
-                                                        floorLabel = "Nyarutarama Garden",
-                                                    )
-                                                },
+                                                onVenueAction = ::showMapPreviewUnavailable,
                                                 edgeAiEnabled = uiState.edgeAiEnabled,
                                                 onAiAction = { feature ->
                                                     appViewModel.showFeedback("$feature will run on-device when the local model is installed.")
@@ -654,13 +628,7 @@ fun App() {
                                                 }
                                             },
                                             eventInvitation = selectedEventInvitation,
-                                            onVenueAction = {
-                                                appViewModel.openMapRoute(
-                                                    route = "Route to Nyarutarama Garden",
-                                                    floorId = "l1",
-                                                    floorLabel = "Nyarutarama Garden",
-                                                )
-                                            },
+                                            onVenueAction = ::showMapPreviewUnavailable,
                                             edgeAiEnabled = uiState.edgeAiEnabled,
                                             onAiAction = { feature ->
                                                 appViewModel.showFeedback("$feature will run on-device when the local model is installed.")

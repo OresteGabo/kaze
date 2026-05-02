@@ -8,6 +8,7 @@ import dev.orestegabo.kaze.data.repository.MapRepository
 import dev.orestegabo.kaze.data.repository.StayRepository
 import dev.orestegabo.kaze.platform.PlatformServices
 import dev.orestegabo.kaze.platform.PlatformServicesProvider
+import dev.orestegabo.kaze.presentation.api.createKazeApiRepositories
 import dev.orestegabo.kaze.presentation.auth.AuthGateway
 import dev.orestegabo.kaze.presentation.auth.ExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.KazeAuthGateway
@@ -40,6 +41,35 @@ internal data class KazeDependencies(
     val nativeSocialAuthLauncher: NativeSocialAuthLauncher,
 ) {
     companion object {
+        private const val DEFAULT_LAUNCH_HOTEL_ID = "rw-kgl-marriott"
+        private const val DEFAULT_LAUNCH_MAP_ID = "map_marriott_main"
+
+        fun production(
+            apiBaseUrl: String = defaultAuthApiBaseUrl(),
+        ): KazeDependencies {
+            val repositories = createKazeApiRepositories(apiBaseUrl)
+            val platformServices = PlatformServicesProvider.create()
+            return KazeDependencies(
+                hotelId = DEFAULT_LAUNCH_HOTEL_ID,
+                mapId = DEFAULT_LAUNCH_MAP_ID,
+                hotelRepository = repositories.hotelRepository,
+                stayRepository = repositories.stayRepository,
+                experienceRepository = repositories.experienceRepository,
+                mapRepository = repositories.mapRepository,
+                observeHotelContext = ObserveHotelContextUseCase(repositories.hotelRepository),
+                submitLateCheckout = SubmitLateCheckoutUseCase(repositories.stayRepository),
+                platformServices = platformServices,
+                authGateway = KazeAuthGateway(
+                    client = createAuthHttpClient(),
+                    baseUrl = apiBaseUrl,
+                    deviceId = "kaze-device",
+                    deviceLabel = defaultDeviceLabel(),
+                ),
+                externalUrlLauncher = createExternalUrlLauncher(),
+                nativeSocialAuthLauncher = createNativeSocialAuthLauncher(),
+            )
+        }
+
         fun demo(): KazeDependencies {
             val hotelRepository = DemoHotelRepository()
             val stayRepository = DemoStayRepository()
@@ -71,4 +101,4 @@ internal data class KazeDependencies(
 
 @Composable
 internal fun rememberKazeDependencies(): KazeDependencies =
-    remember { KazeDependencies.demo() }
+    remember { KazeDependencies.production() }

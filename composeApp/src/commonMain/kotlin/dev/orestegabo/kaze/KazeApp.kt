@@ -26,7 +26,6 @@ import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.presentation.demo.InvitationState
 import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
-import dev.orestegabo.kaze.presentation.demo.invitationPreviews
 import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import dev.orestegabo.kaze.presentation.di.rememberKazeDependencies
 import dev.orestegabo.kaze.presentation.app.KazeSessionMode
@@ -140,7 +139,7 @@ fun App() {
         val authenticatedInvitations = uiState.sessionInvitations.map { it.toInvitationPreview() }
         val visibleInvitations = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> authenticatedInvitations
-            KazeSessionMode.GUEST, null -> invitationPreviews
+            KazeSessionMode.GUEST, null -> emptyList()
         }
         val authenticatedEventDays = uiState.sessionEvents
             .distinctBy { it.dayId }
@@ -414,6 +413,7 @@ fun App() {
                                                 onEnterCode = ::handleJoinCode,
                                                 onOpenInvitation = ::openInvitation,
                                                 onSeeAllInvitations = ::openInvitations,
+                                                onBrowseVenues = { openPublicBrowse("") },
                                                 onSubmitReservation = appViewModel::submitReservation,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
@@ -470,7 +470,14 @@ fun App() {
                                                         handleEventResult(eventsViewModel.onSessionAction(it))
                                                     }
                                                 },
-                                                onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
+                                                onEmptyAction = {
+                                                    if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                                                        appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+                                                    } else {
+                                                        appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
+                                                        appViewModel.showFeedback("Browse public venues now. Event access appears after you join an event.")
+                                                    }
+                                                },
                                                 eventInvitation = selectedEventInvitation,
                                                 onVenueAction = {
                                                     appViewModel.openMapRoute(
@@ -489,6 +496,8 @@ fun App() {
                                             KazeDestination.INVITATIONS -> InvitationsScreen(
                                                 modifier = Modifier.weight(1f),
                                                 invitations = visibleInvitations,
+                                                isGuestMode = isGuestMode,
+                                                allowInvitationCreation = false,
                                                 onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                                 selectedInvitation = selectedInvitation,
                                                 onSelectedInvitationChange = { selectedInvitation = it },
@@ -579,6 +588,7 @@ fun App() {
                                             onEnterCode = ::handleJoinCode,
                                             onOpenInvitation = ::openInvitation,
                                             onSeeAllInvitations = ::openInvitations,
+                                            onBrowseVenues = { openPublicBrowse("") },
                                             onSubmitReservation = appViewModel::submitReservation,
                                             bottomContentPadding = bottomContentPadding,
                                         )
@@ -635,7 +645,14 @@ fun App() {
                                                     handleEventResult(eventsViewModel.onSessionAction(it))
                                                 }
                                             },
-                                            onEmptyAction = { appViewModel.onDestinationSelected(KazeDestination.INVITATIONS) },
+                                            onEmptyAction = {
+                                                if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                                                    appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
+                                                } else {
+                                                    appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
+                                                    appViewModel.showFeedback("Browse public venues now. Event access appears after you join an event.")
+                                                }
+                                            },
                                             eventInvitation = selectedEventInvitation,
                                             onVenueAction = {
                                                 appViewModel.openMapRoute(
@@ -654,6 +671,8 @@ fun App() {
                                         KazeDestination.INVITATIONS -> InvitationsScreen(
                                             modifier = Modifier.weight(1f),
                                             invitations = visibleInvitations,
+                                            isGuestMode = isGuestMode,
+                                            allowInvitationCreation = false,
                                             onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                             selectedInvitation = selectedInvitation,
                                             onSelectedInvitationChange = { selectedInvitation = it },

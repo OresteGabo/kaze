@@ -84,6 +84,8 @@ import kotlin.random.Random
 @Composable
 internal fun InvitationsScreen(
     invitations: List<InvitationPreview>,
+    isGuestMode: Boolean,
+    allowInvitationCreation: Boolean,
     onBack: () -> Unit,
     selectedInvitation: InvitationPreview?,
     onSelectedInvitationChange: (InvitationPreview?) -> Unit,
@@ -97,7 +99,7 @@ internal fun InvitationsScreen(
     val scrollState = rememberScrollState()
     var isCreatingInvitation by remember { mutableStateOf(false) }
     var createdInvitations by remember { mutableStateOf(emptyList<InvitationPreview>()) }
-    val visibleInvitations = createdInvitations + invitations
+    val visibleInvitations = if (allowInvitationCreation) createdInvitations + invitations else invitations
     val activeInvitations = visibleInvitations.filter { it.state == InvitationState.ACTIVE }
     val pastInvitations = visibleInvitations.filter { it.state != InvitationState.ACTIVE }
 
@@ -115,7 +117,7 @@ internal fun InvitationsScreen(
         return
     }
 
-    if (isCreatingInvitation) {
+    if (allowInvitationCreation && isCreatingInvitation) {
         CreateInvitationScreen(
             onBack = { isCreatingInvitation = false },
             onCreateInvitation = { invitation ->
@@ -168,12 +170,14 @@ internal fun InvitationsScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
             )
-            KazePrimaryButton(
-                label = "Create invitation",
-                onClick = { isCreatingInvitation = true },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = Icons.Default.Edit,
-            )
+            if (allowInvitationCreation) {
+                KazePrimaryButton(
+                    label = "Create invitation",
+                    onClick = { isCreatingInvitation = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = Icons.Default.Edit,
+                )
+            }
         }
 
         if (edgeAiEnabled) {
@@ -191,13 +195,23 @@ internal fun InvitationsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(420.dp),
-                title = stringResource(Res.string.empty_invitations_title),
-                subtitle = stringResource(Res.string.empty_invitations_subtitle),
-                actionLabel = stringResource(Res.string.empty_invitations_action),
+                title = if (isGuestMode) {
+                    "Private invitations appear after sign-in"
+                } else {
+                    stringResource(Res.string.empty_invitations_title)
+                },
+                subtitle = if (isGuestMode) {
+                    "Kaze does not show sample invitations in production. Sign in to access invitations linked to your account or event code."
+                } else if (allowInvitationCreation) {
+                    stringResource(Res.string.empty_invitations_subtitle)
+                } else {
+                    "You have no invitations yet. When an organizer invites you, the event details and pass access will appear here."
+                },
+                actionLabel = if (allowInvitationCreation) stringResource(Res.string.empty_invitations_action) else null,
                 eyebrow = "Invitations",
-                tags = listOf("RSVP", "Passes", "Guest updates"),
+                tags = if (isGuestMode) listOf("Sign in", "Event code", "Pass access") else listOf("RSVP", "Passes", "Guest updates"),
                 icon = Icons.Default.MarkEmailUnread,
-                onAction = { isCreatingInvitation = true },
+                onAction = if (allowInvitationCreation) ({ isCreatingInvitation = true }) else null,
             )
         } else {
             SectionLabel("Active")

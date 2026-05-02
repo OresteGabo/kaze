@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
@@ -61,7 +60,6 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.presentation.demo.InvitationState
 import dev.orestegabo.kaze.theme.KazeTheme
-import dev.orestegabo.kaze.ui.ai.KazeAiAssistCard
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
@@ -178,16 +176,6 @@ internal fun InvitationsScreen(
                     leadingIcon = Icons.Default.Edit,
                 )
             }
-        }
-
-        if (edgeAiEnabled) {
-            KazeAiAssistCard(
-                title = "Smart RSVP assistant",
-                subtitle = "For organizers, Kaze can turn local voice notes into reviewable guest details before creating invitations.",
-                actionLabel = "Prepare RSVP draft",
-                onAction = { onAiAction("Smart RSVP Voice-to-Data") },
-                icon = Icons.Default.AutoAwesome,
-            )
         }
 
         if (visibleInvitations.isEmpty()) {
@@ -473,15 +461,6 @@ private fun InvitationDetailScreen(
                 }
             }
 
-            if (edgeAiEnabled) {
-                KazeAiAssistCard(
-                    title = "Explain this pass",
-                    subtitle = "Kaze can explain access, schedule, and venue rules from this invitation without sending the pass to a server.",
-                    actionLabel = "Explain offline",
-                    onAction = { onAiAction("Offline Pass Explainer") },
-                    icon = Icons.Default.AutoAwesome,
-                )
-            }
         }
     }
 }
@@ -701,15 +680,6 @@ private fun WeddingInvitationDetailScreen(
                 }
             }
 
-            if (edgeAiEnabled) {
-                KazeAiAssistCard(
-                    title = "Explain this pass",
-                    subtitle = "Kaze can explain access, schedule, and venue rules from this invitation without sending the pass to a server.",
-                    actionLabel = "Explain offline",
-                    onAction = { onAiAction("Offline Pass Explainer") },
-                    icon = Icons.Default.AutoAwesome,
-                )
-            }
         }
     }
 }

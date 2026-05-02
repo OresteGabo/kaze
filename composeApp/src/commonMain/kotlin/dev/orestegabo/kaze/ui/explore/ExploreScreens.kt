@@ -102,17 +102,17 @@ internal fun ExploreScreen(
                     Box(modifier = Modifier.weight(0.95f)) {
                         SectionIntroCard(
                             eyebrow = "Explore",
-                            title = "Discover event-ready places",
-                            subtitle = "Browse venues, event services, and useful experiences linked to conferences, weddings, and premium gatherings.",
+                            title = "Browse venues and services",
+                            subtitle = "See venue highlights, useful amenities, and reservation-related services available in Kaze.",
                             icon = Icons.Default.Explore,
                         )
                     }
                     Box(modifier = Modifier.weight(1.05f)) {
                         HighlightPanel(
-                            title = "Featured event experiences",
-                            body = "Photography, live production, hospitality add-ons, and venue moments that can strengthen the event journey.",
+                            title = "Venue highlights",
+                            body = "Check useful venue details and supported services before you request a reservation.",
                             primaryLabel = "Open services",
-                            secondaryLabel = "Open venue map",
+                            secondaryLabel = "View details",
                             onPrimaryClick = onHeroPrimary,
                             onSecondaryClick = onHeroSecondary,
                         )
@@ -121,15 +121,15 @@ internal fun ExploreScreen(
             } else {
                 SectionIntroCard(
                     eyebrow = "Explore",
-                    title = "Discover event-ready places",
-                    subtitle = "Browse venues, event services, and useful experiences linked to conferences, weddings, and premium gatherings.",
+                    title = "Browse venues and services",
+                    subtitle = "See venue highlights, useful amenities, and reservation-related services available in Kaze.",
                     icon = Icons.Default.Explore,
                 )
                 HighlightPanel(
-                    title = "Featured event experiences",
-                    body = "Photography, live production, hospitality add-ons, and venue moments that can strengthen the event journey.",
+                    title = "Venue highlights",
+                    body = "Check useful venue details and supported services before you request a reservation.",
                     primaryLabel = "Open services",
-                    secondaryLabel = "Open venue map",
+                    secondaryLabel = "View details",
                     onPrimaryClick = onHeroPrimary,
                     onSecondaryClick = onHeroSecondary,
                 )

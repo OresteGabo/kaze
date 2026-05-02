@@ -179,35 +179,6 @@ internal fun HomeSettingsScreen(
         }
 
         SettingsCard(
-            title = "On-device AI",
-            subtitle = if (edgeAiEnabled) {
-                "Enabled. Kaze AI runs locally on this device for supported offline tasks."
-            } else {
-                "Disabled. You can turn it back on when you want local AI assistance."
-            },
-            icon = Icons.Default.AutoAwesome,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        "No server AI processing for these features.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
-                        modifier = Modifier.weight(1f),
-                    )
-                    KazeAdaptiveSwitch(
-                        checked = edgeAiEnabled,
-                        onCheckedChange = onEdgeAiEnabledChange,
-                    )
-                }
-            }
-        }
-
-        SettingsCard(
             title = "Session",
             subtitle = sessionLabel,
             icon = Icons.AutoMirrored.Filled.Logout,

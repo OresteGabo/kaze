@@ -59,17 +59,17 @@ internal class KazeAuthGateway(
     private val deviceId: String,
     private val deviceLabel: String,
 ) : AuthGateway {
-    private val authBaseUrl = baseUrl.trimEnd('/')
+    private val apiBaseUrl = baseUrl.trimEnd('/')
 
     override suspend fun signIn(email: String, password: String): AuthSession =
-        client.post("$authBaseUrl/auth/signin") {
+        client.post("$apiBaseUrl/auth/signin") {
             contentType(ContentType.Application.Json)
             setBody(AuthSigninRequest(email = email, password = password))
         }.body<AuthResponse>().toSession()
 
     override suspend fun createAccount(email: String, password: String): AuthSession =
         try {
-            client.post("$authBaseUrl/auth/signup") {
+            client.post("$apiBaseUrl/auth/signup") {
                 contentType(ContentType.Application.Json)
                 setBody(AuthSignupRequest(email = email, password = password))
             }.body<AuthResponse>().toSession()
@@ -83,7 +83,7 @@ internal class KazeAuthGateway(
         credentialType: SocialAuthCredentialType,
         displayName: String?,
     ): AuthSession =
-        client.post("$authBaseUrl/auth/${provider.routeName}") {
+        client.post("$apiBaseUrl/auth/${provider.routeName}") {
             contentType(ContentType.Application.Json)
             setBody(
                 SocialSigninRequest(
@@ -95,27 +95,27 @@ internal class KazeAuthGateway(
         }.body<AuthResponse>().toSession()
 
     override suspend fun getProfile(accessToken: String): AuthUser =
-        client.get("$authBaseUrl/auth/me") {
+        client.get("$apiBaseUrl/auth/me") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
 
     override suspend fun getSession(accessToken: String): AuthSessionBootstrap =
-        client.get("$authBaseUrl/auth/session") {
+        client.get("$apiBaseUrl/auth/session") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
 
     override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> =
-        client.get("$authBaseUrl/auth/me/invitations") {
+        client.get("$apiBaseUrl/auth/me/invitations") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
 
     override suspend fun getEvents(accessToken: String): List<AuthEventSummary> =
-        client.get("$authBaseUrl/auth/me/events") {
+        client.get("$apiBaseUrl/auth/me/events") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
 
     override suspend fun getActiveStay(accessToken: String): AuthActiveStay? =
-        client.get("$authBaseUrl/auth/me/active-stay") {
+        client.get("$apiBaseUrl/auth/me/active-stay") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body<AuthActiveStayResponse>().activeStay
 
@@ -123,7 +123,7 @@ internal class KazeAuthGateway(
         accessToken: String,
         request: ReservationDraftSubmissionRequest,
     ): ReservationResponse =
-        client.post("$authBaseUrl/api/v1/reservations") {
+        client.post("$apiBaseUrl/reservations") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $accessToken")
             setBody(request)
@@ -134,7 +134,7 @@ internal class KazeAuthGateway(
         invitationId: String,
         response: String,
     ): AuthInvitationSummary =
-        client.patch("$authBaseUrl/auth/me/invitations/$invitationId") {
+        client.patch("$apiBaseUrl/auth/me/invitations/$invitationId") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $accessToken")
             setBody(AuthInvitationResponseRequest(response))
@@ -147,7 +147,7 @@ internal class KazeAuthGateway(
         phoneNumber: String?,
         privacyConsent: KazePrivacyConsent?,
     ): AuthUser =
-        client.put("$authBaseUrl/auth/me") {
+        client.put("$apiBaseUrl/auth/me") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $accessToken")
             setBody(
@@ -164,7 +164,7 @@ internal class KazeAuthGateway(
         accessToken: String,
         privacyConsent: KazePrivacyConsent,
     ): AuthUser =
-        client.put("$authBaseUrl/auth/me") {
+        client.put("$apiBaseUrl/auth/me") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $accessToken")
             setBody(
@@ -175,12 +175,12 @@ internal class KazeAuthGateway(
         }.body()
 
     override suspend fun startSocialLogin(provider: SocialAuthProvider): AuthStartResponse =
-        client.get("$authBaseUrl/auth/${provider.routeName}/start") {
+        client.get("$apiBaseUrl/auth/${provider.routeName}/start") {
             parameter("appRedirectUri", AuthDeepLinks.CALLBACK_URI)
         }.body()
 
     override suspend fun claimSession(loginToken: String): AuthSession =
-        client.post("$authBaseUrl/auth/session/claim") {
+        client.post("$apiBaseUrl/auth/session/claim") {
             contentType(ContentType.Application.Json)
             setBody(
                 AuthSessionClaimRequest(
@@ -192,7 +192,7 @@ internal class KazeAuthGateway(
         }.body<AuthResponse>().toSession()
 
     override suspend fun refresh(refreshToken: String): AuthSession =
-        client.post("$authBaseUrl/auth/refresh") {
+        client.post("$apiBaseUrl/auth/refresh") {
             contentType(ContentType.Application.Json)
             setBody(
                 AuthRefreshRequest(
@@ -204,7 +204,7 @@ internal class KazeAuthGateway(
         }.body<AuthResponse>().toSession()
 
     override suspend fun logout(accessToken: String?, refreshToken: String?) {
-        client.post("$authBaseUrl/auth/logout") {
+        client.post("$apiBaseUrl/auth/logout") {
             contentType(ContentType.Application.Json)
             accessToken?.takeIf { it.isNotBlank() }?.let { token ->
                 header(HttpHeaders.Authorization, "Bearer $token")

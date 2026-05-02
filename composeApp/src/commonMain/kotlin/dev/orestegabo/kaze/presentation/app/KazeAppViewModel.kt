@@ -558,8 +558,9 @@ internal class KazeAppViewModel(
                 return@launch
             }
 
-            runCatching { authGateway.getProfile(accessToken) }
+            val profileLoaded = runCatching { authGateway.getProfile(accessToken) }
                 .onSuccess(::applyAuthUserState)
+                .isSuccess
 
             val content = loadSessionContentInParallel(accessToken)
             uiState = uiState.copy(
@@ -567,6 +568,9 @@ internal class KazeAppViewModel(
                 sessionEvents = content.events,
                 sessionActiveStay = content.activeStay,
             )
+            if (!profileLoaded && content.invitations.isEmpty() && content.events.isEmpty() && content.activeStay == null) {
+                showFeedback("Some live Kaze content could not load right now. You can still browse available sections and try again.")
+            }
         }
     }
 

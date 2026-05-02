@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Map
@@ -43,10 +42,8 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.domain.experience.EventDay
 import dev.orestegabo.kaze.domain.experience.ScheduledExperience
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
-import dev.orestegabo.kaze.ui.ai.KazeAiAssistCard
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
-import dev.orestegabo.kaze.ui.components.SectionIntroCard
 import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.empty_event_day_subtitle
@@ -76,27 +73,6 @@ internal fun EventScheduleScreen(
         contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        /*item {
-            SectionIntroCard(
-                eyebrow = "What's On",
-                title = "East Africa Finance Summit",
-                subtitle = "A clean schedule view with day switching, venue references, and direct map transitions.",
-                icon = Icons.Default.CalendarMonth,
-            )
-        }*/
-
-        if (edgeAiEnabled && selectedDay != null) {
-            item {
-                KazeAiAssistCard(
-                    title = "Ask about this event",
-                    subtitle = "Kaze can answer schedule, room, pass, and venue questions from cached event data when the on-device model is available.",
-                    actionLabel = "Ask offline concierge",
-                    onAction = { onAiAction("Offline Event Concierge") },
-                    icon = Icons.Default.AutoAwesome,
-                )
-            }
-        }
-
         if (days.isEmpty() || selectedDay == null) {
             item {
                 KazeEmptyStateScreen(

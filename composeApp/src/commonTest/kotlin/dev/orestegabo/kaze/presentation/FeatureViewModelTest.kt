@@ -333,6 +333,7 @@ class FeatureViewModelTest {
                 status = "PENDING_CONFIRMATION",
                 eventName = request.eventName,
                 preferredDateLabel = request.preferredDateLabel,
+                selectedRoom = request.selectedRoom,
                 guestCount = request.guestCount,
                 packageLabel = request.packageLabel,
                 addOns = request.addOns,

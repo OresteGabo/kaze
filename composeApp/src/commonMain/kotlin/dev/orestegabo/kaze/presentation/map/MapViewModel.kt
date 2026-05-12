@@ -17,9 +17,11 @@ internal class MapViewModel(
         private set
 
     init {
-        uiState = uiState.copy(
-            hotelMap = runImmediateSuspend { mapRepository.getHotelMap(hotelId, mapId) },
-        )
+        runCatching {
+            runImmediateSuspend { mapRepository.getHotelMap(hotelId, mapId) }
+        }.onSuccess { hotelMap ->
+            uiState = uiState.copy(hotelMap = hotelMap)
+        }
     }
 
     fun applyNavigationTarget(target: MapNavigationTarget) {

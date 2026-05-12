@@ -39,21 +39,14 @@ internal enum class LegalPage(
                 heading = "Guest mode and account mode",
                 body = listOf(
                     "Some public browsing features may be available in guest mode without a full account.",
-                    "Private actions such as opening personal invitations, saving protected passes, managing bookings, making certain payments, or viewing private stay details may require sign-in.",
+                    "Private actions such as opening personal invitations, saving protected passes, submitting reservation requests, or viewing private stay details may require sign-in.",
                 ),
             ),
             LegalSection(
-                heading = "Payments and bookings",
+                heading = "Reservations and bookings",
                 body = listOf(
-                    "When payments, reservations, or booking-related actions are used, Kaze may process the data needed to show payment status, booking state, and venue or hotel confirmation details.",
-                    "Kaze may support payment methods commonly used in Rwanda, including mobile money and approved bank or card rails, depending on venue setup.",
-                ),
-            ),
-            LegalSection(
-                heading = "On-device AI features",
-                body = listOf(
-                    "When Kaze shows an on-device AI feature, the app is designed to keep that task on the device instead of sending the content to a remote AI server.",
-                    "Examples may include RSVP assistance, event explanations, or local helper features where available.",
+                    "When reservations or booking-related actions are used, Kaze may process the data needed to show booking state and venue or hotel confirmation details.",
+                    "Direct in-app payments are not part of the MVP experience.",
                 ),
             ),
             LegalSection(

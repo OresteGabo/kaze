@@ -56,7 +56,7 @@ internal fun HomeHeroCard(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        "Events • Pass • Invites",
+                        "Venues • Reservations • Pass",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
@@ -83,7 +83,7 @@ internal fun HomeHeroCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                MetaPill("Events", leadingIcon = Icons.Default.Search)
+                MetaPill("Venues", leadingIcon = Icons.Default.Search)
                 MetaPill("Invitation code", leadingIcon = Icons.Default.VpnKey)
                 MetaPill("Invitations", leadingIcon = Icons.Default.Groups)
             }

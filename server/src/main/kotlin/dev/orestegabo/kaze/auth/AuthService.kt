@@ -3,12 +3,14 @@ package dev.orestegabo.kaze.auth
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.interfaces.Payload
 import io.ktor.http.HttpStatusCode
 import org.mindrot.jbcrypt.BCrypt
 import java.sql.SQLException
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 internal class AuthService(
     private val repositoryProvider: () -> AuthRepository,
@@ -18,6 +20,7 @@ internal class AuthService(
     private val socialProviders: SocialOAuthProviders? = null,
 ) {
     private val signingAlgorithm = Algorithm.HMAC256(jwtConfig.secret)
+    private val revokedAccessTokenIds = ConcurrentHashMap<String, Instant>()
     private val repository: AuthRepository
         get() = repositoryProvider()
 
@@ -152,13 +155,34 @@ internal class AuthService(
         state: String?,
     ): String {
         if (code.isNullOrBlank() || state.isNullOrBlank()) {
-            throw AuthProblemException(HttpStatusCode.BadRequest, "invalid_oauth_callback", "OAuth callback is missing code or state.")
+            return oauthFailureRedirect(
+                appRedirectUri = jwtConfig.socialAuth.appDeepLinkRedirect,
+                code = "invalid_oauth_callback",
+            )
         }
         val attempt = repository.consumeOAuthAttempt(provider, state)
-            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_oauth_state", "OAuth state is invalid or expired.")
+            ?: return oauthFailureRedirect(
+                appRedirectUri = jwtConfig.socialAuth.appDeepLinkRedirect,
+                code = "invalid_oauth_state",
+                state = state,
+            )
         val socialProvider = requireSocialProviders().require(provider)
-        val identity = socialProvider.exchangeAndVerify(code, attempt)
-        val user = repository.upsertExternalUser(identity).user
+        val user = try {
+            val identity = socialProvider.exchangeAndVerify(code, attempt)
+            repository.upsertExternalUser(identity).user
+        } catch (cause: AuthProblemException) {
+            return oauthFailureRedirect(
+                appRedirectUri = attempt.appRedirectUri,
+                code = cause.code,
+                state = attempt.state,
+            )
+        } catch (cause: Throwable) {
+            return oauthFailureRedirect(
+                appRedirectUri = attempt.appRedirectUri,
+                code = "oauth_provider_failed",
+                state = attempt.state,
+            )
+        }
         val oneTimeToken = randomUrlSafeToken()
         repository.createOneTimeLoginToken(
             userId = user.id,
@@ -185,24 +209,23 @@ internal class AuthService(
 
     fun refresh(request: AuthRefreshRequest): AuthResponseDto {
         val incomingHash = secureHash(request.refreshToken)
-        val existing = repository.findActiveRefreshToken(incomingHash)
-            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_refresh_token", "Refresh token is invalid or expired.")
-        val user = repository.findById(existing.userId)
-            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_refresh_token", "Refresh token user no longer exists.")
         val rawRefreshToken = randomUrlSafeToken(48)
-        val replacement = repository.createRefreshToken(
-            userId = user.user.id,
-            tokenHash = secureHash(rawRefreshToken),
-            familyId = existing.familyId,
+        val rotation = repository.rotateRefreshToken(
+            currentTokenHash = incomingHash,
+            replacementTokenHash = secureHash(rawRefreshToken),
             deviceId = request.deviceId,
             deviceLabel = request.deviceLabel,
-            expiresAt = Instant.now().plusSeconds(jwtConfig.refreshTokenTtlSeconds),
-        )
-        repository.revokeRefreshToken(existing.id, replacement.id)
+            replacementExpiresAt = Instant.now().plusSeconds(jwtConfig.refreshTokenTtlSeconds),
+        ) ?: handleFailedRefreshRotation(incomingHash)
+        val user = repository.findById(rotation.consumed.userId)
+            ?: throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_refresh_token", "Refresh token user no longer exists.")
         return user.user.toAccessResponse(refreshToken = rawRefreshToken)
     }
 
-    fun logout(refreshToken: String?) {
+    fun logout(refreshToken: String?, accessToken: Payload?) {
+        // Access JWTs are stateless, so manual logout needs a small server-side deny-list.
+        // This ConcurrentHashMap is process-local by design; it avoids Redis and prunes by exp.
+        revokeAccessToken(accessToken)
         refreshToken?.trim()
             ?.takeIf { it.isNotEmpty() }
             ?.let(::secureHash)
@@ -275,10 +298,37 @@ internal class AuthService(
             ?: throw AuthProblemException(HttpStatusCode.NotFound, "invitation_not_found", "That invitation could not be updated.")
     }
 
+    fun requireGuestAccess(userId: String, hotelId: String, guestId: String) {
+        if (!repository.isGuestLinkedToUser(userId = userId, hotelId = hotelId, guestId = guestId)) {
+            throw AuthProblemException(HttpStatusCode.Forbidden, "forbidden", "This account cannot access that guest resource.")
+        }
+    }
+
+    fun isAccessTokenRevoked(jwtId: String?): Boolean {
+        val tokenId = jwtId?.takeIf { it.isNotBlank() } ?: return true
+        pruneExpiredRevocations()
+        val expiresAt = revokedAccessTokenIds[tokenId] ?: return false
+        if (!expiresAt.isAfter(Instant.now())) {
+            revokedAccessTokenIds.remove(tokenId, expiresAt)
+            return false
+        }
+        return true
+    }
+
     fun verifier(): JWTVerifier =
         JWT.require(signingAlgorithm)
+            // Require registered claims explicitly. The verifier checks exp when present,
+            // but withClaimPresence prevents accepting a signed token missing exp/aud/iss.
+            .withClaimPresence("iss")
+            .withClaimPresence("aud")
+            .withClaimPresence("sub")
+            .withClaimPresence("exp")
+            .withClaimPresence("iat")
+            .withClaimPresence("jti")
             .withIssuer(jwtConfig.issuer)
             .withAudience(jwtConfig.audience)
+            .acceptExpiresAt(0)
+            .acceptIssuedAt(0)
             .build()
 
     fun issueAccessToken(user: AuthUser): String {
@@ -383,6 +433,30 @@ internal class AuthService(
     private fun validatePassword(password: String) {
         require(password.length >= MIN_PASSWORD_LENGTH) { "Password must be at least $MIN_PASSWORD_LENGTH characters." }
     }
+
+    private fun handleFailedRefreshRotation(tokenHash: String): Nothing {
+        val knownToken = repository.findRefreshToken(tokenHash)
+        if (knownToken?.revokedAt != null) {
+            // A revoked refresh token being presented again is a replay signal. Without Redis,
+            // the local database family_id lets us invalidate the whole refresh-token family.
+            repository.revokeRefreshTokenFamily(knownToken.familyId)
+        }
+        throw AuthProblemException(HttpStatusCode.Unauthorized, "invalid_refresh_token", "Refresh token is invalid or expired.")
+    }
+
+    private fun revokeAccessToken(accessToken: Payload?) {
+        val jwtId = accessToken?.id?.takeIf { it.isNotBlank() } ?: return
+        val expiresAt = accessToken.expiresAt?.toInstant() ?: return
+        if (expiresAt.isAfter(Instant.now())) {
+            revokedAccessTokenIds[jwtId] = expiresAt
+        }
+        pruneExpiredRevocations()
+    }
+
+    private fun pruneExpiredRevocations() {
+        val now = Instant.now()
+        revokedAccessTokenIds.entries.removeIf { (_, expiresAt) -> !expiresAt.isAfter(now) }
+    }
 }
 
 internal class AuthProblemException(
@@ -403,6 +477,19 @@ private fun ExternalIdentity.withRequestedDisplayName(displayName: String?): Ext
     val requestedDisplayName = displayName?.trim()?.takeIf { it.isNotEmpty() }
     return if (requestedDisplayName == null) this else copy(displayName = requestedDisplayName)
 }
+
+private fun oauthFailureRedirect(
+    appRedirectUri: String,
+    code: String,
+    state: String? = null,
+): String =
+    appendQueryParams(
+        baseUrl = appRedirectUri,
+        params = buildMap {
+            put("error", code)
+            state?.takeIf { it.isNotBlank() }?.let { put("state", it) }
+        },
+    )
 
 private fun appendQueryParams(baseUrl: String, params: Map<String, String>): String {
     val separator = if ("?" in baseUrl) "&" else "?"

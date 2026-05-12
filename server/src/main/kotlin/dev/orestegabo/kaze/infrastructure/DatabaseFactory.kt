@@ -48,7 +48,7 @@ internal object DatabaseFactory {
 
             logger.info(
                 "DatabaseFactory connected using {} with managed tables: {}",
-                jdbcUrl.substringBefore('?'),
+                config.safeJdbcUrlForLogs(),
                 managedTables.joinToString { it.tableName },
             )
 

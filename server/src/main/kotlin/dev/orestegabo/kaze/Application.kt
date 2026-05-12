@@ -11,6 +11,7 @@ import dev.orestegabo.kaze.infrastructure.initializeDatabaseFactory
 import dev.orestegabo.kaze.infrastructure.initializeDatabaseSeed
 import dev.orestegabo.kaze.infrastructure.initializeDatabaseSchema
 import dev.orestegabo.kaze.infrastructure.loadDatabaseConfig
+import dev.orestegabo.kaze.infrastructure.safeJdbcUrlForLogs
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
@@ -40,5 +41,5 @@ fun Application.module() {
     val authService = get<AuthService>()
     configureHttp(authService)
     registerApiRoutes(dependencies, authService)
-    environment.log.info("Kaze database configured for {}", databaseConfig.jdbcUrl)
+    environment.log.info("Kaze database configured for {}", databaseConfig.safeJdbcUrlForLogs())
 }

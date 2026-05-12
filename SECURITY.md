@@ -1,5 +1,7 @@
 # Security Policy
 
+For development and production-readiness review, use the [Kaze Security Checklist](docs/security-checklist.md).
+
 ## Reporting A Vulnerability
 
 If you discover a security issue in Kaze, do not disclose it publicly.

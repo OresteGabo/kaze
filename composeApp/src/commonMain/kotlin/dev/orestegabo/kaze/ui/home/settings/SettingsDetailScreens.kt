@@ -130,9 +130,6 @@ internal fun SettingsDetailScreen(
                 onAnalyticsConsentChange = onAnalyticsConsentChange,
             )
         }
-        if (page == SettingsDetailPage.PAYMENTS) {
-            PaymentMethodsCard()
-        }
         if (page == SettingsDetailPage.ABOUT) {
             AboutKazeBrandCard()
         }
@@ -196,7 +193,7 @@ private fun HelpSupportCard() {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetaPill("FAQ")
                 MetaPill("Partners")
-                MetaPill("Payments")
+                MetaPill("Reservations")
                 MetaPill("Support")
             }
             HelpFaqCategory(
@@ -205,7 +202,7 @@ private fun HelpSupportCard() {
                     "How do I use an invitation code?" to "Enter the code shared by the organizer to open the invitation and follow event updates.",
                     "What is a Kaze Pass?" to "A digital access pass for an event, venue, or stay when entry control is enabled.",
                     "Can I browse venues without signing in?" to "Yes. You can explore venues and prices first, then sign in when an action needs your account.",
-                    "Where do I see my saved places?" to "Open Settings, then Activity & payments, then Saved places.",
+                    "Where do I see my saved places?" to "Open Settings, then Activity, then Saved places.",
                 ),
             )
             HelpFaqCategory(
@@ -214,21 +211,14 @@ private fun HelpSupportCard() {
                     "Can I add my wedding venue or conference room?" to "Venue owners or managers can contact Kaze to add spaces, prices, photos, maps, and booking rules.",
                     "Can Kaze be used for private events?" to "Yes. Organizers can use Kaze for invitations, guest access, event updates, and Kaze Pass entry.",
                     "Can I change event details after sending invitations?" to "Yes. Invited guests can see updated event information when the organizer changes it.",
-                    "Can Kaze show a venue map?" to "Yes. Some venues can include maps so guests can find halls, rooms, entrances, or event areas.",
-                ),
-            )
-            HelpFaqCategory(
-                title = "Payments",
-                items = listOf(
-                    "Why does cash need confirmation?" to "Cash is paid outside the app, so the venue or hotel confirms it after receiving the money.",
-                    "Who confirms payments?" to "Digital payments can be tracked by the app when supported. Cash payments are confirmed by the venue or hotel.",
+                    "Can Kaze support other venues?" to "Yes. The MVP focuses on conference rooms, wedding venues, and hotels.",
                 ),
             )
             HelpFaqCategory(
                 title = "For businesses",
                 items = listOf(
                     "How can a hotel or venue join Kaze?" to "Contact GABO at dev@kazerwanda.com or visit kazerwanda.com to discuss onboarding.",
-                    "Can Kaze support other businesses?" to "Yes. Kaze can support conference rooms, wedding venues, apartments, stadiums, event spaces, and other mapped spaces.",
+                    "Can Kaze support other businesses?" to "Yes. Kaze can support more venue types after the MVP is stable.",
                     "Can a business request a custom Kaze app?" to "Yes, if agreed with GABO. Kaze is a private commercial product, so custom use needs a business agreement.",
                 ),
             )
@@ -618,8 +608,8 @@ private fun DataCollectionSettingsCard(
                     onCheckedChange = onAnalyticsConsentChange,
                 )
                 DataCollectionRow(
-                    title = "Payments and receipts",
-                    description = "Payment status, transaction references, receipts, and refund/support context when payments are enabled.",
+                    title = "Reservation records",
+                    description = "Reservation request status, confirmation references, and support context when booking actions are used.",
                     status = "When used",
                 )
             }

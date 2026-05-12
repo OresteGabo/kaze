@@ -17,6 +17,11 @@ internal data class DatabaseConfig(
     val seedMode: DatabaseSeedMode,
 )
 
+internal fun DatabaseConfig.safeJdbcUrlForLogs(): String =
+    jdbcUrl
+        .replace(Regex("(jdbc:postgresql://)([^/@:?]+):([^/@]+)@"), "$1***:***@")
+        .substringBefore('?')
+
 internal fun Application.loadDatabaseConfig(): DatabaseConfig =
     run {
         val databaseUrlEnv = System.getenv("DATABASE_URL")?.trim()?.takeIf { it.isNotEmpty() }

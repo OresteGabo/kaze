@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,7 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -56,12 +57,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
 import dev.orestegabo.kaze.presentation.auth.ReservationResponse
-import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
-import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
-import dev.orestegabo.kaze.ui.home.invitations.InvitationEventType
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import kotlinx.coroutines.launch
 
@@ -77,39 +76,18 @@ internal fun HomeReservationDraftScreen(
     val coroutineScope = rememberCoroutineScope()
     var eventName by rememberSaveable(result.title) { mutableStateOf("") }
     var preferredDate by rememberSaveable(result.title) { mutableStateOf("") }
+    val roomOptions = remember(content.title, result.title) { defaultReservationRoomOptions(content, result) }
+    var selectedRoom by rememberSaveable(result.title) {
+        mutableStateOf(roomOptions.firstOrNull { it.title == result.title }?.title ?: roomOptions.firstOrNull()?.title.orEmpty())
+    }
     var guests by rememberSaveable(result.title) { mutableIntStateOf(defaultGuestCount(content.title)) }
     var selectedPackage by rememberSaveable(result.title) { mutableStateOf(defaultReservationPackages(content.title).first().label) }
-    var selectedAddOns by rememberSaveable(result.title) { mutableStateOf(emptyList<String>()) }
     var paymentMethod by rememberSaveable(result.title) { mutableStateOf(defaultPaymentMethods().first()) }
     var note by rememberSaveable(result.title) { mutableStateOf("") }
     var isSaved by rememberSaveable(result.title) { mutableStateOf(false) }
     var isSaving by rememberSaveable(result.title) { mutableStateOf(false) }
     var saveError by rememberSaveable(result.title) { mutableStateOf("") }
     var savedReservationCode by rememberSaveable(result.title) { mutableStateOf("") }
-    var isCreatingInvitation by rememberSaveable(result.title) { mutableStateOf(false) }
-    var linkedInvitation by remember { mutableStateOf<InvitationPreview?>(null) }
-
-    if (isCreatingInvitation) {
-        CreateInvitationScreen(
-            onBack = { isCreatingInvitation = false },
-            onCreateInvitation = { invitation ->
-                linkedInvitation = invitation
-                isCreatingInvitation = false
-                isSaved = true
-            },
-            modifier = Modifier.fillMaxSize(),
-            bottomContentPadding = bottomContentPadding,
-            seed = reservationInvitationSeed(
-                content = content,
-                result = result,
-                eventName = eventName,
-                preferredDate = preferredDate,
-                guests = guests,
-                note = note,
-            ),
-        )
-        return
-    }
 
     Column(
         modifier = Modifier
@@ -133,13 +111,11 @@ internal fun HomeReservationDraftScreen(
                 eventName = eventName,
                 preferredDate = preferredDate,
                 guests = guests,
+                selectedRoom = selectedRoom.takeIf { roomOptions.isNotEmpty() },
                 selectedPackage = selectedPackage,
-                selectedAddOns = selectedAddOns,
                 paymentMethod = paymentMethod,
                 note = note,
                 reservationCode = savedReservationCode,
-                linkedInvitation = linkedInvitation,
-                onCreateInvitation = { isCreatingInvitation = true },
                 onBack = onBack,
             )
             return@Column
@@ -164,6 +140,17 @@ internal fun HomeReservationDraftScreen(
             leadingIcon = Icons.Default.CalendarMonth,
         )
 
+        if (roomOptions.isNotEmpty()) {
+            SectionLabel("Room")
+            ConferenceRoomSelectionGrid(
+                rooms = roomOptions,
+                selectedRoom = selectedRoom,
+                background = content.background,
+                accent = content.accent,
+                onRoomSelected = { selectedRoom = it },
+            )
+        }
+
         ReservationGuestStepper(
             guests = guests,
             accent = content.accent,
@@ -180,41 +167,6 @@ internal fun HomeReservationDraftScreen(
                     selected = selectedPackage == option.label,
                     accent = content.accent,
                     onClick = { selectedPackage = option.label },
-                )
-            }
-        }
-
-        SectionLabel("Add-ons")
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            defaultReservationAddOns(content.title).forEach { addOn ->
-                ReservationChip(
-                    label = addOn,
-                    selected = addOn in selectedAddOns,
-                    accent = content.accent,
-                    onClick = {
-                        selectedAddOns = if (addOn in selectedAddOns) {
-                            selectedAddOns - addOn
-                        } else {
-                            selectedAddOns + addOn
-                        }
-                    },
-                )
-            }
-        }
-
-        SectionLabel("Payment")
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            defaultPaymentMethods().forEach { method ->
-                ReservationChoiceCard(
-                    title = method,
-                    subtitle = paymentSubtitle(method),
-                    selected = paymentMethod == method,
-                    accent = content.accent,
-                    leadingIcon = Icons.Default.Payments,
-                    onClick = { paymentMethod = method },
                 )
             }
         }
@@ -236,8 +188,8 @@ internal fun HomeReservationDraftScreen(
             eventName = eventName,
             preferredDate = preferredDate,
             guests = guests,
+            selectedRoom = selectedRoom.takeIf { roomOptions.isNotEmpty() },
             selectedPackage = selectedPackage,
-            selectedAddOns = selectedAddOns,
             paymentMethod = paymentMethod,
         )
 
@@ -262,9 +214,10 @@ internal fun HomeReservationDraftScreen(
                                 serviceId = serverIds.serviceId,
                                 eventName = normalizedEventName,
                                 preferredDateLabel = normalizedPreferredDate,
+                                selectedRoom = selectedRoom.takeIf { roomOptions.isNotEmpty() },
                                 guestCount = guests,
                                 packageLabel = selectedPackage,
-                                addOns = selectedAddOns,
+                                addOns = emptyList(),
                                 paymentMethod = paymentMethod,
                                 note = note.trim().takeIf { it.isNotBlank() },
                             ),
@@ -509,6 +462,119 @@ private fun ReservationChoiceCard(
 }
 
 @Composable
+private fun ConferenceRoomSelectionGrid(
+    rooms: List<ReservationRoomOption>,
+    selectedRoom: String,
+    background: DrawableResource,
+    accent: Color,
+    onRoomSelected: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        rooms.chunked(2).forEach { rowRooms ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                rowRooms.forEach { room ->
+                    ConferenceRoomSelectionCard(
+                        room = room,
+                        selected = selectedRoom == room.title,
+                        background = background,
+                        accent = accent,
+                        onClick = { onRoomSelected(room.title) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (rowRooms.size == 1) {
+                    Box(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConferenceRoomSelectionCard(
+    room: ReservationRoomOption,
+    selected: Boolean,
+    background: DrawableResource,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = if (selected) accent.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        border = BorderStroke(1.dp, if (selected) accent.copy(alpha = 0.44f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+        tonalElevation = if (selected) 4.dp else 1.dp,
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.55f)
+                    .background(accent.copy(alpha = 0.12f)),
+            ) {
+                Image(
+                    painter = painterResource(background),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.18f)),
+                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                ) {
+                    Icon(
+                        imageVector = if (selected) Icons.Default.CheckCircle else Icons.Default.MeetingRoom,
+                        contentDescription = null,
+                        tint = if (selected) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                        modifier = Modifier.padding(7.dp).size(17.dp),
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Text(
+                    room.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    room.detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
+                )
+                MetaPill(
+                    label = room.metaLabel,
+                    containerColor = accent.copy(alpha = if (selected) 0.18f else 0.10f),
+                    textColor = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    room.priceLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = accent,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ReservationChip(
     label: String,
     selected: Boolean,
@@ -598,8 +664,8 @@ private fun ReservationSummaryCard(
     eventName: String,
     preferredDate: String,
     guests: Int,
+    selectedRoom: String?,
     selectedPackage: String,
-    selectedAddOns: List<String>,
     paymentMethod: String,
 ) {
     Card(
@@ -628,10 +694,12 @@ private fun ReservationSummaryCard(
             ) {
                 MetaPill(if (eventName.isBlank()) "Event name later" else eventName)
                 MetaPill(if (preferredDate.isBlank()) "Date later" else preferredDate)
+                if (!selectedRoom.isNullOrBlank()) {
+                    MetaPill(selectedRoom)
+                }
                 MetaPill("$guests guests")
                 MetaPill(selectedPackage)
                 MetaPill(paymentMethod)
-                selectedAddOns.forEach { MetaPill(it) }
             }
         }
     }
@@ -644,13 +712,11 @@ private fun ReservationSavedCard(
     eventName: String,
     preferredDate: String,
     guests: Int,
+    selectedRoom: String?,
     selectedPackage: String,
-    selectedAddOns: List<String>,
     paymentMethod: String,
     note: String,
     reservationCode: String,
-    linkedInvitation: InvitationPreview?,
-    onCreateInvitation: () -> Unit,
     onBack: () -> Unit,
 ) {
     Card(
@@ -695,8 +761,8 @@ private fun ReservationSavedCard(
                 eventName = eventName,
                 preferredDate = preferredDate,
                 guests = guests,
+                selectedRoom = selectedRoom,
                 selectedPackage = selectedPackage,
-                selectedAddOns = selectedAddOns,
                 paymentMethod = paymentMethod,
             )
             if (note.isNotBlank()) {
@@ -706,71 +772,12 @@ private fun ReservationSavedCard(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
                 )
             }
-            if (linkedInvitation != null) {
-                ReservationLinkedInvitationCard(
-                    invitation = linkedInvitation,
-                    accent = content.accent,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KazeSecondaryButton(
-                    label = if (linkedInvitation == null) "Create invitation" else "New invitation",
-                    onClick = onCreateInvitation,
-                    modifier = Modifier.weight(1f),
-                    leadingIcon = Icons.Default.CalendarMonth,
-                )
-                KazePrimaryButton(
-                    label = "Done",
-                    onClick = onBack,
-                    modifier = Modifier.weight(1f),
-                    leadingIcon = Icons.Default.CheckCircle,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ReservationLinkedInvitationCard(
-    invitation: InvitationPreview,
-    accent: Color,
-) {
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = accent.copy(alpha = 0.12f),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.24f)),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(shape = CircleShape, color = accent.copy(alpha = 0.18f)) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.padding(9.dp).size(18.dp),
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    "Invitation connected",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    "${invitation.title} • ${invitation.code.ifBlank { "code after approval" }}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
-                )
-            }
+            KazePrimaryButton(
+                label = "Done",
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = Icons.Default.CheckCircle,
+            )
         }
     }
 }
@@ -779,6 +786,47 @@ private data class ReservationPackageOption(
     val label: String,
     val detail: String,
 )
+
+private data class ReservationRoomOption(
+    val title: String,
+    val detail: String,
+    val metaLabel: String,
+    val priceLabel: String,
+)
+
+private fun defaultReservationRoomOptions(
+    content: HomeServicePageContent,
+    result: HomeServiceResult,
+): List<ReservationRoomOption> {
+    if (content.title != "Conference rooms") return emptyList()
+
+    val catalogRooms = content.results.map { serviceResult ->
+        ReservationRoomOption(
+            title = serviceResult.title,
+            detail = serviceResult.subtitle,
+            metaLabel = serviceResult.metaLabel,
+            priceLabel = serviceResult.priceLabel,
+        )
+    }
+    val requestedRoom = ReservationRoomOption(
+        title = result.title,
+        detail = result.subtitle,
+        metaLabel = result.metaLabel,
+        priceLabel = result.priceLabel,
+    )
+    return (listOf(requestedRoom) + catalogRooms)
+        .distinctBy { it.title }
+        .ifEmpty {
+            listOf(
+                ReservationRoomOption(
+                    title = "Main conference room",
+                    detail = "Default room choice until this institution publishes its room catalog.",
+                    metaLabel = "Room • Setup",
+                    priceLabel = "Availability on request",
+                ),
+            )
+        }
+}
 
 private fun defaultReservationPackages(categoryTitle: String): List<ReservationPackageOption> {
     // TODO [IN-PROGRESS] Reservation submission is backend-backed; load packages, availability windows,
@@ -807,38 +855,9 @@ private fun defaultReservationPackages(categoryTitle: String): List<ReservationP
     }
 }
 
-private fun defaultReservationAddOns(categoryTitle: String): List<String> {
-    // TODO [PENDING] Route add-ons to the right product modules: catering, styling, cleaning,
-    // insurance, media, transport, and event layouts.
-    return when (categoryTitle) {
-        "Wedding venues" -> listOf("Catering", "Styling & decor", "Photo & video", "Guest access", "Insurance")
-        "Conference rooms" -> listOf("Coffee break", "Projector", "Livestream", "Guest access", "Cleaning")
-        "Apartments" -> listOf("Airport pickup", "Extra cleaning", "Breakfast", "Late checkout")
-        "Catering" -> listOf("Soft drinks", "Coffee break", "Traditional menu", "Service team")
-        "Photo & video" -> listOf("Drone", "Livestream", "Same-day preview", "Extra camera")
-        "Transport" -> listOf("Airport", "Guest shuttle", "VIP car", "Evening return")
-        else -> listOf("Guest access", "Cleaning", "Transport", "Support")
-    }
-}
-
 private fun defaultPaymentMethods(): List<String> = listOf(
-    "MTN MoMo",
-    "Airtel Money",
-    "BK / Rswitch",
-    "Card",
-    "Cash at venue",
+    "Confirm after venue approval",
 )
-
-private fun paymentSubtitle(method: String): String {
-    // TODO [PENDING] Validate payment methods per platform, provider, hotel, venue, and country
-    // before showing them as available.
-    return when (method) {
-        "Cash at venue" -> "Confirm in Kaze after payment is received."
-        "Card" -> "Useful for guests or companies that prefer card payment."
-        "BK / Rswitch" -> "Useful for local bank and card payment rails."
-        else -> "Useful for local mobile payments."
-    }
-}
 
 private data class ReservationServerIds(
     val placeId: String,
@@ -849,12 +868,22 @@ private fun HomeServiceResult.reservationServerIds(content: HomeServicePageConte
     // TODO [IN-PROGRESS] Reservation writes are persisted; replace this UI-side mapping with
     // place/service IDs returned by the public venue catalog API.
     when (title) {
-        "Kigali Garden Pavilion", "Lake View Wedding Lawn" ->
+        "Umucyo Garden Venue" ->
             ReservationServerIds("rw-rebero-umucyo-gardens", "svc_umucyo_garden")
-        "Umubano Grand Hall" ->
+        "Kigali Serena Hotel Garden", "Kigali Serena Hotel" ->
             ReservationServerIds("rw-kgl-serena", "svc_serena_private_dinner")
-        "Nyarutarama Boardroom", "Kigali Training Suite", "Kivu Meeting Room" ->
+        "Singita Kwitonda Lodge" ->
+            ReservationServerIds("rw-musanze-kwitonda", "svc_kwitonda_campfire")
+        "Kigali Marriott Boardroom", "Kigali Marriott Hotel" ->
             ReservationServerIds("rw-kgl-marriott", "svc_marriott_boardroom")
+        "Kigali Convention Centre Auditorium" ->
+            ReservationServerIds("rw-kgl-convention-centre", "svc_kcc_auditorium")
+        "Intare Conference Arena" ->
+            ReservationServerIds("rw-kigali-intare-arena", "svc_intare_mainhall")
+        "Hotel des Mille Collines" ->
+            ReservationServerIds("rw-kgl-mille-collines", "svc_mille_breakfast")
+        "Four Points by Sheraton Kigali" ->
+            ReservationServerIds("rw-kgl-four-points", "svc_fourpoints_simba")
         "Airport VIP Pickup", "Wedding Guest Shuttle" ->
             ReservationServerIds("rw-kgl-marriott", "svc_marriott_airport")
         "Delegate Shuttle Loop" ->
@@ -881,30 +910,4 @@ private fun defaultGuestCount(categoryTitle: String): Int = when (categoryTitle)
     "Conference rooms" -> 60
     "Apartments" -> 2
     else -> 50
-}
-
-private fun reservationInvitationSeed(
-    content: HomeServicePageContent,
-    result: HomeServiceResult,
-    eventName: String,
-    preferredDate: String,
-    guests: Int,
-    note: String,
-): InvitationDraftSeed {
-    // TODO [IN-PROGRESS] Replace this heuristic with an event type returned by the reservation
-    // API/catalog once venue/service details are fully database-backed.
-    val eventType = when (content.title) {
-        "Wedding venues" -> InvitationEventType.WEDDING
-        "Conference rooms" -> InvitationEventType.CONFERENCE
-        else -> InvitationEventType.OTHER
-    }
-    return InvitationDraftSeed(
-        eventType = eventType,
-        eventTitle = eventName.ifBlank { "${result.title} event" },
-        venueName = result.title,
-        preferredDate = preferredDate,
-        guestCount = guests,
-        sourceLabel = "Reservation request",
-        note = note.ifBlank { "Linked to the reservation request for ${result.title}." },
-    )
 }

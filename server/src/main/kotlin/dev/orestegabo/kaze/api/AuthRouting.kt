@@ -15,6 +15,8 @@ import dev.orestegabo.kaze.auth.AuthStartResponseDto
 import dev.orestegabo.kaze.auth.AuthSignupRequest
 import dev.orestegabo.kaze.auth.AuthUserDto
 import dev.orestegabo.kaze.auth.SocialSigninRequest
+import io.ktor.http.HttpHeaders
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -23,6 +25,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
+import io.ktor.server.response.header
 import io.ktor.server.routing.put
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -35,26 +38,32 @@ internal fun Route.registerAuthRoutes(
 ) {
     route("/auth") {
         post("/signup") {
+            call.noStoreAuthResponse()
             call.respond<AuthResponseDto>(authService.signup(call.receive<AuthSignupRequest>()))
         }
 
         post("/signin") {
+            call.noStoreAuthResponse()
             call.respond<AuthResponseDto>(authService.signin(call.receive<AuthSigninRequest>()))
         }
 
         post("/google") {
+            call.noStoreAuthResponse()
             call.respond<AuthResponseDto>(authService.signinWithGoogle(call.receive<SocialSigninRequest>()))
         }
 
         post("/apple") {
+            call.noStoreAuthResponse()
             call.respond<AuthResponseDto>(authService.signinWithApple(call.receive<SocialSigninRequest>()))
         }
 
         post("/facebook") {
+            call.noStoreAuthResponse()
             call.respond<AuthResponseDto>(authService.signinWithFacebook(call.receive<SocialSigninRequest>()))
         }
 
         get("/{provider}/start") {
+            call.noStoreAuthResponse()
             call.respond<AuthStartResponseDto>(
                 authService.createAuthorizationRequest(
                     providerName = call.parameters["provider"].orEmpty(),
@@ -64,6 +73,7 @@ internal fun Route.registerAuthRoutes(
         }
 
         get("/google/callback") {
+            call.noStoreAuthResponse()
             call.respondRedirect(
                 authService.completeOAuthCallback(
                     provider = AuthProvider.GOOGLE,
@@ -74,6 +84,7 @@ internal fun Route.registerAuthRoutes(
         }
 
         post("/apple/callback") {
+            call.noStoreAuthResponse()
             val form = call.receiveParameters()
             call.respondRedirect(
                 authService.completeOAuthCallback(
@@ -85,6 +96,7 @@ internal fun Route.registerAuthRoutes(
         }
 
         get("/facebook/callback") {
+            call.noStoreAuthResponse()
             call.respondRedirect(
                 authService.completeOAuthCallback(
                     provider = AuthProvider.FACEBOOK,
@@ -95,63 +107,81 @@ internal fun Route.registerAuthRoutes(
         }
 
         post("/session/claim") {
+            call.noStoreAuthResponse()
             call.respond<AuthResponseDto>(authService.claimOneTimeLoginToken(call.receive<AuthSessionClaimRequest>()))
         }
 
         post("/refresh") {
+            call.noStoreAuthResponse()
             call.respond<AuthResponseDto>(authService.refresh(call.receive<AuthRefreshRequest>()))
         }
 
         authenticate(ApiJwtAuth) {
             get("/session") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 call.respond<AuthSessionBootstrapDto>(authService.currentUserSession(principal.payload.subject))
             }
 
             get("/me") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 call.respond(authService.currentUser(principal.payload.subject))
             }
 
             get("/me/invitations") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 call.respond(authService.currentUserInvitations(principal.payload.subject))
             }
 
             get("/me/events") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 call.respond(authService.currentUserEvents(principal.payload.subject))
             }
 
             get("/me/active-stay") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 call.respond(AuthActiveStayResponseDto(authService.currentUserActiveStay(principal.payload.subject)))
             }
 
             patch("/me/invitations/{invitationId}") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 val invitationId = call.parameters["invitationId"]
                     ?: throw IllegalArgumentException("Missing invitation id")
                 call.respond(authService.respondToInvitation(principal.payload.subject, invitationId, call.receive<AuthInvitationResponseRequest>()))
             }
 
             put("/me") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: throw IllegalArgumentException("Missing JWT principal")
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 call.respond(authService.updateProfile(principal.payload.subject, call.receive<AuthProfileUpdateRequest>()))
             }
 
             post("/logout") {
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
                 val request = runCatching { call.receiveNullable<AuthRefreshRequest>() }.getOrNull()
-                authService.logout(request?.refreshToken)
+                authService.logout(request?.refreshToken, principal.payload)
                 call.respond(AuthLogoutResponseDto())
             }
         }
     }
+}
+
+private fun ApplicationCall.authenticatedJwtPrincipal(): JWTPrincipal =
+    principal<JWTPrincipal>()
+        ?: throw IllegalArgumentException("Missing JWT principal")
+
+private fun ApplicationCall.noStoreAuthResponse() {
+    // Auth responses contain bearer/refresh tokens or private profile data. no-store prevents
+    // browser, proxy, and CDN caches from persisting sensitive authentication material.
+    if (response.headers[HttpHeaders.CacheControl] != null) return
+    response.header(HttpHeaders.CacheControl, "no-store, no-cache, must-revalidate, max-age=0")
+    response.header(HttpHeaders.Pragma, "no-cache")
+    response.header(HttpHeaders.Expires, "0")
+    response.header("Surrogate-Control", "no-store")
 }

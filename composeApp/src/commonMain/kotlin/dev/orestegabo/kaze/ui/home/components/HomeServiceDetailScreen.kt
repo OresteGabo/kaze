@@ -72,10 +72,7 @@ import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
-import dev.orestegabo.kaze.ui.map.components.BuildingRegistryMapResourcePath
-import dev.orestegabo.kaze.ui.map.components.DemoBuildingMapResources
 import dev.orestegabo.kaze.ui.map.components.KazeMapView
-import dev.orestegabo.kaze.ui.map.components.NyarutaramaBoardroomFeatureId
 import kaze.composeapp.generated.resources.Res
 import kaze.composeapp.generated.resources.kaze_bg_apartments_raster
 import kaze.composeapp.generated.resources.kaze_bg_catering_raster
@@ -118,7 +115,6 @@ internal data class HomeServiceResult(
 
 private enum class ServiceResultDetailTab(val label: String) {
     DETAILS("Details"),
-    MAP("Map"),
 }
 
 @Composable
@@ -206,7 +202,7 @@ internal fun HomeServiceDetailScreen(
                 }
             }
 
-            SectionLabel("${filteredResults.size} demo result${if (filteredResults.size == 1) "" else "s"}")
+            SectionLabel("${filteredResults.size} venue result${if (filteredResults.size == 1) "" else "s"}")
             if (filteredResults.isEmpty()) {
                 EmptyServiceResultsCard(accent = content.accent)
             } else {
@@ -709,17 +705,6 @@ private fun HomeServiceResultDetailScreen(
                     onReserve = { isReservationDraftOpen = true },
                 )
             }
-
-            ServiceResultDetailTab.MAP -> {
-                SectionLabel("Map")
-                ServiceResultMapCard(
-                    title = result.title,
-                    accent = content.accent,
-                    mapResourcePath = result.mapResourcePath ?: BuildingRegistryMapResourcePath,
-                    selectedMapFeatureId = result.selectedMapFeatureId,
-                    selectedMapFeatureName = result.selectedMapFeatureName,
-                )
-            }
         }
     }
 }
@@ -1172,7 +1157,7 @@ private fun EmptyServiceResultsCard(accent: Color) {
         border = BorderStroke(1.dp, accent.copy(alpha = 0.18f)),
     ) {
         Text(
-            "No demo result matched that search. Try a shorter word or remove the selected filter.",
+            "No venue matched that search. Try a shorter word or remove the selected filter.",
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
@@ -1226,7 +1211,7 @@ private fun defaultIncludedServices(categoryTitle: String): List<String> = when 
     "Wedding venues" -> listOf("Guest seating", "Parking guidance", "Event access", "Layout planning")
     "Conference rooms" -> listOf("Wi-Fi", "Projector", "Reception support", "Room setup")
     "Apartments" -> listOf("Furnished", "Kitchen basics", "Guest support", "Nearby venue access")
-    "Hotels" -> listOf("Rooms", "Event spaces", "Restaurant", "Indoor map")
+    "Hotels" -> listOf("Rooms", "Event spaces", "Restaurant", "Guest support")
     "Event layouts" -> listOf("Attendee count", "Table style", "Guest flow", "Kaze Pass entry")
     "Styling & decor" -> listOf("Flowers", "Lighting", "Stage details", "Setup team")
     "Catering" -> listOf("Menu options", "Guest count", "Service timing", "Drinks")
@@ -1239,21 +1224,21 @@ private fun defaultIncludedServices(categoryTitle: String): List<String> = when 
 private fun defaultBookingNotes(categoryTitle: String): List<String> = when (categoryTitle) {
     "Wedding venues" -> listOf(
         "Final capacity and decoration rules should be confirmed by the venue.",
-        "After reservation, you can create invitations and prepare Kaze Pass access.",
-        "Catering, styling, media, and transport can be attached later as event add-ons.",
+        "After approval, invitation acceptance and Kaze Pass access can be prepared.",
+        "Optional services can be coordinated outside the MVP reservation request.",
     )
     "Conference rooms" -> listOf(
-        "Confirm the room setup before payment: boardroom, classroom, or theatre.",
+        "Confirm the room setup before approval: boardroom, classroom, or theatre.",
         "Guest access can be prepared after the room is approved.",
-        "Catering, livestreaming, and cleaning can be added to the reservation.",
+        "Extras can be coordinated after the venue confirms availability.",
     )
     "Apartments" -> listOf(
-        "Confirm check-in time and guest count before payment.",
+        "Confirm check-in time and guest count before approval.",
         "Apartment options can support guests attending an event nearby.",
         "Transport or cleaning can be added after the host confirms availability.",
     )
     "Catering" -> listOf(
-        "Final menu and guest count should be confirmed before payment.",
+        "Final menu and guest count should be confirmed before approval.",
         "Attach catering to a venue or event so timing stays clear.",
         "Service team and drinks can be adjusted after provider confirmation.",
     )
@@ -1265,12 +1250,12 @@ private fun defaultBookingNotes(categoryTitle: String): List<String> = when (cat
     "Transport" -> listOf(
         "Confirm pickup points, passenger count, and return timing.",
         "Guest transport can be attached to invitations later.",
-        "Cash or mobile payment confirmation should be tracked in-app.",
+        "Provider confirmation should happen before guests rely on the route.",
     )
     else -> listOf(
         "Availability and final pricing should be confirmed by the provider.",
         "This service can later be attached to an event or invitation.",
-        "Payment, access, and provider updates will become backend-backed.",
+        "Access and provider updates will become backend-backed.",
     )
 }
 
@@ -1278,7 +1263,7 @@ private fun defaultGalleryLabels(categoryTitle: String): List<String> = when (ca
     "Wedding venues" -> listOf("Reception", "Garden", "Entrance")
     "Conference rooms" -> listOf("Room", "Setup", "Access")
     "Apartments" -> listOf("Living", "Bedroom", "Area")
-    "Hotels" -> listOf("Hotel", "Spaces", "Map")
+    "Hotels" -> listOf("Hotel", "Spaces", "Rooms")
     "Event layouts" -> listOf("Tables", "Aisles", "Entry")
     "Styling & decor" -> listOf("Flowers", "Lights", "Stage")
     "Catering" -> listOf("Menu", "Service", "Drinks")
@@ -1318,7 +1303,21 @@ private fun HomeServiceResult.displayAvailabilityLabel(): String = when {
 @Composable
 private fun servicePageContent(query: String): HomeServicePageContent {
     val colors = MaterialTheme.colorScheme
-    return when (query) {
+    val normalizedQuery = query.trim().lowercase()
+    if (normalizedQuery !in setOf("wedding venues", "conference rooms", "hotels")) {
+        return HomeServicePageContent(
+            title = "Unavailable",
+            subtitle = "This area is not part of the MVP yet.",
+            icon = Icons.Default.Search,
+            background = Res.drawable.kaze_bg_guest_access_raster,
+            accent = colors.primary,
+            filters = emptyList(),
+            highlights = listOf("Use wedding venues, conference rooms, or hotels for the MVP reservation journey."),
+            isAvailable = false,
+            results = emptyList(),
+        )
+    }
+    return when (normalizedQuery) {
         "wedding venues" -> HomeServicePageContent(
             title = "Wedding venues",
             subtitle = "Find reception spaces, compare capacity, and prepare guest access before the event.",
@@ -1326,20 +1325,30 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             background = Res.drawable.kaze_bg_wedding_venues_raster,
             accent = colors.tertiary,
             filters = listOf("Reception", "Garden", "Banquet", "Kigali", "Parking"),
-            highlights = listOf("Check venue capacity and starting price.", "Preview layouts for tables, chairs, and guest flow.", "Create invitations and Kaze Pass access after booking."),
+            highlights = listOf("Check venue capacity and starting price.", "Compare event-ready spaces before requesting approval.", "Prepare invitation and pass access after a reservation is confirmed."),
             isAvailable = true,
             results = listOf(
-                HomeServiceResult("Kigali Garden Pavilion", "Outdoor reception venue with garden photo zones and covered dining.", "Garden • 450 guests", "From RWF 1.8M"),
                 HomeServiceResult(
-                    title = "Umubano Grand Hall",
-                    subtitle = "Banquet hall with parking, stage space, and guest entrance control.",
-                    metaLabel = "Banquet • Parking",
-                    priceLabel = "From RWF 2.4M",
-                    mapResourcePath = DemoBuildingMapResources.UmubanoGrandHall,
-                    selectedMapFeatureId = "umubano_grand_hall",
-                    selectedMapFeatureName = "Umubano Grand Hall",
+                    title = "Umucyo Garden Venue",
+                    subtitle = "Garden ceremony and reception venue with guest flow support.",
+                    metaLabel = "Garden • 450 guests",
+                    priceLabel = "Quote after review",
+                    locationLabel = "Rebero Ridge, Kigali",
                 ),
-                HomeServiceResult("Lake View Wedding Lawn", "Reception lawn for sunset ceremonies and family seating layouts.", "Reception • Garden", "From RWF 1.5M"),
+                HomeServiceResult(
+                    title = "Kigali Serena Hotel Garden",
+                    subtitle = "Hotel garden and hospitality setup for family events and private dinners.",
+                    metaLabel = "Garden • Dinner",
+                    priceLabel = "Quote after review",
+                    locationLabel = "Kigali City Centre",
+                ),
+                HomeServiceResult(
+                    title = "Singita Kwitonda Lodge",
+                    subtitle = "Premium lodge venue for intimate hosted dinners and destination celebrations.",
+                    metaLabel = "Lodge • Private event",
+                    priceLabel = "From RWF 1.8M",
+                    locationLabel = "Musanze, Rwanda",
+                ),
             ),
         )
         "conference rooms" -> HomeServicePageContent(
@@ -1349,28 +1358,30 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             background = Res.drawable.kaze_bg_conference_rooms_raster,
             accent = colors.primary,
             filters = listOf("Half day", "Full day", "Projector", "Boardroom", "Training"),
-            highlights = listOf("Compare room setup, capacity, and included equipment.", "Reserve a time slot and add attendee access later.", "Request extras like catering, cleaning, or livestreaming."),
+            highlights = listOf("Compare room setup, capacity, and included equipment.", "Send one reservation request for venue approval.", "Add attendee access after the room is confirmed."),
             isAvailable = true,
             results = listOf(
                 HomeServiceResult(
-                    title = "Nyarutarama Boardroom",
-                    subtitle = "Quiet executive room with screen, Wi-Fi, and reception desk support.",
+                    title = "Kigali Marriott Boardroom",
+                    subtitle = "Half-day and full-day boardroom request with screen, coffee station, and support staff.",
                     metaLabel = "Boardroom • Projector",
-                    priceLabel = "RWF 180K half day",
-                    mapResourcePath = DemoBuildingMapResources.NyarutaramaBoardroom,
-                    selectedMapFeatureId = NyarutaramaBoardroomFeatureId,
-                    selectedMapFeatureName = "Nyarutarama Boardroom",
+                    priceLabel = "From RWF 450K",
+                    locationLabel = "KN 3 Avenue, Kigali",
                 ),
                 HomeServiceResult(
-                    title = "Kigali Training Suite",
-                    subtitle = "Flexible classroom setup for workshops and product launches.",
-                    metaLabel = "Training • Full day",
-                    priceLabel = "RWF 320K full day",
-                    mapResourcePath = DemoBuildingMapResources.KigaliTrainingSuite,
-                    selectedMapFeatureId = "kigali_training_suite",
-                    selectedMapFeatureName = "Kigali Training Suite",
+                    title = "Kigali Convention Centre Auditorium",
+                    subtitle = "Large-format conference venue for plenaries, exhibitions, and public forums.",
+                    metaLabel = "Auditorium • Conference",
+                    priceLabel = "Quote after review",
+                    locationLabel = "Kimihurura, Kigali",
                 ),
-                HomeServiceResult("Kivu Meeting Room", "Compact meeting room for interviews and small planning sessions.", "Half day • 18 seats", "RWF 95K half day"),
+                HomeServiceResult(
+                    title = "Intare Conference Arena",
+                    subtitle = "Large-scale auditorium package with registration and access coordination.",
+                    metaLabel = "Main hall • Conference",
+                    priceLabel = "Quote after review",
+                    locationLabel = "Rusororo, Kigali",
+                ),
             ),
         )
         "apartments" -> HomeServicePageContent(
@@ -1397,45 +1408,37 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             icon = Icons.Default.Hotel,
             background = Res.drawable.kaze_bg_hotels_raster,
             accent = colors.primary,
-            filters = listOf("Rooms", "Events", "Restaurant", "Pool", "Map"),
-            highlights = listOf("See public hotel services before booking.", "Open venue maps when a hotel provides them.", "Connect stays, requests, and passes in one place."),
+            filters = listOf("Rooms", "Events", "Restaurant", "Conference", "Kigali"),
+            highlights = listOf("See public hotel services before booking.", "Request event, room, or hospitality support.", "Connect stays, requests, and passes after approval."),
             isAvailable = true,
             results = listOf(
                 HomeServiceResult(
-                    title = "Kaze Demo Hotel",
-                    subtitle = "Rooms, event spaces, restaurant, and indoor guest navigation.",
-                    metaLabel = "Rooms • Map",
+                    title = "Kigali Marriott Hotel",
+                    subtitle = "Hotel rooms, boardroom reservation, airport pickup, and conference support.",
+                    metaLabel = "Rooms • Events",
                     priceLabel = "Rooms from RWF 120K",
-                    mapResourcePath = DemoBuildingMapResources.KazeDemoHotel,
-                    selectedMapFeatureId = "kaze_lobby",
-                    selectedMapFeatureName = "Kaze Lobby",
+                    locationLabel = "KN 3 Avenue, Kigali",
                 ),
                 HomeServiceResult(
-                    title = "Mille Collines Business Stay",
-                    subtitle = "Business hotel with meeting spaces and central Kigali access.",
+                    title = "Kigali Serena Hotel",
+                    subtitle = "Central hotel with private dinner setup, event hosting, and guest support.",
                     metaLabel = "Events • Restaurant",
                     priceLabel = "Rooms from RWF 160K",
-                    mapResourcePath = DemoBuildingMapResources.MilleCollinesBusinessStay,
-                    selectedMapFeatureId = "mille_conference_wing",
-                    selectedMapFeatureName = "Conference Wing",
+                    locationLabel = "Kigali City Centre",
                 ),
                 HomeServiceResult(
-                    title = "Green Hill Boutique Hotel",
-                    subtitle = "Small hotel for wedding guests and family groups.",
-                    metaLabel = "Pool • Rooms",
-                    priceLabel = "Rooms from RWF 90K",
-                    mapResourcePath = DemoBuildingMapResources.GreenHillBoutiqueHotel,
-                    selectedMapFeatureId = "green_hill_garden",
-                    selectedMapFeatureName = "Garden Venue",
+                    title = "Hotel des Mille Collines",
+                    subtitle = "Historic Kigali hotel with breakfast meeting and guest-stay support.",
+                    metaLabel = "Rooms • Meeting",
+                    priceLabel = "Rooms from RWF 120K",
+                    locationLabel = "2 KN 6 Avenue, Kigali",
                 ),
                 HomeServiceResult(
-                    title = "Kigali Blueprint Hotel",
-                    subtitle = "Two-floor concept map with public areas, meeting zones, amenities, staff space, and connectors.",
-                    metaLabel = "2 floors • Complex map",
-                    priceLabel = "Demo map",
-                    mapResourcePath = DemoBuildingMapResources.KigaliBlueprintHotel,
-                    selectedMapFeatureId = "f1_conference_hall",
-                    selectedMapFeatureName = "Conference Hall",
+                    title = "Four Points by Sheraton Kigali",
+                    subtitle = "Business hotel with ballroom package and central Kigali accommodation.",
+                    metaLabel = "Ballroom • Rooms",
+                    priceLabel = "Quote after review",
+                    locationLabel = "Nyarugenge, Kigali",
                 ),
             ),
         )
@@ -1515,7 +1518,7 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             background = Res.drawable.kaze_bg_transport_raster,
             accent = colors.tertiary,
             filters = listOf("Airport", "Shuttle", "VIP car", "Guest pickup", "Bus", "Wedding"),
-            highlights = listOf("Attach pickup details to event invitations.", "Coordinate drivers with venue timing.", "Later, collect transport payments in-app."),
+            highlights = listOf("Attach pickup details to event invitations.", "Coordinate drivers with venue timing.", "Confirm transport outside the MVP reservation flow."),
             isAvailable = true,
             results = listOf(
                 HomeServiceResult("Airport VIP Pickup", "Driver pickup for speakers, couples, or special guests.", "Airport • VIP car", "From RWF 35K"),
@@ -1542,17 +1545,15 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             ),
         )
         else -> HomeServicePageContent(
-            title = "Service",
-            subtitle = "Explore this service and see what can be connected to your event.",
+            title = "Unavailable",
+            subtitle = "This area is not part of the MVP yet.",
             icon = Icons.Default.Search,
             background = Res.drawable.kaze_bg_guest_access_raster,
             accent = colors.primary,
-            filters = listOf("Available", "Nearby", "Popular"),
-            highlights = listOf("Browse matching options.", "Compare useful details before choosing.", "Save it to your event when ready."),
-            isAvailable = true,
-            results = listOf(
-                HomeServiceResult("Sample service", "Demo service result for this category.", "Available • Nearby", "Price varies"),
-            ),
+            filters = emptyList(),
+            highlights = listOf("Use wedding venues, conference rooms, or hotels for the MVP reservation journey."),
+            isAvailable = false,
+            results = emptyList(),
         )
     }
 }

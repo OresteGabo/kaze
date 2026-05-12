@@ -44,9 +44,18 @@ internal interface AuthRepository {
         expiresAt: Instant,
     ): StoredRefreshToken
 
+    fun findRefreshToken(tokenHash: String): StoredRefreshToken?
     fun findActiveRefreshToken(tokenHash: String): StoredRefreshToken?
+    fun rotateRefreshToken(
+        currentTokenHash: String,
+        replacementTokenHash: String,
+        deviceId: String?,
+        deviceLabel: String?,
+        replacementExpiresAt: Instant,
+    ): RefreshTokenRotation?
     fun revokeRefreshToken(tokenId: String, replacedByTokenId: String? = null)
     fun revokeRefreshTokenFamily(familyId: String)
+    fun isGuestLinkedToUser(userId: String, hotelId: String, guestId: String): Boolean
     fun findById(userId: String): StoredAuthUser?
     fun updateProfile(
         userId: String,
@@ -70,6 +79,11 @@ internal data class SignupConflicts(
     val emailExists: Boolean,
     val usernameExists: Boolean,
     val phoneNumberExists: Boolean,
+)
+
+internal data class RefreshTokenRotation(
+    val consumed: StoredRefreshToken,
+    val replacement: StoredRefreshToken,
 )
 
 internal class JdbcAuthRepository(
@@ -458,7 +472,7 @@ internal class JdbcAuthRepository(
                 """
                 INSERT INTO auth_refresh_tokens (user_id, token_hash, family_id, device_id, device_label, expires_at)
                 VALUES (?, ?, ?, ?, ?, ?)
-                RETURNING id, user_id, token_hash, family_id
+                RETURNING id, user_id, token_hash, family_id, expires_at, revoked_at, replaced_by_token_id
                 """.trimIndent(),
             ).use { statement ->
                 statement.setString(1, userId)
@@ -474,11 +488,27 @@ internal class JdbcAuthRepository(
             }
         }
 
+    override fun findRefreshToken(tokenHash: String): StoredRefreshToken? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT id, user_id, token_hash, family_id, expires_at, revoked_at, replaced_by_token_id
+                FROM auth_refresh_tokens
+                WHERE token_hash = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, tokenHash)
+                statement.executeQuery().use { result ->
+                    if (result.next()) result.toStoredRefreshToken() else null
+                }
+            }
+        }
+
     override fun findActiveRefreshToken(tokenHash: String): StoredRefreshToken? =
         dataSource.connection.use { connection ->
             connection.prepareStatement(
                 """
-                SELECT id, user_id, token_hash, family_id
+                SELECT id, user_id, token_hash, family_id, expires_at, revoked_at, replaced_by_token_id
                 FROM auth_refresh_tokens
                 WHERE token_hash = ?
                   AND revoked_at IS NULL
@@ -489,6 +519,86 @@ internal class JdbcAuthRepository(
                 statement.executeQuery().use { result ->
                     if (result.next()) result.toStoredRefreshToken() else null
                 }
+            }
+        }
+
+    override fun rotateRefreshToken(
+        currentTokenHash: String,
+        replacementTokenHash: String,
+        deviceId: String?,
+        deviceLabel: String?,
+        replacementExpiresAt: Instant,
+    ): RefreshTokenRotation? =
+        dataSource.connection.use { connection ->
+            val originalAutoCommit = connection.autoCommit
+            connection.autoCommit = false
+            try {
+                val existing = connection.prepareStatement(
+                    """
+                    SELECT id, user_id, token_hash, family_id, expires_at, revoked_at, replaced_by_token_id
+                    FROM auth_refresh_tokens
+                    WHERE token_hash = ?
+                    FOR UPDATE
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, currentTokenHash)
+                    statement.executeQuery().use { result ->
+                        if (result.next()) result.toStoredRefreshToken() else null
+                    }
+                }
+
+                if (existing == null || existing.revokedAt != null || !existing.expiresAt.isAfter(Instant.now())) {
+                    connection.rollback()
+                    return@use null
+                }
+
+                val replacement = connection.prepareStatement(
+                    """
+                    INSERT INTO auth_refresh_tokens (user_id, token_hash, family_id, device_id, device_label, expires_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    RETURNING id, user_id, token_hash, family_id, expires_at, revoked_at, replaced_by_token_id
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, existing.userId)
+                    statement.setString(2, replacementTokenHash)
+                    statement.setString(3, existing.familyId)
+                    statement.setString(4, deviceId?.trim()?.takeIf { it.isNotEmpty() })
+                    statement.setString(5, deviceLabel?.trim()?.takeIf { it.isNotEmpty() })
+                    statement.setTimestamp(6, Timestamp.from(replacementExpiresAt))
+                    statement.executeQuery().use { result ->
+                        check(result.next()) { "Refresh token rotation did not return a replacement row" }
+                        result.toStoredRefreshToken()
+                    }
+                }
+
+                // Row-level locking plus the revoked_at predicate prevents two concurrent refreshes
+                // from producing two valid replacement tokens for the same stolen refresh token.
+                val updatedRows = connection.prepareStatement(
+                    """
+                    UPDATE auth_refresh_tokens
+                    SET revoked_at = now(),
+                        replaced_by_token_id = ?
+                    WHERE id = ?
+                      AND revoked_at IS NULL
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, replacement.id)
+                    statement.setString(2, existing.id)
+                    statement.executeUpdate()
+                }
+
+                if (updatedRows != 1) {
+                    connection.rollback()
+                    return@use null
+                }
+
+                connection.commit()
+                RefreshTokenRotation(consumed = existing, replacement = replacement)
+            } catch (cause: Throwable) {
+                connection.rollback()
+                throw cause
+            } finally {
+                connection.autoCommit = originalAutoCommit
             }
         }
 
@@ -523,6 +633,25 @@ internal class JdbcAuthRepository(
             }
         }
     }
+
+    override fun isGuestLinkedToUser(userId: String, hotelId: String, guestId: String): Boolean =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT 1
+                FROM guests
+                WHERE user_id = ?
+                  AND hotel_id = ?
+                  AND id = ?
+                LIMIT 1
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.setString(2, hotelId)
+                statement.setString(3, guestId)
+                statement.executeQuery().use { result -> result.next() }
+            }
+        }
 
     override fun findById(userId: String): StoredAuthUser? =
         dataSource.connection.use { connection ->
@@ -886,6 +1015,9 @@ private fun ResultSet.toStoredRefreshToken(): StoredRefreshToken =
         userId = getString("user_id"),
         tokenHash = getString("token_hash"),
         familyId = getString("family_id"),
+        expiresAt = getTimestamp("expires_at").toInstant(),
+        revokedAt = getTimestamp("revoked_at")?.toInstant(),
+        replacedByTokenId = getString("replaced_by_token_id"),
     )
 
 private fun ResultSet.toAuthInvitationSummaryDto(): AuthInvitationSummaryDto {

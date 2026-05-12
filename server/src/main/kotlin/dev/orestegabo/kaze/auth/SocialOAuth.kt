@@ -293,8 +293,15 @@ internal class ExternalTokenVerifier {
             .get(decoded.keyId)
             .let { jwk ->
                 JWT.require(Algorithm.RSA256(jwk.publicKey as java.security.interfaces.RSAPublicKey, null))
+                    // External identity JWTs must carry the same registered claims we require
+                    // for first-party tokens, otherwise a signed but incomplete token could slip through.
+                    .withClaimPresence("iss")
+                    .withClaimPresence("aud")
+                    .withClaimPresence("sub")
+                    .withClaimPresence("exp")
                     .withIssuer(*listOfNotNull(issuer, alternateIssuer).toTypedArray())
                     .withAudience(audience)
+                    .acceptExpiresAt(0)
                     .build()
             }
         val token = try {

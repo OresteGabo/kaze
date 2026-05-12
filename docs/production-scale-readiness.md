@@ -260,6 +260,7 @@ If none of those are true yet, Redis can wait.
 ## Background Jobs
 
 - Todo: Move slow or side-effect-heavy work out of request handlers.
+- Todo: Background task failures must not fail the whole system or block unrelated operations.
 - Todo: Use Cloud Tasks or Pub/Sub for:
   - emails
   - push notifications
@@ -268,7 +269,8 @@ If none of those are true yet, Redis can wait.
   - staff alerts
   - map imports
   - large sync jobs
-- Todo: Add retry policies and dead-letter queues.
+- Todo: Add bounded retry policies with backoff, idempotency protections, and dead-letter queues.
+- Todo: Quarantine failed background tasks in a dead-letter queue for manual inspection, replay, or cancellation.
 - Todo: Make write endpoints idempotent with request IDs where user retry is possible.
 
 ## Client Performance

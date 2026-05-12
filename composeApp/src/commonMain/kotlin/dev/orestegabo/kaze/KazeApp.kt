@@ -26,11 +26,13 @@ import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.presentation.demo.InvitationState
 import dev.orestegabo.kaze.presentation.demo.PublicVenuePreview
-import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import dev.orestegabo.kaze.presentation.di.rememberKazeDependencies
 import dev.orestegabo.kaze.presentation.app.KazeSessionMode
 import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
 import dev.orestegabo.kaze.domain.guest.GuestIdentity
+import dev.orestegabo.kaze.domain.HotelBranding
+import dev.orestegabo.kaze.domain.HotelConfig
+import dev.orestegabo.kaze.domain.TypographySpec
 import dev.orestegabo.kaze.presentation.events.EventsActionResult
 import dev.orestegabo.kaze.presentation.events.EventsViewModel
 import dev.orestegabo.kaze.presentation.explore.ExploreActionResult
@@ -76,7 +78,7 @@ fun App() {
         )
     }
     val uiState = appViewModel.uiState
-    KazeTheme(hotelConfig = sampleHotel.config, themeMode = uiState.themeMode) {
+    KazeTheme(hotelConfig = KazeMvpThemeConfig, themeMode = uiState.themeMode) {
         val stayViewModel = viewModel {
             StayViewModel(
                 hotelId = dependencies.hotelId,
@@ -163,15 +165,15 @@ fun App() {
             .map { it.toScheduledExperience() }
         val eventsDays = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> authenticatedEventDays
-            KazeSessionMode.GUEST, null -> eventsUiState.days
+            KazeSessionMode.GUEST, null -> emptyList()
         }
         val eventsSelectedDay = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> authenticatedSelectedDay
-            KazeSessionMode.GUEST, null -> eventsUiState.selectedDay
+            KazeSessionMode.GUEST, null -> null
         }
         val eventsSessions = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> authenticatedSessions
-            KazeSessionMode.GUEST, null -> eventsUiState.sessions
+            KazeSessionMode.GUEST, null -> emptyList()
         }
         val pendingInvitationCount = visibleInvitations.count { it.awaitingResponse }
         val availableDestinations = when (uiState.sessionMode) {
@@ -252,8 +254,7 @@ fun App() {
                 appViewModel.showFeedback("Enter a short event or invitation code first.")
             } else {
                 selectedEventInvitation = null
-                appViewModel.onDestinationSelected(KazeDestination.EVENTS)
-                appViewModel.showFeedback("Code $trimmedCode matched. Review the linked event details.")
+                appViewModel.showFeedback("Sign in to accept invitations linked to $trimmedCode.")
             }
         }
 
@@ -294,7 +295,7 @@ fun App() {
 
         LaunchedEffect(uiState.sessionMode, resolvedGuestName) {
             stayViewModel.applyPresentationContext(
-                showSharedDemoAccess = uiState.sessionMode != KazeSessionMode.AUTHENTICATED,
+                showSharedDemoAccess = false,
                 guestName = resolvedGuestName,
             )
         }
@@ -345,9 +346,11 @@ fun App() {
                         AuthEntryScreen(
                             modifier = Modifier.fillMaxSize(),
                             feedbackMessage = uiState.feedbackMessage,
+                            authFailure = uiState.authFailure,
                             onSignIn = appViewModel::signIn,
                             onCreateAccount = appViewModel::createAccount,
                             onSocialSignIn = appViewModel::signInWithSocialProvider,
+                            onDismissAuthFailure = appViewModel::dismissAuthFailure,
                             onContinueAsGuest = appViewModel::continueAsGuest,
                             onOpenLegalPage = ::openLegalPage,
                         )
@@ -778,6 +781,27 @@ private fun dev.orestegabo.kaze.presentation.auth.AuthEventSummary.toScheduledEx
         venueLabel = venueLabel,
         hostLabel = hostLabel,
     )
+
+private val KazeMvpThemeConfig = HotelConfig(
+    hotelId = "kaze-mvp",
+    displayName = "Kaze",
+    branding = HotelBranding(
+        primaryHex = "#2F6970",
+        secondaryHex = "#B4874F",
+        accentHex = "#D8C6A3",
+        surfaceHex = "#FCF8F1",
+        backgroundHex = "#F3EEE5",
+        logoAsset = "branding/kaze/logo.svg",
+        wordmarkAsset = "branding/kaze/wordmark.svg",
+        typography = TypographySpec(
+            headingScale = 1.05f,
+            bodyScale = 1f,
+            labelScale = 0.96f,
+        ),
+    ),
+    supportedLocales = listOf("en", "fr"),
+    defaultCurrencyCode = "RWF",
+)
 
 private fun String.toDisplayNameFromEmail(): String {
     val localPart = substringBefore('@').trim()

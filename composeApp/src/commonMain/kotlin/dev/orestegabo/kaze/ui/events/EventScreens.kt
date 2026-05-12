@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EventBusy
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
@@ -243,9 +242,9 @@ private fun SessionCard(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetaPill(session.venueLabel, leadingIcon = Icons.Default.Place)
                 session.hostLabel?.let { MetaPill(it, leadingIcon = Icons.Default.CalendarMonth) }
-                MetaPill("Open map", leadingIcon = Icons.Default.Map)
+                MetaPill("Venue details", leadingIcon = Icons.Default.Place)
             }
-            KazeSecondaryButton(label = "Open map", onClick = onOpenMap, leadingIcon = Icons.Default.Map)
+            KazeSecondaryButton(label = "Venue details", onClick = onOpenMap, leadingIcon = Icons.Default.Place)
         }
     }
 }

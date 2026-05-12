@@ -23,7 +23,6 @@ import dev.orestegabo.kaze.presentation.demo.ServiceRequestRecord
 import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
 import dev.orestegabo.kaze.presentation.demo.StayScreen
 import dev.orestegabo.kaze.presentation.demo.StayTab
-import dev.orestegabo.kaze.presentation.demo.demoAccessContexts
 import dev.orestegabo.kaze.presentation.demo.requestOptions
 import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import dev.orestegabo.kaze.presentation.util.runImmediateSuspend
@@ -37,21 +36,20 @@ internal class StayViewModel(
     private val stayRepository: StayRepository,
     private val submitLateCheckoutUseCase: SubmitLateCheckoutUseCase,
 ) : ViewModel() {
-    private val initialAccessContext = demoAccessContexts.firstOrNull()
     private var currentGuestIdentity: GuestIdentity? = guestIdentity
 
     var uiState by mutableStateOf(
         StayUiState(
-            hotelDisplayName = initialAccessContext?.title ?: sampleHotel.config.displayName,
-            accessProfileLabel = initialAccessContext?.accessProfileLabel ?: "No active access yet",
-            accessStatusLabel = initialAccessContext?.statusLabel ?: "Waiting for invites",
-            accessCard = initialAccessContext?.accessCard,
-            accessContexts = demoAccessContexts,
-            selectedAccessContextId = initialAccessContext?.id,
-            stayMoments = initialAccessContext?.moments.orEmpty(),
-            requestOptions = initialAccessContext?.toServiceOptions().orEmpty(),
-            suggestionActivities = initialAccessContext?.suggestions.orEmpty(),
-            guestName = "Aline",
+            hotelDisplayName = "",
+            accessProfileLabel = "No linked access yet",
+            accessStatusLabel = "Waiting for your invitation, pass, or active stay",
+            accessCard = null,
+            accessContexts = emptyList(),
+            selectedAccessContextId = null,
+            stayMoments = emptyList(),
+            requestOptions = emptyList(),
+            suggestionActivities = emptyList(),
+            guestName = "",
             assignedRoomLabel = currentGuestIdentity?.roomId?.let { "Room $it" }.orEmpty(),
         ),
     )
@@ -75,18 +73,16 @@ internal class StayViewModel(
         showSharedDemoAccess: Boolean,
         guestName: String,
     ) {
-        val accessContexts = if (showSharedDemoAccess) demoAccessContexts else emptyList()
-        val selectedAccessContext = accessContexts.firstOrNull()
         uiState = uiState.copy(
-            hotelDisplayName = selectedAccessContext?.title ?: sampleHotel.config.displayName,
-            accessProfileLabel = selectedAccessContext?.accessProfileLabel ?: "No linked access yet",
-            accessStatusLabel = selectedAccessContext?.statusLabel ?: "Waiting for your real invitation or pass",
-            accessCard = selectedAccessContext?.accessCard,
-            accessContexts = accessContexts,
-            selectedAccessContextId = selectedAccessContext?.id,
-            stayMoments = selectedAccessContext?.moments.orEmpty(),
-            requestOptions = selectedAccessContext?.toServiceOptions().orEmpty(),
-            suggestionActivities = selectedAccessContext?.suggestions.orEmpty(),
+            hotelDisplayName = uiState.hotelDisplayName,
+            accessProfileLabel = "No linked access yet",
+            accessStatusLabel = "Waiting for your real invitation, pass, or active stay",
+            accessCard = null,
+            accessContexts = emptyList(),
+            selectedAccessContextId = null,
+            stayMoments = emptyList(),
+            requestOptions = emptyList(),
+            suggestionActivities = emptyList(),
             guestName = guestName,
             activeStayScreen = StayScreen.HOME,
         )

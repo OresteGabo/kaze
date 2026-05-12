@@ -27,6 +27,7 @@ internal data class KazeAppUiState(
     val currentDestination: KazeDestination = KazeDestination.HOME,
     val activeMapTarget: MapNavigationTarget = MapNavigationTarget(),
     val feedbackMessage: String = "",
+    val authFailure: KazeAuthFailure? = null,
     val successCelebration: KazeSuccessCelebration? = null,
 )
 
@@ -38,6 +39,12 @@ internal enum class KazeSessionMode {
 internal data class KazeSuccessCelebration(
     val title: String,
     val subtitle: String,
+)
+
+internal data class KazeAuthFailure(
+    val title: String,
+    val message: String,
+    val provider: String? = null,
 )
 
 internal data class KazePrivacyConsent(

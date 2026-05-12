@@ -222,6 +222,7 @@ private val CREATE_SCHEMA_SQL = listOf(
         event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,
         event_name VARCHAR(240) NOT NULL,
         preferred_date_label VARCHAR(120) NOT NULL,
+        selected_room_label VARCHAR(160),
         guest_count INTEGER NOT NULL CHECK (guest_count > 0),
         package_label VARCHAR(160) NOT NULL,
         add_ons TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
@@ -232,6 +233,7 @@ private val CREATE_SCHEMA_SQL = listOf(
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
     """.trimIndent(),
+    "ALTER TABLE venue_reservations ADD COLUMN IF NOT EXISTS selected_room_label VARCHAR(160)",
     "CREATE INDEX IF NOT EXISTS idx_venue_reservations_requester ON venue_reservations(requester_user_id, created_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_venue_reservations_place ON venue_reservations(place_id, created_at DESC)",
     """

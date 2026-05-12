@@ -552,7 +552,7 @@ private fun WeddingInvitationDetailScreen(
                             )
                         }
                         Text(
-                            "Together with their families",
+                            invitation.statusLabel,
                             style = MaterialTheme.typography.titleMedium,
                             color = pass.cardOnSurface.copy(alpha = 0.82f),
                             textAlign = TextAlign.Center,
@@ -565,7 +565,7 @@ private fun WeddingInvitationDetailScreen(
                             textAlign = TextAlign.Center,
                         )
                         Text(
-                            "invite you to celebrate their wedding",
+                            invitation.subtitle,
                             style = MaterialTheme.typography.headlineSmall,
                             color = pass.cardOnSurfaceMuted,
                             textAlign = TextAlign.Center,
@@ -581,20 +581,20 @@ private fun WeddingInvitationDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             MetaPill(
-                                label = "28 June 2026",
+                                label = invitation.code.ifBlank { "Code after approval" },
                                 leadingIcon = Icons.Default.CalendarMonth,
                                 containerColor = pass.cardOnSurface.copy(alpha = 0.14f),
                                 textColor = pass.cardOnSurface,
                             )
                             MetaPill(
-                                label = "Kigali",
+                                label = invitation.phoneLabel,
                                 leadingIcon = Icons.Default.CheckCircle,
                                 containerColor = pass.cardOnSurface.copy(alpha = 0.14f),
                                 textColor = pass.cardOnSurface,
                             )
                         }
                         Text(
-                            "Garden ceremony • Sunset reception",
+                            invitation.subtitle,
                             style = MaterialTheme.typography.titleMedium,
                             color = pass.cardOnSurface.copy(alpha = 0.88f),
                             textAlign = TextAlign.Center,
@@ -620,7 +620,7 @@ private fun WeddingInvitationDetailScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        "A beautiful welcome into the wedding day.",
+                        "Review this invitation and respond when you are ready.",
                         style = MaterialTheme.typography.headlineMedium,
                         color = colors.onSurface,
                         fontWeight = FontWeight.Black,
@@ -648,14 +648,8 @@ private fun WeddingInvitationDetailScreen(
                         KazePrimaryButton(
                             label = if (isActive) "Open wedding" else "View wedding",
                             onClick = onOpenEvent,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             leadingIcon = Icons.Default.CalendarMonth,
-                        )
-                        KazeSecondaryButton(
-                            label = "Share look",
-                            onClick = {},
-                            modifier = Modifier.weight(1f),
-                            leadingIcon = Icons.Default.Edit,
                         )
                     }
                     if (invitation.awaitingResponse) {

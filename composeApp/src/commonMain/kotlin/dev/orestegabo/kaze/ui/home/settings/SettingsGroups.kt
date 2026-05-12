@@ -39,14 +39,13 @@ internal enum class SettingsGroup(
         ),
     ),
     ACTIVITY_PAYMENTS(
-        title = "Activity & payments",
-        summary = "Invitations, saved places, and payment methods.",
+        title = "Activity",
+        summary = "Invitations and saved places.",
         icon = Icons.Default.EventAvailable,
-        previewTokens = listOf("Invitations", "Saved places", "Payments"),
+        previewTokens = listOf("Invitations", "Saved places"),
         pages = listOf(
             SettingsDetailPage.INVITATIONS,
             SettingsDetailPage.SAVED_PLACES,
-            SettingsDetailPage.PAYMENTS,
         ),
     ),
     SUPPORT_LEGAL(

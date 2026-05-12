@@ -135,7 +135,7 @@ internal fun HomeScreen(
                         eyebrow = "Home",
                         tags = listOf("Venues", "Reservations", "Pass"),
                         icon = Icons.Outlined.BookmarkBorder,
-                        onAction = onBrowseVenues,
+                        onAction = { selectedServiceQuery = "conference rooms" },
                     )
                 } else {
                     HomeStayDashboard(
@@ -187,6 +187,10 @@ internal fun HomeScreen(
                     onSubmit = { onEnterCode(joinCode) },
                 )
             }
+
+            HomeServiceRail(
+                onOpenService = { serviceQuery -> selectedServiceQuery = serviceQuery },
+            )
 
             if (invitations.isNotEmpty()) {
                 InvitationSection(

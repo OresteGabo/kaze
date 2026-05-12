@@ -6,7 +6,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import dev.orestegabo.kaze.platform.SecureStore
 import dev.orestegabo.kaze.presentation.auth.AuthDeepLinks
+import dev.orestegabo.kaze.presentation.auth.AuthActiveStay
+import dev.orestegabo.kaze.presentation.auth.AuthEventSummary
 import dev.orestegabo.kaze.presentation.auth.AuthGateway
+import dev.orestegabo.kaze.presentation.auth.AuthInvitationSummary
 import dev.orestegabo.kaze.presentation.auth.AuthPrivacyConsent
 import dev.orestegabo.kaze.presentation.auth.AuthUser
 import dev.orestegabo.kaze.presentation.auth.AuthSession
@@ -34,6 +37,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 internal class KazeAppViewModel(
     private val secureStore: SecureStore,
@@ -62,6 +69,11 @@ internal class KazeAppViewModel(
                 claimSocialSession(callback.loginToken)
             }
         }
+        scope.launch {
+            AuthDeepLinks.failures.collect { failure ->
+                showAuthFailure(failure.code)
+            }
+        }
     }
 
     fun retryStartup() {
@@ -75,6 +87,7 @@ internal class KazeAppViewModel(
             isReady = false,
             isStartupTakingTooLong = false,
             feedbackMessage = "",
+            authFailure = null,
         )
         startupTimeoutJob = scope.launch {
             delay(STARTUP_TIMEOUT_MS)
@@ -109,6 +122,7 @@ internal class KazeAppViewModel(
                 privacyConsent = persistedPrivacyConsent,
             )
             if (persistedSessionMode == KazeSessionMode.AUTHENTICATED) {
+                applyCachedSessionContent()
                 refreshProfileFromServer()
             }
             startupTimeoutJob?.cancel()
@@ -150,6 +164,10 @@ internal class KazeAppViewModel(
     fun dismissFeedback() {
         feedbackDismissJob?.cancel()
         uiState = uiState.copy(feedbackMessage = "")
+    }
+
+    fun dismissAuthFailure() {
+        uiState = uiState.copy(authFailure = null, feedbackMessage = "")
     }
 
     fun showFeedback(message: String) {
@@ -275,6 +293,7 @@ internal class KazeAppViewModel(
             return
         }
         showFeedback("Opening ${socialProvider.displayName} sign-in...")
+        uiState = uiState.copy(authFailure = null)
         scope.launch {
             val nativeResult = runCatching { nativeSocialAuthLauncher.signIn(socialProvider) }
                 .onFailure { showFeedback(it.toAuthMessage()) }
@@ -349,6 +368,7 @@ internal class KazeAppViewModel(
             secureStore.remove(SESSION_PHONE_NUMBER_KEY)
             secureStore.remove(AUTH_TOKEN_KEY)
             secureStore.remove(REFRESH_TOKEN_KEY)
+            secureStore.remove(SESSION_CONTENT_CACHE_KEY)
         }
     }
 
@@ -414,6 +434,7 @@ internal class KazeAppViewModel(
 
     private fun claimSocialSession(loginToken: String) {
         showFeedback("Finishing secure sign-in...")
+        uiState = uiState.copy(authFailure = null)
         scope.launch {
             runCatching { authGateway.claimSession(loginToken) }
                 .onSuccess { session ->
@@ -421,6 +442,37 @@ internal class KazeAppViewModel(
                 }
                 .onFailure { showFeedback(it.toAuthMessage()) }
         }
+    }
+
+    private fun showAuthFailure(code: String) {
+        val failure = when (code) {
+            "invalid_oauth_state" -> KazeAuthFailure(
+                title = "Sign-in session expired",
+                message = "Your Google sign-in session expired or was already used. Start again and Kaze will create a fresh secure session.",
+                provider = SocialAuthProvider.GOOGLE.displayName,
+            )
+            "google_auth_not_configured", "social_auth_not_configured" -> KazeAuthFailure(
+                title = "Google sign-in is not ready",
+                message = "The server is missing Google sign-in configuration. Email sign-in and guest browsing are still available.",
+                provider = SocialAuthProvider.GOOGLE.displayName,
+            )
+            "identity_email_missing" -> KazeAuthFailure(
+                title = "Email permission is required",
+                message = "Google did not share an email address with Kaze. Choose an account with email access or use another sign-in option.",
+                provider = SocialAuthProvider.GOOGLE.displayName,
+            )
+            else -> KazeAuthFailure(
+                title = "Could not complete Google sign-in",
+                message = "Google sign-in could not finish right now. Please try again, or continue as guest while Kaze stays available.",
+                provider = SocialAuthProvider.GOOGLE.displayName,
+            )
+        }
+        feedbackDismissJob?.cancel()
+        uiState = uiState.copy(
+            authFailure = failure,
+            feedbackMessage = "",
+            sessionMode = null,
+        )
     }
 
     private fun startAuthenticatedSession(
@@ -555,6 +607,13 @@ internal class KazeAppViewModel(
                     sessionEvents = bootstrap.events,
                     sessionActiveStay = bootstrap.activeStay,
                 )
+                persistSessionContent(
+                    SessionContent(
+                        invitations = bootstrap.invitations,
+                        events = bootstrap.events,
+                        activeStay = bootstrap.activeStay,
+                    ),
+                )
                 return@launch
             }
 
@@ -568,9 +627,42 @@ internal class KazeAppViewModel(
                 sessionEvents = content.events,
                 sessionActiveStay = content.activeStay,
             )
+            if (content.invitations.isNotEmpty() || content.events.isNotEmpty() || content.activeStay != null) {
+                persistSessionContent(content)
+            }
             if (!profileLoaded && content.invitations.isEmpty() && content.events.isEmpty() && content.activeStay == null) {
                 showFeedback("Some live Kaze content could not load right now. You can still browse available sections and try again.")
             }
+        }
+    }
+
+    private fun applyCachedSessionContent() {
+        scope.launch {
+            val cached = secureStore.get(SESSION_CONTENT_CACHE_KEY)
+                ?.let { payload -> runCatching { SessionCacheJson.decodeFromString<CachedSessionContent>(payload) }.getOrNull() }
+                ?: return@launch
+            if (cached.userId.isNotBlank() && cached.userId != uiState.sessionUserId) return@launch
+            uiState = uiState.copy(
+                sessionInvitations = cached.invitations,
+                sessionEvents = cached.events,
+                sessionActiveStay = cached.activeStay,
+            )
+        }
+    }
+
+    private fun persistSessionContent(content: SessionContent) {
+        scope.launch {
+            secureStore.put(
+                SESSION_CONTENT_CACHE_KEY,
+                SessionCacheJson.encodeToString(
+                    CachedSessionContent(
+                        userId = uiState.sessionUserId,
+                        invitations = content.invitations,
+                        events = content.events,
+                        activeStay = content.activeStay,
+                    ),
+                ),
+            )
         }
     }
 
@@ -698,6 +790,7 @@ internal class KazeAppViewModel(
         const val SESSION_DISPLAY_NAME_KEY = "app.session_display_name"
         const val SESSION_USERNAME_KEY = "app.session_username"
         const val SESSION_PHONE_NUMBER_KEY = "app.session_phone_number"
+        const val SESSION_CONTENT_CACHE_KEY = "app.session_content_cache"
         const val AUTH_TOKEN_KEY = "auth.access_token"
         const val REFRESH_TOKEN_KEY = "auth.refresh_token"
         const val TRUE_VALUE = "true"
@@ -724,7 +817,19 @@ private fun AuthPrivacyConsent.toKazePrivacyConsent(): KazePrivacyConsent =
     )
 
 private data class SessionContent(
-    val invitations: List<dev.orestegabo.kaze.presentation.auth.AuthInvitationSummary>,
-    val events: List<dev.orestegabo.kaze.presentation.auth.AuthEventSummary>,
-    val activeStay: dev.orestegabo.kaze.presentation.auth.AuthActiveStay?,
+    val invitations: List<AuthInvitationSummary>,
+    val events: List<AuthEventSummary>,
+    val activeStay: AuthActiveStay?,
 )
+
+@Serializable
+private data class CachedSessionContent(
+    val userId: String,
+    val invitations: List<AuthInvitationSummary> = emptyList(),
+    val events: List<AuthEventSummary> = emptyList(),
+    val activeStay: AuthActiveStay? = null,
+)
+
+private val SessionCacheJson = Json {
+    ignoreUnknownKeys = true
+}

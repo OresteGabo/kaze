@@ -83,10 +83,10 @@ internal fun ExploreScreen(
                 KazeEmptyStateScreen(
                     modifier = Modifier.fillMaxWidth(),
                     title = "Nothing to explore yet",
-                    subtitle = "Event services, venue moments, and useful add-ons will appear here when Kaze has something worth browsing.",
+                    subtitle = "Public venue details will appear here when Kaze has live information to show.",
                     actionLabel = null,
                     eyebrow = "Explore",
-                    tags = listOf("Services", "Vendors", "Moments"),
+                    tags = listOf("Venues", "Reservations", "Events"),
                     icon = Icons.Default.Explore,
                     onAction = null,
                 )
@@ -102,16 +102,16 @@ internal fun ExploreScreen(
                     Box(modifier = Modifier.weight(0.95f)) {
                         SectionIntroCard(
                             eyebrow = "Explore",
-                            title = "Browse venues and services",
-                            subtitle = "See venue highlights, useful amenities, and reservation-related services available in Kaze.",
+                            title = "Browse venues",
+                            subtitle = "See venue highlights and useful details before you request a reservation.",
                             icon = Icons.Default.Explore,
                         )
                     }
                     Box(modifier = Modifier.weight(1.05f)) {
                         HighlightPanel(
                             title = "Venue highlights",
-                            body = "Check useful venue details and supported services before you request a reservation.",
-                            primaryLabel = "Open services",
+                            body = "Check useful venue details before you request a reservation.",
+                            primaryLabel = "Start reservation",
                             secondaryLabel = "View details",
                             onPrimaryClick = onHeroPrimary,
                             onSecondaryClick = onHeroSecondary,
@@ -121,14 +121,14 @@ internal fun ExploreScreen(
             } else {
                 SectionIntroCard(
                     eyebrow = "Explore",
-                    title = "Browse venues and services",
-                    subtitle = "See venue highlights, useful amenities, and reservation-related services available in Kaze.",
+                    title = "Browse venues",
+                    subtitle = "See venue highlights and useful details before you request a reservation.",
                     icon = Icons.Default.Explore,
                 )
                 HighlightPanel(
                     title = "Venue highlights",
-                    body = "Check useful venue details and supported services before you request a reservation.",
-                    primaryLabel = "Open services",
+                    body = "Check useful venue details before you request a reservation.",
+                    primaryLabel = "Start reservation",
                     secondaryLabel = "View details",
                     onPrimaryClick = onHeroPrimary,
                     onSecondaryClick = onHeroSecondary,

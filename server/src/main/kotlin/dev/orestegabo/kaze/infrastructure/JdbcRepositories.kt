@@ -797,6 +797,10 @@ internal class JdbcReservationRepository(
                         append(" using ")
                         append(draft.packageLabel)
                     }
+                    if (!draft.selectedRoom.isNullOrBlank()) {
+                        append(" in ")
+                        append(draft.selectedRoom)
+                    }
                     append(".")
                 }
 
@@ -836,9 +840,9 @@ internal class JdbcReservationRepository(
                     """
                     INSERT INTO venue_reservations (
                         id, reservation_code, requester_user_id, place_id, service_id, event_id, event_name,
-                        preferred_date_label, guest_count, package_label, add_ons, payment_method, note, status, created_at, updated_at
+                        preferred_date_label, selected_room_label, guest_count, package_label, add_ons, payment_method, note, status, created_at, updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """.trimIndent(),
                 ).use { statement ->
                     statement.setString(1, reservationId)
@@ -849,14 +853,15 @@ internal class JdbcReservationRepository(
                     statement.setString(6, eventId)
                     statement.setString(7, draft.eventName)
                     statement.setString(8, draft.preferredDateLabel)
-                    statement.setInt(9, draft.guestCount)
-                    statement.setString(10, draft.packageLabel)
-                    statement.setArray(11, connection.createArrayOf("text", draft.addOns.toTypedArray()))
-                    statement.setString(12, draft.paymentMethod)
-                    statement.setNullableString(13, draft.note?.takeIf { it.isNotBlank() })
-                    statement.setString(14, "PENDING_CONFIRMATION")
-                    statement.setTimestamp(15, java.sql.Timestamp.from(createdAt))
+                    statement.setNullableString(9, draft.selectedRoom?.takeIf { it.isNotBlank() })
+                    statement.setInt(10, draft.guestCount)
+                    statement.setString(11, draft.packageLabel)
+                    statement.setArray(12, connection.createArrayOf("text", draft.addOns.toTypedArray()))
+                    statement.setString(13, draft.paymentMethod)
+                    statement.setNullableString(14, draft.note?.takeIf { it.isNotBlank() })
+                    statement.setString(15, "PENDING_CONFIRMATION")
                     statement.setTimestamp(16, java.sql.Timestamp.from(createdAt))
+                    statement.setTimestamp(17, java.sql.Timestamp.from(createdAt))
                     statement.executeUpdate()
                 }
 
@@ -871,6 +876,7 @@ internal class JdbcReservationRepository(
                     status = "PENDING_CONFIRMATION",
                     eventName = draft.eventName,
                     preferredDateLabel = draft.preferredDateLabel,
+                    selectedRoom = draft.selectedRoom,
                     guestCount = draft.guestCount,
                     packageLabel = draft.packageLabel,
                     addOns = draft.addOns,

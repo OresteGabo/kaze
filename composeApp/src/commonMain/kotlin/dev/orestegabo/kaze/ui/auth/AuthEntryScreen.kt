@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.kaze.presentation.app.KazeAuthFailure
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.chrome.KazeAmbientBackground
@@ -58,9 +60,11 @@ import org.jetbrains.compose.resources.painterResource
 internal fun AuthEntryScreen(
     modifier: Modifier = Modifier,
     feedbackMessage: String,
+    authFailure: KazeAuthFailure? = null,
     onSignIn: (String, String) -> Unit,
     onCreateAccount: (String, String) -> Unit,
     onSocialSignIn: (String) -> Unit,
+    onDismissAuthFailure: () -> Unit = {},
     onContinueAsGuest: () -> Unit,
     onOpenLegalPage: (LegalPage) -> Unit,
 ) {
@@ -77,6 +81,18 @@ internal fun AuthEntryScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         KazeAmbientBackground(modifier = Modifier.fillMaxSize())
+        if (authFailure != null) {
+            AuthFailureScreen(
+                failure = authFailure,
+                onTryAgain = {
+                    onDismissAuthFailure()
+                    onSocialSignIn(authFailure.provider ?: "Google")
+                },
+                onUseEmail = onDismissAuthFailure,
+                onContinueAsGuest = onContinueAsGuest,
+            )
+            return@Box
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -205,6 +221,74 @@ internal fun AuthEntryScreen(
             AuthLegalLinks(
                 onOpenLegalPage = onOpenLegalPage,
             )
+        }
+    }
+}
+
+@Composable
+private fun AuthFailureScreen(
+    failure: KazeAuthFailure,
+    onTryAgain: () -> Unit,
+    onUseEmail: () -> Unit,
+    onContinueAsGuest: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+            tonalElevation = 2.dp,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        ) {
+            Column(
+                modifier = Modifier.padding(22.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.k_logo_raster),
+                    contentDescription = "Kaze",
+                    modifier = Modifier.size(56.dp),
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = failure.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = failure.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                    )
+                }
+                KazePrimaryButton(
+                    label = "Try Google Again",
+                    onClick = onTryAgain,
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    leadingIcon = Icons.Default.Refresh,
+                )
+                KazeSecondaryButton(
+                    label = "Use Email Instead",
+                    onClick = onUseEmail,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextButton(onClick = onContinueAsGuest) {
+                    Text("Continue as guest")
+                }
+            }
         }
     }
 }

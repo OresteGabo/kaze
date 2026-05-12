@@ -17,29 +17,26 @@ internal class ExploreViewModel(
 
     init {
         uiState = uiState.copy(
-            highlights = runImmediateSuspend {
-                experienceRepository.getAmenityHighlights(hotelId)
-            },
+            highlights = runCatching {
+                runImmediateSuspend {
+                    experienceRepository.getAmenityHighlights(hotelId)
+                }
+            }.getOrDefault(emptyList()),
         )
     }
 
     fun onHighlightAction(highlight: AmenityHighlight): ExploreActionResult =
         when (highlight.actionLabel) {
-            "Open amenity map", "Open amenity", "Open venue map", "Start route" -> ExploreActionResult.NavigateToMap(
-                route = "Arrival route to ${highlight.locationLabel}",
-                floorId = "l1",
-                floorLabel = highlight.locationLabel,
-            )
+            "Open amenity map", "Open venue map", "Start route" ->
+                ExploreActionResult.Feedback("Indoor maps are not part of the MVP yet. Use the venue details for now.")
+            "Open amenity" ->
+                ExploreActionResult.Feedback("${highlight.title} details are available from the venue.")
             else -> ExploreActionResult.Feedback("${highlight.title} saved for this event journey.")
         }
 
     fun reserveExperience(): ExploreActionResult.Feedback =
-        ExploreActionResult.Feedback("Event services are ready to explore.")
+        ExploreActionResult.Feedback("Choose a venue from Home to start a reservation request.")
 
-    fun openPoolDeckRoute(): ExploreActionResult.NavigateToMap =
-        ExploreActionResult.NavigateToMap(
-            route = "Arrival route to Main Venue",
-            floorId = "l1",
-            floorLabel = "Main Venue",
-        )
+    fun openPoolDeckRoute(): ExploreActionResult.Feedback =
+        ExploreActionResult.Feedback("Advanced indoor maps are deferred for MVP.")
 }

@@ -169,6 +169,7 @@ internal fun VenueReservation.toDto(): ReservationResponseDto = ReservationRespo
     status = status,
     eventName = eventName,
     preferredDateLabel = preferredDateLabel,
+    selectedRoom = selectedRoom,
     guestCount = guestCount,
     packageLabel = packageLabel,
     addOns = addOns,

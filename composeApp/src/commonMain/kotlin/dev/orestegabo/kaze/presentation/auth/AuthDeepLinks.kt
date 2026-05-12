@@ -8,12 +8,15 @@ internal object AuthDeepLinks {
     const val CALLBACK_URI = "kaze://auth/callback"
 
     private val _callbacks = MutableSharedFlow<AuthCallback>(extraBufferCapacity = 1)
+    private val _failures = MutableSharedFlow<AuthCallbackFailure>(extraBufferCapacity = 1)
     val callbacks: SharedFlow<AuthCallback> = _callbacks.asSharedFlow()
+    val failures: SharedFlow<AuthCallbackFailure> = _failures.asSharedFlow()
 
     fun handle(url: String): Boolean {
-        val callback = parseAuthCallback(url) ?: return false
-        _callbacks.tryEmit(callback)
-        return true
+        val parsed = parseAuthCallback(url) ?: return false
+        parsed.callback?.let(_callbacks::tryEmit)
+        parsed.failure?.let(_failures::tryEmit)
+        return parsed.callback != null || parsed.failure != null
     }
 }
 
@@ -22,9 +25,19 @@ internal data class AuthCallback(
     val state: String?,
 )
 
+internal data class AuthCallbackFailure(
+    val code: String,
+    val state: String?,
+)
+
+private data class ParsedAuthCallback(
+    val callback: AuthCallback? = null,
+    val failure: AuthCallbackFailure? = null,
+)
+
 fun handleKazeAuthDeepLink(url: String): Boolean = AuthDeepLinks.handle(url)
 
-private fun parseAuthCallback(url: String): AuthCallback? {
+private fun parseAuthCallback(url: String): ParsedAuthCallback? {
     if (!url.startsWith(AuthDeepLinks.CALLBACK_URI)) return null
     val query = url.substringAfter("?", missingDelimiterValue = "")
     if (query.isBlank()) return null
@@ -35,8 +48,18 @@ private fun parseAuthCallback(url: String): AuthCallback? {
             if (key.isBlank()) null else key to value
         }
         .toMap()
+    params["error"]?.takeIf { it.isNotBlank() }?.let { errorCode ->
+        return ParsedAuthCallback(
+            failure = AuthCallbackFailure(
+                code = errorCode,
+                state = params["state"]?.takeIf { it.isNotBlank() },
+            ),
+        )
+    }
     val loginToken = params["login_token"]?.takeIf { it.isNotBlank() } ?: return null
-    return AuthCallback(loginToken = loginToken, state = params["state"])
+    return ParsedAuthCallback(
+        callback = AuthCallback(loginToken = loginToken, state = params["state"]),
+    )
 }
 
 private fun String.urlDecode(): String =

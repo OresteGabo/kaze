@@ -6,6 +6,7 @@ import dev.orestegabo.kaze.data.repository.MapRepository
 import dev.orestegabo.kaze.data.repository.StayRepository
 import dev.orestegabo.kaze.domain.ExperienceMode
 import dev.orestegabo.kaze.domain.Hotel
+import dev.orestegabo.kaze.domain.HotelBranding
 import dev.orestegabo.kaze.domain.HotelCampus
 import dev.orestegabo.kaze.domain.HotelConfig
 import dev.orestegabo.kaze.domain.HotelMarket
@@ -17,6 +18,7 @@ import dev.orestegabo.kaze.domain.ItinerarySection
 import dev.orestegabo.kaze.domain.ItineraryTab
 import dev.orestegabo.kaze.domain.ReservationStatus
 import dev.orestegabo.kaze.domain.TimeWindow
+import dev.orestegabo.kaze.domain.TypographySpec
 import dev.orestegabo.kaze.domain.VenueRef
 import dev.orestegabo.kaze.domain.experience.AmenityHighlight
 import dev.orestegabo.kaze.domain.experience.EventDay
@@ -40,7 +42,6 @@ import dev.orestegabo.kaze.domain.map.MapSize
 import dev.orestegabo.kaze.domain.map.importing.HotelMapSourceManifest
 import dev.orestegabo.kaze.domain.map.importing.TenantScopedImportRequest
 import dev.orestegabo.kaze.presentation.auth.createAuthHttpClient
-import dev.orestegabo.kaze.presentation.demo.sampleHotel
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -340,24 +341,33 @@ private data class ServiceRequestReceiptDto(
 )
 
 private fun HotelDto.toDomain(): Hotel {
-    val fallback = sampleHotel.takeIf { it.id == id }
     return Hotel(
         id = id,
         slug = slug,
         name = name,
-        market = runCatching { HotelMarket.valueOf(market) }.getOrElse {
-            fallback?.market ?: HotelMarket.LUXURY_HOTEL
-        },
+        market = runCatching { HotelMarket.valueOf(market) }.getOrDefault(HotelMarket.CONFERENCE_VENUE),
         timezoneId = timezoneId,
-        config = (fallback?.config ?: sampleHotel.config).copy(
+        config = HotelConfig(
             hotelId = id,
             displayName = displayName,
+            branding = HotelBranding(
+                primaryHex = "#2F6970",
+                secondaryHex = "#B4874F",
+                accentHex = "#D8C6A3",
+                surfaceHex = "#FCF8F1",
+                backgroundHex = "#F3EEE5",
+                logoAsset = "branding/kaze/logo.svg",
+                wordmarkAsset = "branding/kaze/wordmark.svg",
+                typography = TypographySpec(
+                    headingScale = 1.05f,
+                    bodyScale = 1f,
+                    labelScale = 0.96f,
+                ),
+            ),
             supportedLocales = supportedLocales,
+            defaultCurrencyCode = "RWF",
         ),
-        campus = fallback?.campus?.copy(
-            city = city,
-            countryCode = countryCode,
-        ) ?: HotelCampus(
+        campus = HotelCampus(
             city = city,
             countryCode = countryCode,
             buildings = emptyList(),

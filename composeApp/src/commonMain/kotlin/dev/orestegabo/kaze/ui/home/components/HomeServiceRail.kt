@@ -15,16 +15,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.BusinessCenter
-import androidx.compose.material.icons.filled.Celebration
-import androidx.compose.material.icons.filled.Chair
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Hotel
-import androidx.compose.material.icons.filled.LocalFlorist
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -66,57 +59,15 @@ internal fun HomeServiceRail(
             query = "conference rooms",
         ),
         HomeServiceAction(
-            title = "Apartments",
-            icon = Icons.Default.Apartment,
-            accent = colors.secondary,
-            query = "apartments",
-        ),
-        HomeServiceAction(
             title = "Hotels",
             icon = Icons.Default.Hotel,
             accent = colors.primary,
             query = "hotels",
         ),
-        HomeServiceAction(
-            title = "Event layouts",
-            icon = Icons.Default.Chair,
-            accent = colors.secondary,
-            query = "event layouts",
-        ),
-        HomeServiceAction(
-            title = "Styling & decor",
-            icon = Icons.Default.LocalFlorist,
-            accent = colors.tertiary,
-            query = "event styling",
-        ),
-        HomeServiceAction(
-            title = "Catering",
-            icon = Icons.Default.Restaurant,
-            accent = colors.primary,
-            query = "catering",
-        ),
-        HomeServiceAction(
-            title = "Photo & video",
-            icon = Icons.Default.Videocam,
-            accent = colors.secondary,
-            query = "photo video live streaming",
-        ),
-        HomeServiceAction(
-            title = "Transport",
-            icon = Icons.Default.DirectionsCar,
-            accent = colors.tertiary,
-            query = "event transport",
-        ),
-        HomeServiceAction(
-            title = "Guest access",
-            icon = Icons.Default.Celebration,
-            accent = colors.primary,
-            query = "guest access",
-        ),
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionLabel("Popular services")
+        SectionLabel("Venues")
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

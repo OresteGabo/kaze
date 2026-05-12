@@ -74,6 +74,7 @@ Kaze should avoid becoming a generic hotel utility app with unrelated room-servi
 - [Map Access Control](docs/map-access-control.md)
 - [UI Architecture](docs/ui-architecture.md)
 - [API Contracts](docs/kaze-api-contracts.md)
+- [Security Checklist](docs/security-checklist.md)
 - [Roadmap](ROADMAP.md)
 
 ## Legal And Project Policies

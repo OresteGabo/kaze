@@ -17,7 +17,9 @@ internal class EventsViewModel(
         private set
 
     init {
-        val days = runImmediateSuspend { experienceRepository.getEventDays(hotelId) }
+        val days = runCatching {
+            runImmediateSuspend { experienceRepository.getEventDays(hotelId) }
+        }.getOrDefault(emptyList())
         val selectedDay = days.firstOrNull()
         uiState = EventsUiState(
             days = days,
@@ -41,5 +43,7 @@ internal class EventsViewModel(
         )
 
     private fun loadSchedule(day: EventDay): List<ScheduledExperience> =
-        runImmediateSuspend { experienceRepository.getEventSchedule(hotelId, day.id) }
+        runCatching {
+            runImmediateSuspend { experienceRepository.getEventSchedule(hotelId, day.id) }
+        }.getOrDefault(emptyList())
 }

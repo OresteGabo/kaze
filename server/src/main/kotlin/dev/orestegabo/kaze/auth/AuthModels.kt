@@ -63,6 +63,9 @@ internal data class StoredRefreshToken(
     val userId: String,
     val tokenHash: String,
     val familyId: String,
+    val expiresAt: java.time.Instant,
+    val revokedAt: java.time.Instant? = null,
+    val replacedByTokenId: String? = null,
 )
 
 @Serializable
@@ -120,7 +123,7 @@ internal data class AuthResponseDto(
 @Serializable
 internal data class AuthLogoutResponseDto(
     val status: String = "signed_out",
-    val message: String = "Token cleared on this device. Discard the stored JWT to complete logout.",
+    val message: String = "Token revoked on this device. Clear any locally stored auth tokens.",
 )
 
 @Serializable

@@ -16,6 +16,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.CachingOptions
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.jwt.JWTPrincipal
@@ -43,6 +45,8 @@ import io.ktor.server.plugins.requestvalidation.RequestValidationException
 import io.ktor.server.plugins.requestvalidation.ValidationResult
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.path
+import io.ktor.server.request.httpMethod
+import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -66,6 +70,15 @@ internal fun Application.configureHttp(authService: AuthService) {
         header("X-Frame-Options", "DENY")
         header("Referrer-Policy", "no-referrer")
     }
+    install(
+        createApplicationPlugin("KazeSensitiveRouteNoStore") {
+            onCall { call ->
+                if (call.request.path().startsWith("/api/v1/auth")) {
+                    call.noStoreSensitiveResponse()
+                }
+            }
+        },
+    )
     install(CORS) {
         securityConfig.corsAllowedHosts.forEach { host ->
             allowHost(host, schemes = listOf("http", "https"))
@@ -84,6 +97,11 @@ internal fun Application.configureHttp(authService: AuthService) {
     install(CallLogging) {
         level = Level.INFO
         filter { call -> call.request.path() != "/health" }
+        // Log only method/path. Query strings can contain OAuth codes or login tokens,
+        // and Authorization headers must never be emitted by request logging.
+        format { call ->
+            "${call.request.httpMethod.value} ${call.request.path()}"
+        }
     }
     install(CachingHeaders) {
         options { _, content ->
@@ -126,9 +144,17 @@ internal fun Application.configureHttp(authService: AuthService) {
             realm = jwtConfig.realm
             verifier(authService.verifier())
             validate { credential ->
-                credential.payload.subject
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { JWTPrincipal(credential.payload) }
+                val payload = credential.payload
+                val hasRequiredClaims = !payload.subject.isNullOrBlank() &&
+                    !payload.id.isNullOrBlank() &&
+                    payload.issuer == jwtConfig.issuer &&
+                    payload.audience.contains(jwtConfig.audience) &&
+                    payload.expiresAt != null
+                when {
+                    !hasRequiredClaims -> null
+                    authService.isAccessTokenRevoked(payload.id) -> null
+                    else -> JWTPrincipal(payload)
+                }
             }
         }
     }
@@ -218,6 +244,8 @@ internal fun Application.configureHttp(authService: AuthService) {
                 request.preferredDateLabel.isBlank() -> ValidationResult.Invalid("preferredDateLabel is required")
                 request.preferredDateLabel.length > RESERVATION_DATE_LABEL_MAX_LENGTH ->
                     ValidationResult.Invalid("preferredDateLabel must be $RESERVATION_DATE_LABEL_MAX_LENGTH characters or fewer")
+                request.selectedRoom != null && request.selectedRoom.length > RESERVATION_SELECTED_ROOM_MAX_LENGTH ->
+                    ValidationResult.Invalid("selectedRoom must be $RESERVATION_SELECTED_ROOM_MAX_LENGTH characters or fewer")
                 request.guestCount !in 1..RESERVATION_GUEST_MAX_COUNT ->
                     ValidationResult.Invalid("guestCount must be between 1 and $RESERVATION_GUEST_MAX_COUNT")
                 request.packageLabel.isBlank() -> ValidationResult.Invalid("packageLabel is required")
@@ -330,6 +358,16 @@ private fun normalizeAuthPhoneNumber(phoneNumber: String): String =
         }
     }
 
+private fun ApplicationCall.noStoreSensitiveResponse() {
+    // Applied before auth handlers run, so failed signin/expired-token responses are also
+    // protected from browser, proxy, and CDN caching.
+    if (response.headers[HttpHeaders.CacheControl] != null) return
+    response.header(HttpHeaders.CacheControl, "no-store, no-cache, must-revalidate, max-age=0")
+    response.header(HttpHeaders.Pragma, "no-cache")
+    response.header(HttpHeaders.Expires, "0")
+    response.header("Surrogate-Control", "no-store")
+}
+
 private const val API_RATE_LIMIT_REQUESTS = 120
 private const val AUTH_RATE_LIMIT_REQUESTS = 20
 private const val API_COMPRESSION_MIN_BYTES = 64L
@@ -342,6 +380,7 @@ private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
 private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500
 private const val RESERVATION_EVENT_NAME_MAX_LENGTH = 240
 private const val RESERVATION_DATE_LABEL_MAX_LENGTH = 120
+private const val RESERVATION_SELECTED_ROOM_MAX_LENGTH = 160
 private const val RESERVATION_GUEST_MAX_COUNT = 50_000
 private const val RESERVATION_PACKAGE_LABEL_MAX_LENGTH = 160
 private const val RESERVATION_ADD_ON_MAX_COUNT = 20

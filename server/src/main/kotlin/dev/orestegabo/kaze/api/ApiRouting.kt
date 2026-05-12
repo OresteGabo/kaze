@@ -49,10 +49,10 @@ internal fun Application.registerApiRoutes(
 
                 if (isApiAuthenticationEnabled() || isJwtAuthenticationRequired()) {
                     authenticate(ApiJwtAuth, ApiAuth, strategy = AuthenticationStrategy.FirstSuccessful) {
-                        registerPrivateApiV1Routes(dependencies)
+                        registerPrivateApiV1Routes(dependencies, authService)
                     }
                 } else {
-                    registerPrivateApiV1Routes(dependencies)
+                    registerPrivateApiV1Routes(dependencies, authService)
                 }
             }
         }
@@ -108,6 +108,7 @@ private fun Route.registerPublicApiV1Routes(
 
 private fun Route.registerPrivateApiV1Routes(
     dependencies: ServerDependencies,
+    authService: AuthService,
 ) {
     post("/reservations") {
         call.noStore()
@@ -121,6 +122,7 @@ private fun Route.registerPrivateApiV1Routes(
                     serviceId = request.serviceId?.takeIf { it.isNotBlank() },
                     eventName = request.eventName.trim(),
                     preferredDateLabel = request.preferredDateLabel.trim(),
+                    selectedRoom = request.selectedRoom?.trim()?.takeIf { it.isNotBlank() },
                     guestCount = request.guestCount,
                     packageLabel = request.packageLabel.trim(),
                     addOns = request.addOns.map { it.trim() }.filter { it.isNotBlank() },
@@ -144,6 +146,7 @@ private fun Route.registerPrivateApiV1Routes(
                 call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
+                call.requireGuestAccess(authService, hotelId, guestId)
                 call.respond(dependencies.guestStayService.getGuest(hotelId, guestId).toDto())
             }
 
@@ -151,6 +154,7 @@ private fun Route.registerPrivateApiV1Routes(
                 call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
+                call.requireGuestAccess(authService, hotelId, guestId)
                 call.respond(dependencies.guestStayService.getItinerary(hotelId, guestId).toDto())
             }
 
@@ -158,12 +162,15 @@ private fun Route.registerPrivateApiV1Routes(
                 call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
+                call.requireGuestAccess(authService, hotelId, guestId)
                 call.respond(dependencies.guestStayService.getLateCheckoutHistory(hotelId, guestId).map { it.toDto() })
             }
 
             post("/late-checkout") {
+                call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
+                call.requireGuestAccess(authService, hotelId, guestId)
                 val request = call.receive<LateCheckoutSubmissionRequest>()
                 call.respond(
                     dependencies.guestStayService.submitLateCheckout(
@@ -185,12 +192,15 @@ private fun Route.registerPrivateApiV1Routes(
                 call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
+                call.requireGuestAccess(authService, hotelId, guestId)
                 call.respond(dependencies.guestStayService.getServiceRequestHistory(hotelId, guestId).map { it.toDto() })
             }
 
             post("/service-requests") {
+                call.noStore()
                 val hotelId = call.requiredParam("hotelId")
                 val guestId = call.requiredParam("guestId")
+                call.requireGuestAccess(authService, hotelId, guestId)
                 val request = call.receive<ServiceRequestSubmissionRequest>()
                 call.respond(
                     dependencies.guestStayService.submitServiceRequest(
@@ -235,6 +245,18 @@ private fun ApplicationCall.authenticatedUserId(): String =
         ?: principal<UserIdPrincipal>()?.name?.takeIf { it.isNotBlank() && it != "api-client" }
         ?: throw IllegalArgumentException("A signed-in user is required.")
 
+private fun ApplicationCall.requireGuestAccess(authService: AuthService, hotelId: String, guestId: String) {
+    val jwtUserId = principal<JWTPrincipal>()?.payload?.subject?.takeIf { it.isNotBlank() }
+    if (jwtUserId != null) {
+        // IDOR guard: a signed-in user may only access guest/stay records linked to their sub.
+        // Staff/server API bearer access remains server-to-server and has no end-user sub claim.
+        authService.requireGuestAccess(userId = jwtUserId, hotelId = hotelId, guestId = guestId)
+        return
+    }
+    if (principal<UserIdPrincipal>()?.name == "api-client") return
+    throw IllegalArgumentException("A signed-in user is required.")
+}
+
 private fun ApplicationCall.cachePublicJson(maxAgeSeconds: Int = PUBLIC_JSON_CACHE_SECONDS) {
     response.header(
         HttpHeaders.CacheControl,
@@ -243,7 +265,10 @@ private fun ApplicationCall.cachePublicJson(maxAgeSeconds: Int = PUBLIC_JSON_CAC
 }
 
 private fun ApplicationCall.noStore() {
-    response.header(HttpHeaders.CacheControl, "no-store")
+    response.header(HttpHeaders.CacheControl, "no-store, no-cache, must-revalidate, max-age=0")
+    response.header(HttpHeaders.Pragma, "no-cache")
+    response.header(HttpHeaders.Expires, "0")
+    response.header("Surrogate-Control", "no-store")
 }
 
 private const val PUBLIC_JSON_CACHE_SECONDS = 120

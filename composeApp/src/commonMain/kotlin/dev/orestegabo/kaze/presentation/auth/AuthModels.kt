@@ -170,6 +170,8 @@ internal data class EventCreateRequest(
     val startsAtIso: String? = null,
     val endsAtIso: String? = null,
     val placeId: String? = null,
+    val recurrenceFrequency: String? = null,
+    val recurrenceUntilIso: String? = null,
 )
 
 @Serializable

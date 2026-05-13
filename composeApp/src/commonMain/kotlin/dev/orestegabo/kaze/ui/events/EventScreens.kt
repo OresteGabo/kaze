@@ -96,6 +96,7 @@ internal fun EventScheduleScreen(
     onEmptyAction: () -> Unit,
     canCreateEvent: Boolean = false,
     onCreateEvent: (EventCreateRequest) -> Unit = {},
+    onSuggestedEventAction: (String, String) -> Unit = { _, _ -> },
     eventInvitation: InvitationPreview? = null,
     onVenueAction: () -> Unit = {},
     edgeAiEnabled: Boolean,
@@ -140,6 +141,7 @@ internal fun EventScheduleScreen(
                         EventSuggestionSection(
                             sessions = suggestedSessions,
                             onSessionAction = onSessionAction,
+                            onEventAction = onSuggestedEventAction,
                         )
                     }
                 }
@@ -181,6 +183,7 @@ internal fun EventScheduleScreen(
                     EventSuggestionSection(
                         sessions = suggestedSessions,
                         onSessionAction = onSessionAction,
+                        onEventAction = onSuggestedEventAction,
                     )
                 }
             }
@@ -731,6 +734,7 @@ private fun EventPlanningWarnings(
 private fun EventSuggestionSection(
     sessions: List<ScheduledExperience>,
     onSessionAction: (ScheduledExperience) -> Unit,
+    onEventAction: (String, String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Suggested public events", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -740,7 +744,20 @@ private fun EventSuggestionSection(
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
         )
         sessions.take(6).forEach { session ->
-            SessionCard(session = session, onOpenMap = { onSessionAction(session) })
+            SessionCard(
+                session = session,
+                onOpenMap = { onSessionAction(session) },
+                trailingContent = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { onEventAction(session.id, "DISMISSED") }) {
+                            Text("Dismiss")
+                        }
+                        TextButton(onClick = { onEventAction(session.id, "SAVED") }) {
+                            Text("Save")
+                        }
+                    }
+                },
+            )
         }
     }
 }
@@ -1494,6 +1511,7 @@ private enum class EventAccessPreset(
 private fun SessionCard(
     session: ScheduledExperience,
     onOpenMap: () -> Unit,
+    trailingContent: @Composable (() -> Unit)? = null,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -1507,6 +1525,20 @@ private fun SessionCard(
                 color = MaterialTheme.colorScheme.secondary,
             )
             Text(session.title, style = MaterialTheme.typography.titleLarge)
+            if (session.unreadNoticeCount > 0 || !session.latestNoticeLabel.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                ) {
+                    Text(
+                        text = session.latestNoticeLabel ?: "${session.unreadNoticeCount} update(s)",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
             Text(session.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetaPill(session.venueLabel, leadingIcon = Icons.Default.Place)
@@ -1514,6 +1546,7 @@ private fun SessionCard(
                 MetaPill("Venue details", leadingIcon = Icons.Default.Place)
             }
             KazeSecondaryButton(label = "Venue details", onClick = onOpenMap, leadingIcon = Icons.Default.Place)
+            trailingContent?.invoke()
         }
     }
 }

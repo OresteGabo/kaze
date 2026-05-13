@@ -12,6 +12,8 @@ import dev.orestegabo.kaze.presentation.auth.AuthSession
 import dev.orestegabo.kaze.presentation.auth.AuthSessionBootstrap
 import dev.orestegabo.kaze.presentation.auth.AuthStartResponse
 import dev.orestegabo.kaze.presentation.auth.AuthUser
+import dev.orestegabo.kaze.presentation.auth.EventCreateRequest
+import dev.orestegabo.kaze.presentation.auth.EventVenueOption
 import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
 import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.presentation.auth.SocialAuthCredentialType
@@ -316,6 +318,24 @@ class FeatureViewModelTest {
         override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = emptyList()
 
         override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = emptyList()
+
+        override suspend fun getPublicEvents(): List<AuthEventSummary> = emptyList()
+        override suspend fun getEventVenues(): List<EventVenueOption> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary =
+            AuthEventSummary(
+                id = "event_created",
+                dayId = "event-day-2026-04-04",
+                dayLabel = "Sat 04 Apr",
+                dateIso = "2026-04-04",
+                title = request.title,
+                description = request.summary.orEmpty(),
+                startIso = "2026-04-04T08:00:00Z",
+                endIso = "2026-04-04T11:00:00Z",
+                venueLabel = "Kaze",
+            )
 
         override suspend fun getActiveStay(accessToken: String): AuthActiveStay? = null
 

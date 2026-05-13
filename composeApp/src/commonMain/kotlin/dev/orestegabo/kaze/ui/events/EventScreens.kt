@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -156,7 +157,7 @@ internal fun EventScheduleScreen(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            item { Text("Today's schedule", style = MaterialTheme.typography.headlineSmall) }
+            item { Text("Events on this day", style = MaterialTheme.typography.headlineSmall) }
             if (sessions.isEmpty()) {
                 item {
                     KazeEmptyStateScreen(
@@ -227,7 +228,7 @@ private fun EventCreatePage(
                     )
                 }
                 TextButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text("Back")
                 }
             }
@@ -254,6 +255,7 @@ private fun EventCreatePanel(
     var selectedHour by rememberSaveable { mutableStateOf(18) }
     var selectedMinute by rememberSaveable { mutableStateOf(0) }
     var selectedDurationMinutes by rememberSaveable { mutableStateOf(180) }
+    var selectedRecurrence by rememberSaveable { mutableStateOf(EventRecurrenceOption.NONE) }
     var selectedVenueId by rememberSaveable { mutableStateOf<String?>(null) }
     var eventType by rememberSaveable { mutableStateOf("WEDDING") }
     var selectedPreset by rememberSaveable { mutableStateOf(EventAccessPreset.default) }
@@ -339,6 +341,14 @@ private fun EventCreatePanel(
                     formError = null
                 },
             )
+            EventRecurrenceSelector(
+                selected = selectedRecurrence,
+                onSelected = {
+                    focusManager.clearFocus()
+                    selectedRecurrence = it
+                    formError = null
+                },
+            )
             EventVenueSelector(
                 venueOptions = venueOptions,
                 selectedVenueId = selectedVenueId,
@@ -347,6 +357,13 @@ private fun EventCreatePanel(
                     selectedVenueId = it
                     formError = null
                 },
+            )
+            EventPlanningWarnings(
+                dateIso = selectedDateIso,
+                hour = selectedHour,
+                minute = selectedMinute,
+                durationMinutes = selectedDurationMinutes,
+                city = venueOptions.firstOrNull { it.id == selectedVenueId }?.city,
             )
             formError?.let { message ->
                 Text(
@@ -410,6 +427,8 @@ private fun EventCreatePanel(
                             startsAtIso = schedule.startsAtIso,
                             endsAtIso = schedule.endsAtIso,
                             placeId = selectedVenueId,
+                            recurrenceFrequency = selectedRecurrence.frequency,
+                            recurrenceUntilIso = selectedRecurrence.recurrenceUntilIso(selectedDateIso),
                         ),
                     )
                     title = ""
@@ -419,6 +438,7 @@ private fun EventCreatePanel(
                     selectedHour = 18
                     selectedMinute = 0
                     selectedDurationMinutes = 180
+                    selectedRecurrence = EventRecurrenceOption.NONE
                     selectedVenueId = null
                     selectedPreset = EventAccessPreset.default
                     isAccessPersonalized = false
@@ -578,6 +598,39 @@ private fun EventScheduleSelector(
 }
 
 @Composable
+private fun EventRecurrenceSelector(
+    selected: EventRecurrenceOption,
+    onSelected: (EventRecurrenceOption) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Repeat", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+        ) {
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    selected.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    EventRecurrenceOption.entries.forEach { option ->
+                        EventPickerChip(
+                            label = option.label,
+                            selected = option == selected,
+                            onClick = { onSelected(option) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun EventVenueSelector(
     venueOptions: List<EventVenueOption>,
     selectedVenueId: String?,
@@ -635,6 +688,40 @@ private fun EventVenueSelector(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventPlanningWarnings(
+    dateIso: String,
+    hour: Int,
+    minute: Int,
+    durationMinutes: Int,
+    city: String?,
+) {
+    val warnings = buildEventPlanningWarnings(dateIso, hour, minute, durationMinutes, city)
+    if (warnings.isEmpty()) return
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.36f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.22f)),
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "Planning warnings",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.error,
+                fontWeight = FontWeight.SemiBold,
+            )
+            warnings.forEach { warning ->
+                Text(
+                    warning,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+                )
             }
         }
     }
@@ -1093,6 +1180,67 @@ private data class SelectedEventSchedule(
     val endDisplayLabel: String,
 )
 
+private fun buildEventPlanningWarnings(
+    dateIso: String,
+    hour: Int,
+    minute: Int,
+    durationMinutes: Int,
+    city: String?,
+): List<String> {
+    val date = EventCalendarDate.parse(dateIso) ?: return emptyList()
+    val startMinute = if (durationMinutes == ALL_DAY_EVENT_DURATION) 0 else hour * 60 + minute
+    val endMinute = if (durationMinutes == ALL_DAY_EVENT_DURATION) MINUTES_PER_DAY else (startMinute + durationMinutes).coerceAtMost(MINUTES_PER_DAY)
+    return buildList {
+        if (date.isLastSaturdayOfMonth() && timeWindowsOverlap(startMinute, endMinute, 8 * 60, 12 * 60)) {
+            add("Umuganda is usually observed nationwide on the last Saturday morning. Travel and services may be limited before noon.")
+        }
+        if (city.equals("Kigali", ignoreCase = true) && date.isFirstOrThirdSundayOfMonth() && timeWindowsOverlap(startMinute, endMinute, 7 * 60, 10 * 60)) {
+            add("Kigali Car Free Day may close selected roads on the first and third Sunday morning. Confirm routes before scheduling arrivals.")
+        }
+    }
+}
+
+private fun timeWindowsOverlap(startA: Int, endA: Int, startB: Int, endB: Int): Boolean =
+    startA < endB && startB < endA
+
+private enum class EventRecurrenceOption(
+    val label: String,
+    val description: String,
+    val frequency: String?,
+    private val monthsAhead: Int?,
+) {
+    NONE(
+        label = "Once",
+        description = "This event happens one time.",
+        frequency = null,
+        monthsAhead = null,
+    ),
+    WEEKLY_3_MONTHS(
+        label = "Weekly · 3 months",
+        description = "Repeats every week on the selected weekday for the next 3 months.",
+        frequency = "WEEKLY",
+        monthsAhead = 3,
+    ),
+    WEEKLY_6_MONTHS(
+        label = "Weekly · 6 months",
+        description = "Good for regular community, church, class, or club events.",
+        frequency = "WEEKLY",
+        monthsAhead = 6,
+    ),
+    WEEKLY_12_MONTHS(
+        label = "Weekly · 1 year",
+        description = "Use for stable schedules, like weekly Sunday service.",
+        frequency = "WEEKLY",
+        monthsAhead = 12,
+    );
+
+    fun recurrenceUntilIso(startDateIso: String): String? {
+        val months = monthsAhead ?: return null
+        val startDate = EventCalendarDate.parse(startDateIso) ?: return null
+        return "${startDate.plusMonths(months).iso}T23:59:00Z"
+    }
+}
+
 @OptIn(ExperimentalTime::class)
 private fun buildEventDateOptions(): List<EventDateOption> {
     val today = EventCalendarDate.parse(Clock.System.now().toString().substringBefore("T"))
@@ -1168,7 +1316,8 @@ private data class EventCalendarDate(
     val iso: String = "${year.toString().padStart(4, '0')}-${month.twoDigits()}-${day.twoDigits()}"
     val monthKey: String = "${year.toString().padStart(4, '0')}-${month.twoDigits()}"
     val monthDayLabel: String = "${day.twoDigits()} ${month.monthShortLabel()}"
-    val weekdayLabel: String = weekdayName(dayOfWeekIndex())
+    val weekdayIndex: Int = dayOfWeekIndex()
+    val weekdayLabel: String = weekdayName(weekdayIndex)
 
     fun plusDays(days: Int): EventCalendarDate {
         var y = year
@@ -1184,6 +1333,20 @@ private data class EventCalendarDate(
         }
         return EventCalendarDate(y, m, d)
     }
+
+    fun plusMonths(months: Int): EventCalendarDate {
+        val monthIndex = (year * 12 + (month - 1)) + months
+        val newYear = monthIndex / 12
+        val newMonth = monthIndex % 12 + 1
+        val newDay = day.coerceAtMost(daysInMonth(newYear, newMonth))
+        return EventCalendarDate(newYear, newMonth, newDay)
+    }
+
+    fun isLastSaturdayOfMonth(): Boolean =
+        weekdayIndex == SATURDAY_INDEX && day + 7 > daysInMonth(year, month)
+
+    fun isFirstOrThirdSundayOfMonth(): Boolean =
+        weekdayIndex == SUNDAY_INDEX && (day in 1..7 || day in 15..21)
 
     private fun dayOfWeekIndex(): Int {
         var adjustedMonth = month
@@ -1270,6 +1433,8 @@ private fun Int.isLeapYear(): Boolean =
 private const val MINUTES_PER_DAY = 24 * 60
 private const val ALL_DAY_EVENT_DURATION = -1
 private const val MAX_FIXED_EVENT_DAYS = 5
+private const val SATURDAY_INDEX = 5
+private const val SUNDAY_INDEX = 6
 
 private enum class EventAccessPreset(
     val label: String,

@@ -301,6 +301,26 @@ internal class AuthService(
         repository.createEventNotice(userId, eventId, request)
     }
 
+    fun reviewVenueReservation(
+        reviewerUserId: String,
+        reservationId: String,
+        request: VenueReservationReviewRequest,
+    ): VenueReservationReviewDto {
+        val normalizedStatus = request.status.trim().uppercase()
+        if (normalizedStatus !in setOf("PENDING_CONFIRMATION", "CONFIRMED", "DECLINED", "CANCELLED")) {
+            throw AuthProblemException(HttpStatusCode.BadRequest, "invalid_reservation_status", "Reservation status is not supported.")
+        }
+        return repository.reviewVenueReservation(
+            reviewerUserId = reviewerUserId,
+            reservationId = reservationId,
+            request = request.copy(
+                status = normalizedStatus,
+                selectedRoomLabel = request.selectedRoomLabel?.trim()?.takeIf { it.isNotEmpty() },
+                venueNote = request.venueNote?.trim()?.takeIf { it.isNotEmpty() },
+            ),
+        ) ?: throw AuthProblemException(HttpStatusCode.NotFound, "reservation_not_found", "That venue reservation could not be found.")
+    }
+
     fun createEvent(userId: String, request: EventCreateRequest): AuthEventSummaryDto {
         val title = request.title.trim()
         if (title.isBlank()) {

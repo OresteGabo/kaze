@@ -6,6 +6,7 @@ import dev.orestegabo.kaze.auth.AuthSessionClaimRequest
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.auth.AuthSigninRequest
 import dev.orestegabo.kaze.auth.AuthSignupRequest
+import dev.orestegabo.kaze.auth.EventCreateRequest
 import dev.orestegabo.kaze.auth.SocialSigninRequest
 import dev.orestegabo.kaze.auth.loadJwtConfig
 import io.ktor.http.CacheControl
@@ -217,6 +218,15 @@ internal fun Application.configureHttp(authService: AuthService) {
                 else -> ValidationResult.Valid
             }
         }
+        validate<EventCreateRequest> { request ->
+            when {
+                request.title.isBlank() -> ValidationResult.Invalid("title is required")
+                request.title.length > EVENT_TITLE_MAX_LENGTH -> ValidationResult.Invalid("title must be $EVENT_TITLE_MAX_LENGTH characters or fewer")
+                request.eventType.length > EVENT_TYPE_MAX_LENGTH -> ValidationResult.Invalid("eventType must be $EVENT_TYPE_MAX_LENGTH characters or fewer")
+                request.summary != null && request.summary.length > EVENT_SUMMARY_MAX_LENGTH -> ValidationResult.Invalid("summary must be $EVENT_SUMMARY_MAX_LENGTH characters or fewer")
+                else -> ValidationResult.Valid
+            }
+        }
         validate<LateCheckoutSubmissionRequest> { request ->
             when {
                 request.checkoutTimeIso.isBlank() -> ValidationResult.Invalid("checkoutTimeIso is required")
@@ -376,6 +386,9 @@ private const val AUTH_PASSWORD_MIN_LENGTH = 8
 private const val AUTH_PASSWORD_MAX_LENGTH = 256
 private const val AUTH_DISPLAY_NAME_MAX_LENGTH = 240
 private const val AUTH_TOKEN_MAX_LENGTH = 8_192
+private const val EVENT_TITLE_MAX_LENGTH = 240
+private const val EVENT_TYPE_MAX_LENGTH = 64
+private const val EVENT_SUMMARY_MAX_LENGTH = 2_000
 private const val ASSISTANT_QUESTION_MAX_LENGTH = 1_000
 private const val SERVICE_REQUEST_NOTE_MAX_LENGTH = 500
 private const val RESERVATION_EVENT_NAME_MAX_LENGTH = 240

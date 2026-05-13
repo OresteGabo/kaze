@@ -67,6 +67,9 @@ internal interface AuthRepository {
     fun listInvitationsForUser(userId: String): List<AuthInvitationSummaryDto>
     fun listEventsForUser(userId: String): List<AuthEventSummaryDto>
     fun listPublicEvents(): List<AuthEventSummaryDto>
+    fun listSuggestedEventsForUser(userId: String): List<AuthEventSummaryDto>
+    fun updateEventFollow(userId: String, eventId: String, status: String)
+    fun createEventNotice(userId: String, eventId: String, request: EventNoticeCreateRequest)
     fun findActiveStayForUser(userId: String): AuthActiveStayDto?
     fun respondToInvitation(userId: String, invitationId: String, accepted: Boolean): AuthInvitationSummaryDto?
     fun createEvent(userId: String, request: EventCreateRequest): AuthEventSummaryDto
@@ -765,7 +768,31 @@ internal class JdbcAuthRepository(
                     e.attendance_policy,
                     e.capacity_mode,
                     e.requires_identity,
-                    e.join_code
+                    e.join_code,
+                    CASE
+                        WHEN e.organizer_user_id = ? THEN 'ORGANIZER'
+                        WHEN m.id IS NOT NULL THEN 'JOINED'
+                        WHEN i.id IS NOT NULL THEN 'INVITED'
+                        WHEN f.follow_status = 'SAVED' THEN 'SAVED'
+                        ELSE NULL
+                    END AS viewer_state,
+                    (
+                        SELECT COUNT(*)::INT
+                        FROM event_change_notices n
+                        LEFT JOIN event_notice_receipts r
+                            ON r.notice_id = n.id
+                            AND r.user_id = ?
+                        WHERE n.event_id = e.id
+                          AND r.seen_at IS NULL
+                          AND r.dismissed_at IS NULL
+                    ) AS unread_notice_count,
+                    (
+                        SELECT n.title
+                        FROM event_change_notices n
+                        WHERE n.event_id = e.id
+                        ORDER BY n.created_at DESC
+                        LIMIT 1
+                    ) AS latest_notice_label
                 FROM events e
                 LEFT JOIN event_invitations i
                     ON i.event_id = e.id
@@ -774,6 +801,9 @@ internal class JdbcAuthRepository(
                     ON m.event_id = e.id
                     AND m.user_id = ?
                     AND m.membership_status = 'ACTIVE'
+                LEFT JOIN event_follows f
+                    ON f.event_id = e.id
+                    AND f.user_id = ?
                 LEFT JOIN service_places sp ON sp.id = e.place_id
                 LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
                 CROSS JOIN LATERAL (
@@ -788,12 +818,15 @@ internal class JdbcAuthRepository(
                     ) AS gs(occurrence_start)
                     WHERE e.recurrence_frequency = 'WEEKLY'
                 ) occ
-                WHERE i.id IS NOT NULL OR m.id IS NOT NULL
+                WHERE i.id IS NOT NULL OR m.id IS NOT NULL OR f.follow_status = 'SAVED'
                 ORDER BY starts_at ASC, id ASC
                 """.trimIndent(),
             ).use { statement ->
                 statement.setString(1, userId)
                 statement.setString(2, userId)
+                statement.setString(3, userId)
+                statement.setString(4, userId)
+                statement.setString(5, userId)
                 statement.executeQuery().use { result ->
                     buildList {
                         while (result.next()) {
@@ -823,7 +856,10 @@ internal class JdbcAuthRepository(
                     e.attendance_policy,
                     e.capacity_mode,
                     e.requires_identity,
-                    e.join_code
+                    e.join_code,
+                    NULL::TEXT AS viewer_state,
+                    0::INT AS unread_notice_count,
+                    NULL::TEXT AS latest_notice_label
                 FROM events e
                 LEFT JOIN service_places sp ON sp.id = e.place_id
                 LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
@@ -855,6 +891,150 @@ internal class JdbcAuthRepository(
                 }
             }
         }
+
+    override fun listSuggestedEventsForUser(userId: String): List<AuthEventSummaryDto> =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT
+                    CONCAT(e.id, '@', to_char(occ.starts_at, 'YYYYMMDDHH24MI')) AS id,
+                    CONCAT('event-day-', to_char(occ.starts_at, 'YYYY-MM-DD')) AS day_id,
+                    trim(to_char(occ.starts_at, 'Dy DD Mon')) AS day_label,
+                    to_char(occ.starts_at, 'YYYY-MM-DD') AS date_iso,
+                    e.title,
+                    e.summary,
+                    occ.starts_at,
+                    occ.ends_at,
+                    COALESCE(sp.name, e.title) AS venue_label,
+                    organizer.display_name AS host_label,
+                    e.visibility,
+                    e.attendance_policy,
+                    e.capacity_mode,
+                    e.requires_identity,
+                    e.join_code,
+                    'SUGGESTED'::TEXT AS viewer_state,
+                    (
+                        SELECT COUNT(*)::INT
+                        FROM event_change_notices n
+                        LEFT JOIN event_notice_receipts r
+                            ON r.notice_id = n.id
+                            AND r.user_id = ?
+                        WHERE n.event_id = e.id
+                          AND r.seen_at IS NULL
+                          AND r.dismissed_at IS NULL
+                    ) AS unread_notice_count,
+                    (
+                        SELECT n.title
+                        FROM event_change_notices n
+                        WHERE n.event_id = e.id
+                        ORDER BY n.created_at DESC
+                        LIMIT 1
+                    ) AS latest_notice_label
+                FROM events e
+                LEFT JOIN service_places sp ON sp.id = e.place_id
+                LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                LEFT JOIN event_follows f
+                    ON f.event_id = e.id
+                    AND f.user_id = ?
+                LEFT JOIN event_invitations i
+                    ON i.event_id = e.id
+                    AND i.invited_user_id = ?
+                LEFT JOIN event_memberships m
+                    ON m.event_id = e.id
+                    AND m.user_id = ?
+                    AND m.membership_status = 'ACTIVE'
+                CROSS JOIN LATERAL (
+                    SELECT e.starts_at, e.ends_at
+                    WHERE e.recurrence_frequency IS NULL OR e.recurrence_frequency <> 'WEEKLY'
+                    UNION ALL
+                    SELECT occurrence_start AS starts_at, occurrence_start + (e.ends_at - e.starts_at) AS ends_at
+                    FROM generate_series(
+                        e.starts_at,
+                        LEAST(COALESCE(e.recurrence_until, now() + interval '1 year'), now() + interval '1 year'),
+                        interval '1 week'
+                    ) AS gs(occurrence_start)
+                    WHERE e.recurrence_frequency = 'WEEKLY'
+                ) occ
+                WHERE e.visibility = 'PUBLIC'
+                  AND e.lifecycle_status IN ('SCHEDULED', 'PUBLISHED')
+                  AND (occ.ends_at IS NULL OR occ.ends_at >= now())
+                  AND COALESCE(f.follow_status, '') <> 'DISMISSED'
+                  AND COALESCE(f.follow_status, '') <> 'SAVED'
+                  AND i.id IS NULL
+                  AND m.id IS NULL
+                  AND e.organizer_user_id IS DISTINCT FROM ?
+                ORDER BY occ.starts_at ASC, e.id ASC
+                LIMIT 100
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, userId)
+                statement.setString(2, userId)
+                statement.setString(3, userId)
+                statement.setString(4, userId)
+                statement.setString(5, userId)
+                statement.executeQuery().use { result ->
+                    buildList {
+                        while (result.next()) {
+                            add(result.toAuthEventSummaryDto())
+                        }
+                    }
+                }
+            }
+        }
+
+    override fun updateEventFollow(userId: String, eventId: String, status: String) {
+        dataSource.connection.use { connection ->
+            val baseEventId = eventId.substringBefore("@")
+            val normalizedStatus = status.trim().uppercase()
+            require(normalizedStatus in setOf("SAVED", "DISMISSED")) { "Unsupported event follow status." }
+            connection.prepareStatement(
+                """
+                INSERT INTO event_follows (event_id, user_id, follow_status)
+                VALUES (?, ?, ?)
+                ON CONFLICT (event_id, user_id) DO UPDATE
+                SET follow_status = EXCLUDED.follow_status,
+                    updated_at = now()
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, baseEventId)
+                statement.setString(2, userId)
+                statement.setString(3, normalizedStatus)
+                statement.executeUpdate()
+            }
+        }
+    }
+
+    override fun createEventNotice(userId: String, eventId: String, request: EventNoticeCreateRequest) {
+        dataSource.connection.use { connection ->
+            val baseEventId = eventId.substringBefore("@")
+            val ownsEvent = connection.prepareStatement(
+                """
+                SELECT 1
+                FROM events
+                WHERE id = ?
+                  AND organizer_user_id = ?
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, baseEventId)
+                statement.setString(2, userId)
+                statement.executeQuery().use { it.next() }
+            }
+            require(ownsEvent) { "Only the organizer can publish event notices." }
+            connection.prepareStatement(
+                """
+                INSERT INTO event_change_notices (event_id, change_type, title, message, created_by_user_id)
+                VALUES (?, ?, ?, ?, ?)
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, baseEventId)
+                statement.setString(2, request.changeType.toEventNoticeType())
+                statement.setString(3, request.title.trim().take(160))
+                statement.setString(4, request.message.trim())
+                statement.setString(5, userId)
+                statement.executeUpdate()
+            }
+        }
+    }
 
     override fun findActiveStayForUser(userId: String): AuthActiveStayDto? =
         dataSource.connection.use { connection ->
@@ -1195,6 +1375,9 @@ private fun ResultSet.toAuthEventSummaryDto(): AuthEventSummaryDto =
         capacityMode = getString("capacity_mode"),
         requiresIdentity = getBoolean("requires_identity"),
         joinCode = getString("join_code"),
+        viewerState = getString("viewer_state"),
+        unreadNoticeCount = getInt("unread_notice_count"),
+        latestNoticeLabel = getString("latest_notice_label"),
     )
 
 private fun java.sql.Connection.findEventSummaryForUser(userId: String, eventId: String): AuthEventSummaryDto? =
@@ -1215,7 +1398,30 @@ private fun java.sql.Connection.findEventSummaryForUser(userId: String, eventId:
             e.attendance_policy,
             e.capacity_mode,
             e.requires_identity,
-            e.join_code
+            e.join_code,
+            CASE
+                WHEN e.organizer_user_id = ? THEN 'ORGANIZER'
+                WHEN m.id IS NOT NULL THEN 'JOINED'
+                WHEN f.follow_status = 'SAVED' THEN 'SAVED'
+                ELSE NULL
+            END AS viewer_state,
+            (
+                SELECT COUNT(*)::INT
+                FROM event_change_notices n
+                LEFT JOIN event_notice_receipts r
+                    ON r.notice_id = n.id
+                    AND r.user_id = ?
+                WHERE n.event_id = e.id
+                  AND r.seen_at IS NULL
+                  AND r.dismissed_at IS NULL
+            ) AS unread_notice_count,
+            (
+                SELECT n.title
+                FROM event_change_notices n
+                WHERE n.event_id = e.id
+                ORDER BY n.created_at DESC
+                LIMIT 1
+            ) AS latest_notice_label
         FROM events e
         LEFT JOIN service_places sp ON sp.id = e.place_id
         LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
@@ -1223,13 +1429,19 @@ private fun java.sql.Connection.findEventSummaryForUser(userId: String, eventId:
             ON m.event_id = e.id
             AND m.user_id = ?
             AND m.membership_status = 'ACTIVE'
+        LEFT JOIN event_follows f
+            ON f.event_id = e.id
+            AND f.user_id = ?
         WHERE e.id = ?
-          AND (e.organizer_user_id = ? OR m.id IS NOT NULL)
+          AND (e.organizer_user_id = ? OR m.id IS NOT NULL OR f.follow_status = 'SAVED')
         """.trimIndent(),
     ).use { statement ->
         statement.setString(1, userId)
-        statement.setString(2, eventId)
+        statement.setString(2, userId)
         statement.setString(3, userId)
+        statement.setString(4, userId)
+        statement.setString(5, eventId)
+        statement.setString(6, userId)
         statement.executeQuery().use { result ->
             if (result.next()) result.toAuthEventSummaryDto() else null
         }
@@ -1246,6 +1458,14 @@ private fun String.toEventCapacityMode(): EventCapacityMode =
 
 private fun String.toEventRecurrenceFrequency(): String? =
     trim().uppercase().takeIf { it == "WEEKLY" }
+
+private fun String.toEventNoticeType(): String =
+    trim()
+        .uppercase()
+        .replace(Regex("[^A-Z0-9_]+"), "_")
+        .trim('_')
+        .ifBlank { "ORGANIZER_NOTE" }
+        .take(64)
 
 private fun String.toEventType(): String =
     trim()

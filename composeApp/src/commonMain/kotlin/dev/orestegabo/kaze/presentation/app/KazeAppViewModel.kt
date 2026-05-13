@@ -465,10 +465,34 @@ internal class KazeAppViewModel(
 
     fun refreshPublicEvents() {
         scope.launch {
-            runCatching { authGateway.getPublicEvents() }
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+            val eventsResult = if (!accessToken.isNullOrBlank() && uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
+                runCatching { authGateway.getEventSuggestions(accessToken) }
+            } else {
+                runCatching { authGateway.getPublicEvents() }
+            }
+            eventsResult
                 .onSuccess { events ->
                     uiState = uiState.copy(publicEvents = events)
                 }
+        }
+    }
+
+    fun updateEventFollow(eventId: String, status: String) {
+        scope.launch {
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+            if (accessToken.isNullOrBlank()) {
+                showFeedback("Sign in before saving events.")
+                return@launch
+            }
+            runCatching { authGateway.updateEventFollow(accessToken, eventId, status) }
+                .onSuccess {
+                    uiState = uiState.copy(publicEvents = uiState.publicEvents.filterNot { it.id == eventId })
+                    refreshAuthenticatedSessionFromServer(accessToken)
+                    refreshPublicEvents()
+                    showFeedback(if (status.equals("SAVED", ignoreCase = true)) "Event saved." else "Event dismissed.")
+                }
+                .onFailure { showFeedback("Could not update this event right now.") }
         }
     }
 

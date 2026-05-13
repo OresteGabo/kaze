@@ -1542,6 +1542,24 @@ private fun SessionCard(
             Text(session.description, style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetaPill(session.venueLabel, leadingIcon = Icons.Default.Place)
+                session.venueReservationLabel?.let { label ->
+                    val isConfirmed = session.venueReservationStatus == "CONFIRMED"
+                    val isDeclined = session.venueReservationStatus in setOf("DECLINED", "CANCELLED")
+                    MetaPill(
+                        label = listOfNotNull(label, session.venueRoomLabel?.takeIf { it.isNotBlank() }).joinToString(" • "),
+                        leadingIcon = if (isConfirmed) Icons.Default.Check else Icons.Default.Place,
+                        containerColor = when {
+                            isConfirmed -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            isDeclined -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.72f)
+                            else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f)
+                        },
+                        textColor = when {
+                            isConfirmed -> MaterialTheme.colorScheme.primary
+                            isDeclined -> MaterialTheme.colorScheme.onErrorContainer
+                            else -> MaterialTheme.colorScheme.onSecondaryContainer
+                        },
+                    )
+                }
                 session.hostLabel?.let { MetaPill(it, leadingIcon = Icons.Default.CalendarMonth) }
                 MetaPill("Venue details", leadingIcon = Icons.Default.Place)
             }

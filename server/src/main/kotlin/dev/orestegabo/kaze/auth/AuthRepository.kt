@@ -66,8 +66,10 @@ internal interface AuthRepository {
     ): StoredAuthUser?
     fun listInvitationsForUser(userId: String): List<AuthInvitationSummaryDto>
     fun listEventsForUser(userId: String): List<AuthEventSummaryDto>
+    fun listPublicEvents(): List<AuthEventSummaryDto>
     fun findActiveStayForUser(userId: String): AuthActiveStayDto?
     fun respondToInvitation(userId: String, invitationId: String, accepted: Boolean): AuthInvitationSummaryDto?
+    fun createEvent(userId: String, request: EventCreateRequest): AuthEventSummaryDto
 }
 
 internal data class StoredAuthUser(
@@ -758,7 +760,12 @@ internal class JdbcAuthRepository(
                     e.starts_at,
                     e.ends_at,
                     COALESCE(sp.name, e.title) AS venue_label,
-                    organizer.display_name AS host_label
+                    organizer.display_name AS host_label,
+                    e.visibility,
+                    e.attendance_policy,
+                    e.capacity_mode,
+                    e.requires_identity,
+                    e.join_code
                 FROM events e
                 LEFT JOIN event_invitations i
                     ON i.event_id = e.id
@@ -775,6 +782,46 @@ internal class JdbcAuthRepository(
             ).use { statement ->
                 statement.setString(1, userId)
                 statement.setString(2, userId)
+                statement.executeQuery().use { result ->
+                    buildList {
+                        while (result.next()) {
+                            add(result.toAuthEventSummaryDto())
+                        }
+                    }
+                }
+            }
+        }
+
+    override fun listPublicEvents(): List<AuthEventSummaryDto> =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                SELECT
+                    e.id,
+                    CONCAT('event-day-', to_char(e.starts_at, 'YYYY-MM-DD')) AS day_id,
+                    trim(to_char(e.starts_at, 'Dy DD Mon')) AS day_label,
+                    to_char(e.starts_at, 'YYYY-MM-DD') AS date_iso,
+                    e.title,
+                    e.summary,
+                    e.starts_at,
+                    e.ends_at,
+                    COALESCE(sp.name, e.title) AS venue_label,
+                    organizer.display_name AS host_label,
+                    e.visibility,
+                    e.attendance_policy,
+                    e.capacity_mode,
+                    e.requires_identity,
+                    e.join_code
+                FROM events e
+                LEFT JOIN service_places sp ON sp.id = e.place_id
+                LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                WHERE e.visibility = 'PUBLIC'
+                  AND e.lifecycle_status IN ('SCHEDULED', 'PUBLISHED')
+                  AND (e.ends_at IS NULL OR e.ends_at >= now())
+                ORDER BY e.starts_at ASC, e.id ASC
+                LIMIT 100
+                """.trimIndent(),
+            ).use { statement ->
                 statement.executeQuery().use { result ->
                     buildList {
                         while (result.next()) {
@@ -887,6 +934,68 @@ internal class JdbcAuthRepository(
                         }
                     }
                 }
+                connection.commit()
+                summary
+            } catch (cause: Throwable) {
+                connection.rollback()
+                throw cause
+            }
+        }
+
+    override fun createEvent(userId: String, request: EventCreateRequest): AuthEventSummaryDto =
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            try {
+                val eventId = connection.prepareStatement(
+                    """
+                    INSERT INTO events (
+                        organizer_user_id, place_id, slug, title, event_type, lifecycle_status,
+                        visibility, attendance_policy, capacity_mode, requires_identity,
+                        join_code, summary, starts_at, ends_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, 'SCHEDULED', ?, ?, ?, ?, ?, ?, COALESCE(?::timestamptz, now()), COALESCE(?::timestamptz, now() + interval '3 hours'))
+                    RETURNING id
+                    """.trimIndent(),
+                ).use { statement ->
+                    val title = request.title.trim()
+                    val eventType = request.eventType.toEventType()
+                    val visibility = request.visibility.toEventVisibility()
+                    val attendancePolicy = request.attendancePolicy.toEventAttendancePolicy()
+                    val capacityMode = request.capacityMode.toEventCapacityMode()
+                    statement.setString(1, userId)
+                    statement.setString(2, request.placeId?.trim()?.takeIf { it.isNotEmpty() })
+                    statement.setString(3, "${title.toSlug()}-${randomUrlSafeToken(5).lowercase()}")
+                    statement.setString(4, title)
+                    statement.setString(5, eventType)
+                    statement.setString(6, visibility.name)
+                    statement.setString(7, attendancePolicy.name)
+                    statement.setString(8, capacityMode.name)
+                    statement.setBoolean(9, request.requiresIdentity)
+                    statement.setString(10, randomEventJoinCode())
+                    statement.setString(11, request.summary?.trim()?.takeIf { it.isNotEmpty() })
+                    statement.setString(12, request.startsAtIso?.trim()?.takeIf { it.isNotEmpty() })
+                    statement.setString(13, request.endsAtIso?.trim()?.takeIf { it.isNotEmpty() })
+                    statement.executeQuery().use { result ->
+                        check(result.next()) { "Event insert did not return an id" }
+                        result.getString("id")
+                    }
+                }
+                connection.prepareStatement(
+                    """
+                    INSERT INTO event_memberships (event_id, user_id, membership_role, membership_status)
+                    VALUES (?, ?, 'ORGANIZER', 'ACTIVE')
+                    ON CONFLICT (event_id, user_id) DO UPDATE
+                    SET membership_role = EXCLUDED.membership_role,
+                        membership_status = EXCLUDED.membership_status,
+                        updated_at = now()
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, eventId)
+                    statement.setString(2, userId)
+                    statement.executeUpdate()
+                }
+                val summary = connection.findEventSummaryForUser(userId, eventId)
+                    ?: error("Created event could not be loaded")
                 connection.commit()
                 summary
             } catch (cause: Throwable) {
@@ -1055,7 +1164,78 @@ private fun ResultSet.toAuthEventSummaryDto(): AuthEventSummaryDto =
         endIso = getTimestamp("ends_at").toInstant().toString(),
         venueLabel = getString("venue_label"),
         hostLabel = getString("host_label"),
+        visibility = getString("visibility"),
+        attendancePolicy = getString("attendance_policy"),
+        capacityMode = getString("capacity_mode"),
+        requiresIdentity = getBoolean("requires_identity"),
+        joinCode = getString("join_code"),
     )
+
+private fun java.sql.Connection.findEventSummaryForUser(userId: String, eventId: String): AuthEventSummaryDto? =
+    prepareStatement(
+        """
+        SELECT
+            e.id,
+            CONCAT('event-day-', to_char(e.starts_at, 'YYYY-MM-DD')) AS day_id,
+            trim(to_char(e.starts_at, 'Dy DD Mon')) AS day_label,
+            to_char(e.starts_at, 'YYYY-MM-DD') AS date_iso,
+            e.title,
+            e.summary,
+            e.starts_at,
+            e.ends_at,
+            COALESCE(sp.name, e.title) AS venue_label,
+            organizer.display_name AS host_label,
+            e.visibility,
+            e.attendance_policy,
+            e.capacity_mode,
+            e.requires_identity,
+            e.join_code
+        FROM events e
+        LEFT JOIN service_places sp ON sp.id = e.place_id
+        LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+        LEFT JOIN event_memberships m
+            ON m.event_id = e.id
+            AND m.user_id = ?
+            AND m.membership_status = 'ACTIVE'
+        WHERE e.id = ?
+          AND (e.organizer_user_id = ? OR m.id IS NOT NULL)
+        """.trimIndent(),
+    ).use { statement ->
+        statement.setString(1, userId)
+        statement.setString(2, eventId)
+        statement.setString(3, userId)
+        statement.executeQuery().use { result ->
+            if (result.next()) result.toAuthEventSummaryDto() else null
+        }
+    }
+
+private fun String.toEventVisibility(): EventVisibility =
+    runCatching { EventVisibility.valueOf(trim().uppercase()) }.getOrDefault(EventVisibility.UNLISTED)
+
+private fun String.toEventAttendancePolicy(): EventAttendancePolicy =
+    runCatching { EventAttendancePolicy.valueOf(trim().uppercase()) }.getOrDefault(EventAttendancePolicy.INVITE_OR_CODE)
+
+private fun String.toEventCapacityMode(): EventCapacityMode =
+    runCatching { EventCapacityMode.valueOf(trim().uppercase()) }.getOrDefault(EventCapacityMode.UNLIMITED)
+
+private fun String.toEventType(): String =
+    trim()
+        .uppercase()
+        .replace(Regex("[^A-Z0-9_]+"), "_")
+        .trim('_')
+        .ifBlank { "OTHER" }
+        .take(64)
+
+private fun String.toSlug(): String =
+    trim()
+        .lowercase()
+        .replace(Regex("[^a-z0-9]+"), "-")
+        .trim('-')
+        .ifBlank { "event" }
+        .take(80)
+
+private fun randomEventJoinCode(): String =
+    randomUrlSafeToken(6).uppercase().filter(Char::isLetterOrDigit).take(8).padEnd(6, 'X')
 
 private fun ResultSet.toAuthActiveStayDto(): AuthActiveStayDto =
     AuthActiveStayDto(

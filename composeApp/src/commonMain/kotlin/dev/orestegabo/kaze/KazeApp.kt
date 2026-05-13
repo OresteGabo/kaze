@@ -493,6 +493,7 @@ fun App() {
                                                 },
                                                 canCreateEvent = uiState.sessionMode == KazeSessionMode.AUTHENTICATED,
                                                 onCreateEvent = appViewModel::createEvent,
+                                                onSuggestedEventAction = appViewModel::updateEventFollow,
                                                 eventInvitation = selectedEventInvitation,
                                                 onVenueAction = ::showMapPreviewUnavailable,
                                                 edgeAiEnabled = uiState.edgeAiEnabled,
@@ -669,6 +670,7 @@ fun App() {
                                             },
                                             canCreateEvent = uiState.sessionMode == KazeSessionMode.AUTHENTICATED,
                                             onCreateEvent = appViewModel::createEvent,
+                                            onSuggestedEventAction = appViewModel::updateEventFollow,
                                             eventInvitation = selectedEventInvitation,
                                             onVenueAction = ::showMapPreviewUnavailable,
                                             edgeAiEnabled = uiState.edgeAiEnabled,
@@ -819,6 +821,9 @@ private fun dev.orestegabo.kaze.presentation.auth.AuthEventSummary.toScheduledEx
         endIso = endIso,
         venueLabel = venueLabel,
         hostLabel = hostLabel,
+        viewerState = viewerState,
+        unreadNoticeCount = unreadNoticeCount,
+        latestNoticeLabel = latestNoticeLabel,
     )
 
 private val KazeMvpThemeConfig = HotelConfig(

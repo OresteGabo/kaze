@@ -33,6 +33,9 @@ internal interface AuthGateway {
     suspend fun getSession(accessToken: String): AuthSessionBootstrap
     suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary>
     suspend fun getEvents(accessToken: String): List<AuthEventSummary>
+    suspend fun getPublicEvents(): List<AuthEventSummary>
+    suspend fun getEventVenues(): List<EventVenueOption>
+    suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary
     suspend fun getActiveStay(accessToken: String): AuthActiveStay?
     suspend fun submitReservation(accessToken: String, request: ReservationDraftSubmissionRequest): ReservationResponse
     suspend fun respondToInvitation(accessToken: String, invitationId: String, response: String): AuthInvitationSummary
@@ -112,6 +115,19 @@ internal class KazeAuthGateway(
     override suspend fun getEvents(accessToken: String): List<AuthEventSummary> =
         client.get("$apiBaseUrl/auth/me/events") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body()
+
+    override suspend fun getPublicEvents(): List<AuthEventSummary> =
+        client.get("$apiBaseUrl/events").body()
+
+    override suspend fun getEventVenues(): List<EventVenueOption> =
+        client.get("$apiBaseUrl/places").body()
+
+    override suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary =
+        client.post("$apiBaseUrl/auth/me/events") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(request)
         }.body()
 
     override suspend fun getActiveStay(accessToken: String): AuthActiveStay? =
@@ -247,6 +263,12 @@ internal object NoopAuthGateway : AuthGateway {
     override suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary> = unavailable()
 
     override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = unavailable()
+
+    override suspend fun getPublicEvents(): List<AuthEventSummary> = emptyList()
+
+    override suspend fun getEventVenues(): List<EventVenueOption> = emptyList()
+
+    override suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary = unavailable()
 
     override suspend fun getActiveStay(accessToken: String): AuthActiveStay? = unavailable()
 

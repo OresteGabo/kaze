@@ -29,6 +29,7 @@ import dev.orestegabo.kaze.infrastructure.JdbcMapRepository
 import dev.orestegabo.kaze.infrastructure.JdbcReservationRepository
 import dev.orestegabo.kaze.infrastructure.JdbcStayRepository
 import java.time.Instant
+import javax.sql.DataSource
 
 internal data class GuestProfile(
     val hotelId: String,
@@ -84,6 +85,51 @@ internal data class VenueReservation(
     val paymentMethod: String,
     val createdAt: Instant,
 )
+
+internal data class ServicePlaceSummary(
+    val id: String,
+    val name: String,
+    val kind: String,
+    val city: String,
+    val countryCode: String,
+    val addressLabel: String?,
+)
+
+internal class ServicePlaceQueryService(
+    private val dataSource: DataSource,
+) {
+    private val placeListCache = TtlCache<String, List<ServicePlaceSummary>>()
+
+    suspend fun listPlaces(): List<ServicePlaceSummary> =
+        placeListCache.getOrPut("all") {
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(
+                    """
+                    SELECT id, name, kind, city, country_code, address_label
+                    FROM service_places
+                    ORDER BY city ASC, name ASC
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.executeQuery().use { result ->
+                        buildList {
+                            while (result.next()) {
+                                add(
+                                    ServicePlaceSummary(
+                                        id = result.getString("id"),
+                                        name = result.getString("name"),
+                                        kind = result.getString("kind"),
+                                        city = result.getString("city"),
+                                        countryCode = result.getString("country_code"),
+                                        addressLabel = result.getString("address_label"),
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+}
 
 internal class ReservationService(
     private val reservationRepository: JdbcReservationRepository,
@@ -329,6 +375,7 @@ private fun List<AmenityStatus>.findAmenity(key: String): AmenityStatus? {
 
 internal data class ServerDependencies(
     val hotelService: HotelQueryService,
+    val placeService: ServicePlaceQueryService,
     val guestStayService: GuestStayService,
     val experienceService: ExperienceQueryService,
     val mapService: MapQueryService,
@@ -345,9 +392,11 @@ internal fun createServerDependencies(): ServerDependencies {
     val mapRepository = JdbcMapRepository(dataSource)
     val amenityKnowledgeRepository = AmenityKnowledgeRepository(dataSource)
     val reservationRepository = JdbcReservationRepository(dataSource)
+    val placeService = ServicePlaceQueryService(dataSource)
 
     return ServerDependencies(
         hotelService = HotelQueryService(hotelRepository),
+        placeService = placeService,
         guestStayService = GuestStayService(guestRepository, stayRepository),
         experienceService = ExperienceQueryService(experienceRepository),
         mapService = MapQueryService(mapRepository),

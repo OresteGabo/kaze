@@ -285,6 +285,29 @@ internal class AuthService(
     fun currentUserEvents(userId: String): List<AuthEventSummaryDto> =
         repository.listEventsForUser(userId)
 
+    fun publicEvents(): List<AuthEventSummaryDto> =
+        repository.listPublicEvents()
+
+    fun createEvent(userId: String, request: EventCreateRequest): AuthEventSummaryDto {
+        val title = request.title.trim()
+        if (title.isBlank()) {
+            throw AuthProblemException(HttpStatusCode.BadRequest, "event_title_required", "Event title is required.")
+        }
+        if (title.length > EVENT_TITLE_MAX_LENGTH) {
+            throw AuthProblemException(HttpStatusCode.BadRequest, "event_title_too_long", "Event title is too long.")
+        }
+        return repository.createEvent(
+            userId = userId,
+            request = request.copy(
+                title = title,
+                summary = request.summary?.trim()?.takeIf { it.isNotEmpty() },
+                visibility = request.visibility.toValidEventVisibility(),
+                attendancePolicy = request.attendancePolicy.toValidEventAttendancePolicy(),
+                capacityMode = request.capacityMode.toValidEventCapacityMode(),
+            ),
+        )
+    }
+
     fun currentUserActiveStay(userId: String): AuthActiveStayDto? =
         repository.findActiveStayForUser(userId)
 
@@ -478,6 +501,15 @@ private fun ExternalIdentity.withRequestedDisplayName(displayName: String?): Ext
     return if (requestedDisplayName == null) this else copy(displayName = requestedDisplayName)
 }
 
+private fun String.toValidEventVisibility(): String =
+    runCatching { EventVisibility.valueOf(trim().uppercase()).name }.getOrDefault(EventVisibility.UNLISTED.name)
+
+private fun String.toValidEventAttendancePolicy(): String =
+    runCatching { EventAttendancePolicy.valueOf(trim().uppercase()).name }.getOrDefault(EventAttendancePolicy.INVITE_OR_CODE.name)
+
+private fun String.toValidEventCapacityMode(): String =
+    runCatching { EventCapacityMode.valueOf(trim().uppercase()).name }.getOrDefault(EventCapacityMode.UNLIMITED.name)
+
 private fun oauthFailureRedirect(
     appRedirectUri: String,
     code: String,
@@ -523,6 +555,7 @@ private fun Throwable.toSignupProblem(): AuthProblemException? {
 }
 
 private const val MIN_PASSWORD_LENGTH = 8
+private const val EVENT_TITLE_MAX_LENGTH = 240
 private const val BCRYPT_COST = 12
 private const val OAUTH_ATTEMPT_TTL_SECONDS = 600L
 private const val UNIQUE_VIOLATION_SQL_STATE = "23505"

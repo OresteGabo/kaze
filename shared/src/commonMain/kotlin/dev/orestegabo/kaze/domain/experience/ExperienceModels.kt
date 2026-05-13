@@ -15,6 +15,9 @@ data class ScheduledExperience(
     val endIso: String,
     val venueLabel: String,
     val hostLabel: String? = null,
+    val viewerState: String? = null,
+    val unreadNoticeCount: Int = 0,
+    val latestNoticeLabel: String? = null,
 )
 
 data class AmenityHighlight(

@@ -824,6 +824,9 @@ private fun dev.orestegabo.kaze.presentation.auth.AuthEventSummary.toScheduledEx
         viewerState = viewerState,
         unreadNoticeCount = unreadNoticeCount,
         latestNoticeLabel = latestNoticeLabel,
+        venueReservationStatus = venueReservationStatus,
+        venueReservationLabel = venueReservationLabel,
+        venueRoomLabel = venueRoomLabel,
     )
 
 private val KazeMvpThemeConfig = HotelConfig(

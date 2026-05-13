@@ -2,6 +2,7 @@ package dev.orestegabo.kaze.api
 
 import dev.orestegabo.kaze.application.AmenityStatus
 import dev.orestegabo.kaze.application.GuestProfile
+import dev.orestegabo.kaze.application.ServicePlaceSummary
 import dev.orestegabo.kaze.application.VenueReservation
 import dev.orestegabo.kaze.domain.Hotel
 import dev.orestegabo.kaze.domain.Itinerary
@@ -30,6 +31,15 @@ internal fun Hotel.toDto(): HotelDto = HotelDto(
     countryCode = campus.countryCode,
     supportedLocales = config.supportedLocales,
     activeExperiences = activeExperiences.map { it.name }.sorted(),
+)
+
+internal fun ServicePlaceSummary.toDto(): ServicePlaceDto = ServicePlaceDto(
+    id = id,
+    name = name,
+    kind = kind,
+    city = city,
+    countryCode = countryCode,
+    addressLabel = addressLabel,
 )
 
 internal fun GuestProfile.toDto(): GuestProfileDto = GuestProfileDto(

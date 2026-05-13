@@ -56,6 +56,8 @@ internal fun HomeScreen(
     serviceRequestDraft: ServiceRequestDraftUi,
     submittedServiceRequests: List<ServiceRequestRecord>,
     invitations: List<InvitationPreview>,
+    personalEventCount: Int,
+    suggestedEventCount: Int,
     isGuestMode: Boolean,
     onBackToStayHome: () -> Unit,
     onLateCheckoutDraftChange: (LateCheckoutDraft) -> Unit,
@@ -67,6 +69,7 @@ internal fun HomeScreen(
     onEnterCode: (String) -> Unit,
     onOpenInvitation: (InvitationPreview) -> Unit,
     onSeeAllInvitations: () -> Unit,
+    onSeeEvents: () -> Unit,
     onBrowseVenues: () -> Unit,
     onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
     bottomContentPadding: Dp = 20.dp,
@@ -126,16 +129,30 @@ internal fun HomeScreen(
             HomeTopBar()
 
             if (!isGuestMode) {
-                if (accessContexts.isEmpty() && accessCard == null && invitations.isEmpty()) {
+                val hasPersonalContent = accessContexts.isNotEmpty() ||
+                    accessCard != null ||
+                    invitations.isNotEmpty() ||
+                    personalEventCount > 0
+                if (!hasPersonalContent) {
                     KazeEmptyStateScreen(
                         modifier = Modifier.fillMaxWidth(),
-                        title = "You have not joined anything yet",
-                        subtitle = "Browse venues or send a reservation request first. Your pass, invitations, and stay access will appear here after that.",
-                        actionLabel = "Browse venues",
+                        title = if (suggestedEventCount > 0) "No personal events yet" else "No passes or events yet",
+                        subtitle = if (suggestedEventCount > 0) {
+                            "You have public event suggestions waiting in Events. Joined events, invitations, passes, and stay access will appear here."
+                        } else {
+                            "Browse venues or send a reservation request first. Your pass, invitations, events, and stay access will appear here after that."
+                        },
+                        actionLabel = if (suggestedEventCount > 0) "View events" else "Browse venues",
                         eyebrow = "Home",
-                        tags = listOf("Venues", "Reservations", "Pass"),
+                        tags = if (suggestedEventCount > 0) listOf("Suggestions", "Events", "Pass") else listOf("Venues", "Reservations", "Pass"),
                         icon = Icons.Outlined.BookmarkBorder,
-                        onAction = { selectedServiceQuery = "conference rooms" },
+                        onAction = {
+                            if (suggestedEventCount > 0) {
+                                onSeeEvents()
+                            } else {
+                                selectedServiceQuery = "conference rooms"
+                            }
+                        },
                     )
                 } else {
                     HomeStayDashboard(

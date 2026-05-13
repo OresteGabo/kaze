@@ -163,18 +163,43 @@ fun App() {
         val authenticatedSessions = uiState.sessionEvents
             .filter { it.dayId == authenticatedSelectedDay?.id }
             .map { it.toScheduledExperience() }
+        val publicEventDays = uiState.publicEvents
+            .distinctBy { it.dayId }
+            .map { event ->
+                EventDay(
+                    id = event.dayId,
+                    label = event.dayLabel,
+                    dateIso = event.dateIso,
+                )
+            }
+        var selectedPublicDayId by remember(uiState.publicEvents.map { it.dayId }) {
+            mutableStateOf(publicEventDays.firstOrNull()?.id)
+        }
+        LaunchedEffect(publicEventDays.map { it.id }) {
+            if (selectedPublicDayId == null || publicEventDays.none { it.id == selectedPublicDayId }) {
+                selectedPublicDayId = publicEventDays.firstOrNull()?.id
+            }
+        }
+        val publicSelectedDay = publicEventDays.firstOrNull { it.id == selectedPublicDayId }
+            ?: publicEventDays.firstOrNull()
+        val publicSessions = uiState.publicEvents
+            .filter { it.dayId == publicSelectedDay?.id }
+            .map { it.toScheduledExperience() }
         val eventsDays = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> authenticatedEventDays
-            KazeSessionMode.GUEST, null -> emptyList()
+            KazeSessionMode.GUEST, null -> publicEventDays
         }
         val eventsSelectedDay = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> authenticatedSelectedDay
-            KazeSessionMode.GUEST, null -> null
+            KazeSessionMode.GUEST, null -> publicSelectedDay
         }
         val eventsSessions = when (uiState.sessionMode) {
             KazeSessionMode.AUTHENTICATED -> authenticatedSessions
-            KazeSessionMode.GUEST, null -> emptyList()
+            KazeSessionMode.GUEST, null -> publicSessions
         }
+        val suggestedPublicSessions = uiState.publicEvents
+            .filterNot { publicEvent -> uiState.sessionEvents.any { it.id == publicEvent.id } }
+            .map { it.toScheduledExperience() }
         val pendingInvitationCount = visibleInvitations.count { it.awaitingResponse }
         val availableDestinations = when (uiState.sessionMode) {
             KazeSessionMode.GUEST -> listOf(
@@ -433,11 +458,13 @@ fun App() {
                                                 days = eventsDays,
                                                 selectedDay = eventsSelectedDay,
                                                 sessions = eventsSessions,
+                                                suggestedSessions = if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) suggestedPublicSessions else emptyList(),
+                                                venueOptions = uiState.eventVenueOptions,
                                                 onDaySelected = { day ->
                                                     if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
                                                         selectedAuthenticatedDayId = day.id
                                                     } else {
-                                                        eventsViewModel.onDaySelected(day)
+                                                        selectedPublicDayId = day.id
                                                     }
                                                 },
                                                 onSessionAction = {
@@ -450,17 +477,19 @@ fun App() {
                                                             ),
                                                         )
                                                     } else {
-                                                        handleEventResult(eventsViewModel.onSessionAction(it))
+                                                        showMapPreviewUnavailable()
                                                     }
                                                 },
                                                 onEmptyAction = {
                                                     if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
                                                         appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
                                                     } else {
-                                                        appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
-                                                        appViewModel.showFeedback("Browse public venues now. Event access appears after you join an event.")
+                                                        appViewModel.refreshPublicEvents()
+                                                        appViewModel.showFeedback("Looking for public events you can attend.")
                                                     }
                                                 },
+                                                canCreateEvent = uiState.sessionMode == KazeSessionMode.AUTHENTICATED,
+                                                onCreateEvent = appViewModel::createEvent,
                                                 eventInvitation = selectedEventInvitation,
                                                 onVenueAction = ::showMapPreviewUnavailable,
                                                 edgeAiEnabled = uiState.edgeAiEnabled,
@@ -602,11 +631,13 @@ fun App() {
                                             days = eventsDays,
                                             selectedDay = eventsSelectedDay,
                                             sessions = eventsSessions,
+                                            suggestedSessions = if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) suggestedPublicSessions else emptyList(),
+                                            venueOptions = uiState.eventVenueOptions,
                                             onDaySelected = { day ->
                                                 if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
                                                     selectedAuthenticatedDayId = day.id
                                                 } else {
-                                                    eventsViewModel.onDaySelected(day)
+                                                    selectedPublicDayId = day.id
                                                 }
                                             },
                                             onSessionAction = {
@@ -619,17 +650,19 @@ fun App() {
                                                         ),
                                                     )
                                                 } else {
-                                                    handleEventResult(eventsViewModel.onSessionAction(it))
+                                                    showMapPreviewUnavailable()
                                                 }
                                             },
                                             onEmptyAction = {
                                                 if (uiState.sessionMode == KazeSessionMode.AUTHENTICATED) {
                                                     appViewModel.onDestinationSelected(KazeDestination.INVITATIONS)
                                                 } else {
-                                                    appViewModel.onDestinationSelected(KazeDestination.EXPLORE)
-                                                    appViewModel.showFeedback("Browse public venues now. Event access appears after you join an event.")
+                                                    appViewModel.refreshPublicEvents()
+                                                    appViewModel.showFeedback("Looking for public events you can attend.")
                                                 }
                                             },
+                                            canCreateEvent = uiState.sessionMode == KazeSessionMode.AUTHENTICATED,
+                                            onCreateEvent = appViewModel::createEvent,
                                             eventInvitation = selectedEventInvitation,
                                             onVenueAction = ::showMapPreviewUnavailable,
                                             edgeAiEnabled = uiState.edgeAiEnabled,

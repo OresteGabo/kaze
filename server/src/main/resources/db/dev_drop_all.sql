@@ -10,6 +10,9 @@
 BEGIN;
 
 DROP TABLE IF EXISTS access_passes CASCADE;
+DROP TABLE IF EXISTS event_notice_receipts CASCADE;
+DROP TABLE IF EXISTS event_change_notices CASCADE;
+DROP TABLE IF EXISTS event_follows CASCADE;
 DROP TABLE IF EXISTS event_invitations CASCADE;
 DROP TABLE IF EXISTS event_memberships CASCADE;
 DROP TABLE IF EXISTS venue_reservations CASCADE;

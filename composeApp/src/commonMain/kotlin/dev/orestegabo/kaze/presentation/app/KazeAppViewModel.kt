@@ -14,6 +14,7 @@ import dev.orestegabo.kaze.presentation.auth.AuthPrivacyConsent
 import dev.orestegabo.kaze.presentation.auth.AuthUser
 import dev.orestegabo.kaze.presentation.auth.AuthSession
 import dev.orestegabo.kaze.presentation.auth.ExternalUrlLauncher
+import dev.orestegabo.kaze.presentation.auth.EventCreateRequest
 import dev.orestegabo.kaze.presentation.auth.NativeSocialAuthLauncher
 import dev.orestegabo.kaze.presentation.auth.NoopExternalUrlLauncher
 import dev.orestegabo.kaze.presentation.auth.NoopAuthGateway
@@ -124,7 +125,11 @@ internal class KazeAppViewModel(
             if (persistedSessionMode == KazeSessionMode.AUTHENTICATED) {
                 applyCachedSessionContent()
                 refreshProfileFromServer()
+                refreshPublicEvents()
+            } else {
+                refreshPublicEvents()
             }
+            refreshEventVenues()
             startupTimeoutJob?.cancel()
         }
     }
@@ -335,6 +340,8 @@ internal class KazeAppViewModel(
             displayName = "",
             feedback = "Guest mode is open. You can browse public Kaze information.",
         )
+        refreshPublicEvents()
+        refreshEventVenues()
     }
 
     fun logout() {
@@ -429,6 +436,48 @@ internal class KazeAppViewModel(
         require(!accessToken.isNullOrBlank()) { "Sign in before saving a reservation request." }
         return authGateway.submitReservation(accessToken, request).also {
             refreshAuthenticatedSessionFromServer(accessToken)
+        }
+    }
+
+    fun createEvent(request: EventCreateRequest) {
+        scope.launch {
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+            if (accessToken.isNullOrBlank()) {
+                showFeedback("Sign in before creating an event.")
+                return@launch
+            }
+            runCatching { authGateway.createEvent(accessToken, request) }
+                .onSuccess { event ->
+                    val updatedEvents = (uiState.sessionEvents + event).distinctBy { it.id }
+                    uiState = uiState.copy(sessionEvents = updatedEvents)
+                    persistSessionContent(
+                        SessionContent(
+                            invitations = uiState.sessionInvitations,
+                            events = updatedEvents,
+                            activeStay = uiState.sessionActiveStay,
+                        ),
+                    )
+                    showFeedback("${event.title} is ready. Share code ${event.joinCode ?: "from the event details"} with guests.")
+                }
+                .onFailure { showFeedback("Could not create this event right now. Please check the details and try again.") }
+        }
+    }
+
+    fun refreshPublicEvents() {
+        scope.launch {
+            runCatching { authGateway.getPublicEvents() }
+                .onSuccess { events ->
+                    uiState = uiState.copy(publicEvents = events)
+                }
+        }
+    }
+
+    fun refreshEventVenues() {
+        scope.launch {
+            runCatching { authGateway.getEventVenues() }
+                .onSuccess { venues ->
+                    uiState = uiState.copy(eventVenueOptions = venues)
+                }
         }
     }
 

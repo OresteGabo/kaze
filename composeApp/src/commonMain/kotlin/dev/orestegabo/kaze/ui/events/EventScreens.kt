@@ -357,7 +357,7 @@ private fun EventCreatePanel(
             }
             Text("Event type", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("WEDDING", "CHURCH", "MEETING", "CONFERENCE", "OTHER").forEach { type ->
+                listOf("WEDDING","ANNIVERSARY", "CHURCH", "MEETING", "CONFERENCE", "OTHER").forEach { type ->
                     EventChoiceChip(
                         label = type.lowercase().replaceFirstChar(Char::titlecase),
                         selected = eventType == type,
@@ -942,13 +942,56 @@ private fun EventDaySwitcher(
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            days.forEach { day ->
-                EventDayButton(day = day, selected = day == selectedDay, onClick = { onDaySelected(day) }, modifier = Modifier.weight(1f))
+        if (days.size <= MAX_FIXED_EVENT_DAYS) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                days.forEach { day ->
+                    EventDayButton(
+                        day = day,
+                        selected = day == selectedDay,
+                        onClick = { onDaySelected(day) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${days.size} event days",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                    Text(
+                        "Scroll dates",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                    )
+                }
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(days) { day ->
+                        EventDayButton(
+                            day = day,
+                            selected = day == selectedDay,
+                            onClick = { onDaySelected(day) },
+                            modifier = Modifier.width(108.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -1226,6 +1269,7 @@ private fun Int.isLeapYear(): Boolean =
 
 private const val MINUTES_PER_DAY = 24 * 60
 private const val ALL_DAY_EVENT_DURATION = -1
+private const val MAX_FIXED_EVENT_DAYS = 5
 
 private enum class EventAccessPreset(
     val label: String,

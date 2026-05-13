@@ -212,6 +212,8 @@ private val CREATE_SCHEMA_SQL = listOf(
         summary TEXT,
         starts_at TIMESTAMPTZ,
         ends_at TIMESTAMPTZ,
+        recurrence_frequency VARCHAR(32),
+        recurrence_until TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
@@ -220,6 +222,8 @@ private val CREATE_SCHEMA_SQL = listOf(
     "ALTER TABLE events ADD COLUMN IF NOT EXISTS capacity_mode VARCHAR(64) NOT NULL DEFAULT 'UNLIMITED'",
     "ALTER TABLE events ADD COLUMN IF NOT EXISTS requires_identity BOOLEAN NOT NULL DEFAULT false",
     "ALTER TABLE events ADD COLUMN IF NOT EXISTS join_code VARCHAR(64) UNIQUE",
+    "ALTER TABLE events ADD COLUMN IF NOT EXISTS recurrence_frequency VARCHAR(32)",
+    "ALTER TABLE events ADD COLUMN IF NOT EXISTS recurrence_until TIMESTAMPTZ",
     """
     CREATE TABLE IF NOT EXISTS venue_reservations (
         id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,

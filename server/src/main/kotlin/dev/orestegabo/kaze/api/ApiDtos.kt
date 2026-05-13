@@ -24,6 +24,16 @@ internal data class HotelDto(
 )
 
 @Serializable
+internal data class ServicePlaceDto(
+    val id: String,
+    val name: String,
+    val kind: String,
+    val city: String,
+    val countryCode: String,
+    val addressLabel: String? = null,
+)
+
+@Serializable
 internal data class GuestProfileDto(
     val hotelId: String,
     val guestId: String,

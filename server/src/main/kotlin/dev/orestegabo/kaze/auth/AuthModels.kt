@@ -178,6 +178,28 @@ internal data class AuthEventSummaryDto(
     val viewerState: String? = null,
     val unreadNoticeCount: Int = 0,
     val latestNoticeLabel: String? = null,
+    val venueReservationStatus: String? = null,
+    val venueReservationLabel: String? = null,
+    val venueRoomLabel: String? = null,
+)
+
+@Serializable
+internal data class VenueReservationReviewRequest(
+    val status: String,
+    val selectedRoomLabel: String? = null,
+    val venueNote: String? = null,
+)
+
+@Serializable
+internal data class VenueReservationReviewDto(
+    val id: String,
+    val eventId: String,
+    val placeId: String,
+    val status: String,
+    val selectedRoomLabel: String? = null,
+    val venueNote: String? = null,
+    val confirmedAt: String? = null,
+    val declinedAt: String? = null,
 )
 
 @Serializable

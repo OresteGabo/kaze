@@ -244,13 +244,22 @@ private val CREATE_SCHEMA_SQL = listOf(
         payment_method VARCHAR(120) NOT NULL,
         note TEXT,
         status VARCHAR(64) NOT NULL DEFAULT 'PENDING_CONFIRMATION',
+        confirmed_by_user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL,
+        confirmed_at TIMESTAMPTZ,
+        declined_at TIMESTAMPTZ,
+        venue_note TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
     """.trimIndent(),
     "ALTER TABLE venue_reservations ADD COLUMN IF NOT EXISTS selected_room_label VARCHAR(160)",
+    "ALTER TABLE venue_reservations ADD COLUMN IF NOT EXISTS confirmed_by_user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL",
+    "ALTER TABLE venue_reservations ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ",
+    "ALTER TABLE venue_reservations ADD COLUMN IF NOT EXISTS declined_at TIMESTAMPTZ",
+    "ALTER TABLE venue_reservations ADD COLUMN IF NOT EXISTS venue_note TEXT",
     "CREATE INDEX IF NOT EXISTS idx_venue_reservations_requester ON venue_reservations(requester_user_id, created_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_venue_reservations_place ON venue_reservations(place_id, created_at DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_venue_reservations_event ON venue_reservations(event_id, updated_at DESC)",
     """
     CREATE TABLE IF NOT EXISTS event_memberships (
         id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,

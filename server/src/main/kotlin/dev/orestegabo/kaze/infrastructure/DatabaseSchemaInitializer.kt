@@ -204,7 +204,11 @@ private val CREATE_SCHEMA_SQL = listOf(
         title VARCHAR(240) NOT NULL,
         event_type VARCHAR(64) NOT NULL,
         lifecycle_status VARCHAR(64) NOT NULL DEFAULT 'DRAFT',
-        visibility VARCHAR(64) NOT NULL DEFAULT 'PRIVATE',
+        visibility VARCHAR(64) NOT NULL DEFAULT 'UNLISTED',
+        attendance_policy VARCHAR(64) NOT NULL DEFAULT 'INVITE_OR_CODE',
+        capacity_mode VARCHAR(64) NOT NULL DEFAULT 'UNLIMITED',
+        requires_identity BOOLEAN NOT NULL DEFAULT false,
+        join_code VARCHAR(64) UNIQUE,
         summary TEXT,
         starts_at TIMESTAMPTZ,
         ends_at TIMESTAMPTZ,
@@ -212,6 +216,10 @@ private val CREATE_SCHEMA_SQL = listOf(
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
     """.trimIndent(),
+    "ALTER TABLE events ADD COLUMN IF NOT EXISTS attendance_policy VARCHAR(64) NOT NULL DEFAULT 'INVITE_OR_CODE'",
+    "ALTER TABLE events ADD COLUMN IF NOT EXISTS capacity_mode VARCHAR(64) NOT NULL DEFAULT 'UNLIMITED'",
+    "ALTER TABLE events ADD COLUMN IF NOT EXISTS requires_identity BOOLEAN NOT NULL DEFAULT false",
+    "ALTER TABLE events ADD COLUMN IF NOT EXISTS join_code VARCHAR(64) UNIQUE",
     """
     CREATE TABLE IF NOT EXISTS venue_reservations (
         id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,

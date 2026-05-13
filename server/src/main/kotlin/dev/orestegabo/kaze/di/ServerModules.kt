@@ -17,6 +17,7 @@ import dev.orestegabo.kaze.application.GuestStayService
 import dev.orestegabo.kaze.application.HotelQueryService
 import dev.orestegabo.kaze.application.MapQueryService
 import dev.orestegabo.kaze.application.ReservationService
+import dev.orestegabo.kaze.application.ServicePlaceQueryService
 import dev.orestegabo.kaze.application.ServerDependencies
 import dev.orestegabo.kaze.data.repository.ExperienceRepository
 import dev.orestegabo.kaze.data.repository.HotelRepository
@@ -90,6 +91,7 @@ internal fun serverModule(
     single { JdbcReservationRepository(get()) }
 
     single { HotelQueryService(get()) }
+    single { ServicePlaceQueryService(get()) }
     single { GuestStayService(get(), get()) }
     single { ExperienceQueryService(get()) }
     single { MapQueryService(get()) }
@@ -99,6 +101,7 @@ internal fun serverModule(
     single {
         ServerDependencies(
             hotelService = get(),
+            placeService = get(),
             guestStayService = get(),
             experienceService = get(),
             mapService = get(),

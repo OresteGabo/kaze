@@ -18,6 +18,9 @@ data class ScheduledExperience(
     val viewerState: String? = null,
     val unreadNoticeCount: Int = 0,
     val latestNoticeLabel: String? = null,
+    val venueReservationStatus: String? = null,
+    val venueReservationLabel: String? = null,
+    val venueRoomLabel: String? = null,
 )
 
 data class AmenityHighlight(

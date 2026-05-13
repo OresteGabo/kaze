@@ -122,6 +122,54 @@ internal data class AuthEventSummary(
     val endIso: String,
     val venueLabel: String,
     val hostLabel: String? = null,
+    val visibility: String = EventVisibility.UNLISTED.name,
+    val attendancePolicy: String = EventAttendancePolicy.INVITE_OR_CODE.name,
+    val capacityMode: String = EventCapacityMode.UNLIMITED.name,
+    val requiresIdentity: Boolean = false,
+    val joinCode: String? = null,
+)
+
+@Serializable
+internal data class EventVenueOption(
+    val id: String,
+    val name: String,
+    val kind: String,
+    val city: String,
+    val countryCode: String,
+    val addressLabel: String? = null,
+)
+
+internal enum class EventVisibility(val label: String) {
+    PUBLIC("Public search"),
+    UNLISTED("Shared link or code"),
+    PRIVATE("Private"),
+}
+
+internal enum class EventAttendancePolicy(val label: String) {
+    OPEN("Anyone can join"),
+    REQUEST_ACCESS("Request access"),
+    INVITE_OR_CODE("Invite or code"),
+    REGISTRATION_REQUIRED("Registration required"),
+    APPROVAL_REQUIRED("Approval required"),
+}
+
+internal enum class EventCapacityMode(val label: String) {
+    UNLIMITED("No hard limit"),
+    LIMITED("Limited capacity"),
+}
+
+@Serializable
+internal data class EventCreateRequest(
+    val title: String,
+    val eventType: String = "OTHER",
+    val summary: String? = null,
+    val visibility: String = EventVisibility.UNLISTED.name,
+    val attendancePolicy: String = EventAttendancePolicy.INVITE_OR_CODE.name,
+    val capacityMode: String = EventCapacityMode.UNLIMITED.name,
+    val requiresIdentity: Boolean = false,
+    val startsAtIso: String? = null,
+    val endsAtIso: String? = null,
+    val placeId: String? = null,
 )
 
 @Serializable

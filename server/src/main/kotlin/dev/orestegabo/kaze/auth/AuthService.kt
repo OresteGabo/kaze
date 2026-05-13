@@ -288,6 +288,19 @@ internal class AuthService(
     fun publicEvents(): List<AuthEventSummaryDto> =
         repository.listPublicEvents()
 
+    fun suggestedEvents(userId: String): List<AuthEventSummaryDto> =
+        repository.listSuggestedEventsForUser(userId)
+
+    fun updateEventFollow(userId: String, eventId: String, request: EventFollowRequest) =
+        repository.updateEventFollow(userId, eventId, request.status)
+
+    fun createEventNotice(userId: String, eventId: String, request: EventNoticeCreateRequest) {
+        if (request.title.isBlank() || request.message.isBlank()) {
+            throw AuthProblemException(HttpStatusCode.BadRequest, "event_notice_required", "Notice title and message are required.")
+        }
+        repository.createEventNotice(userId, eventId, request)
+    }
+
     fun createEvent(userId: String, request: EventCreateRequest): AuthEventSummaryDto {
         val title = request.title.trim()
         if (title.isBlank()) {

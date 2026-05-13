@@ -14,6 +14,7 @@ import dev.orestegabo.kaze.auth.AuthSigninRequest
 import dev.orestegabo.kaze.auth.AuthStartResponseDto
 import dev.orestegabo.kaze.auth.AuthSignupRequest
 import dev.orestegabo.kaze.auth.AuthUserDto
+import dev.orestegabo.kaze.auth.EventCreateRequest
 import dev.orestegabo.kaze.auth.SocialSigninRequest
 import io.ktor.http.HttpHeaders
 import io.ktor.server.application.ApplicationCall
@@ -139,6 +140,12 @@ internal fun Route.registerAuthRoutes(
                 call.noStoreAuthResponse()
                 val principal = call.authenticatedJwtPrincipal()
                 call.respond(authService.currentUserEvents(principal.payload.subject))
+            }
+
+            post("/me/events") {
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
+                call.respond(authService.createEvent(principal.payload.subject, call.receive<EventCreateRequest>()))
             }
 
             get("/me/active-stay") {

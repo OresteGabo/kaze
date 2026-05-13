@@ -137,6 +137,8 @@ CREATE TABLE IF NOT EXISTS events (
     summary TEXT,
     starts_at TIMESTAMPTZ,
     ends_at TIMESTAMPTZ,
+    recurrence_frequency VARCHAR(32),
+    recurrence_until TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

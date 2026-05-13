@@ -34,7 +34,9 @@ internal interface AuthGateway {
     suspend fun getInvitations(accessToken: String): List<AuthInvitationSummary>
     suspend fun getEvents(accessToken: String): List<AuthEventSummary>
     suspend fun getPublicEvents(): List<AuthEventSummary>
+    suspend fun getEventSuggestions(accessToken: String): List<AuthEventSummary>
     suspend fun getEventVenues(): List<EventVenueOption>
+    suspend fun updateEventFollow(accessToken: String, eventId: String, status: String)
     suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary
     suspend fun getActiveStay(accessToken: String): AuthActiveStay?
     suspend fun submitReservation(accessToken: String, request: ReservationDraftSubmissionRequest): ReservationResponse
@@ -120,8 +122,21 @@ internal class KazeAuthGateway(
     override suspend fun getPublicEvents(): List<AuthEventSummary> =
         client.get("$apiBaseUrl/events").body()
 
+    override suspend fun getEventSuggestions(accessToken: String): List<AuthEventSummary> =
+        client.get("$apiBaseUrl/auth/me/event-suggestions") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }.body()
+
     override suspend fun getEventVenues(): List<EventVenueOption> =
         client.get("$apiBaseUrl/places").body()
+
+    override suspend fun updateEventFollow(accessToken: String, eventId: String, status: String) {
+        client.put("$apiBaseUrl/auth/me/events/$eventId/follow") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(EventFollowRequest(status))
+        }
+    }
 
     override suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary =
         client.post("$apiBaseUrl/auth/me/events") {
@@ -266,7 +281,11 @@ internal object NoopAuthGateway : AuthGateway {
 
     override suspend fun getPublicEvents(): List<AuthEventSummary> = emptyList()
 
+    override suspend fun getEventSuggestions(accessToken: String): List<AuthEventSummary> = emptyList()
+
     override suspend fun getEventVenues(): List<EventVenueOption> = emptyList()
+
+    override suspend fun updateEventFollow(accessToken: String, eventId: String, status: String) = unavailable()
 
     override suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary = unavailable()
 

@@ -170,7 +170,45 @@ internal data class AuthEventSummaryDto(
     val endIso: String,
     val venueLabel: String,
     val hostLabel: String? = null,
+    val visibility: String = EventVisibility.UNLISTED.name,
+    val attendancePolicy: String = EventAttendancePolicy.INVITE_OR_CODE.name,
+    val capacityMode: String = EventCapacityMode.UNLIMITED.name,
+    val requiresIdentity: Boolean = false,
+    val joinCode: String? = null,
 )
+
+@Serializable
+internal data class EventCreateRequest(
+    val title: String,
+    val eventType: String = "OTHER",
+    val summary: String? = null,
+    val visibility: String = EventVisibility.UNLISTED.name,
+    val attendancePolicy: String = EventAttendancePolicy.INVITE_OR_CODE.name,
+    val capacityMode: String = EventCapacityMode.UNLIMITED.name,
+    val requiresIdentity: Boolean = false,
+    val startsAtIso: String? = null,
+    val endsAtIso: String? = null,
+    val placeId: String? = null,
+)
+
+internal enum class EventVisibility {
+    PUBLIC,
+    UNLISTED,
+    PRIVATE,
+}
+
+internal enum class EventAttendancePolicy {
+    OPEN,
+    REQUEST_ACCESS,
+    INVITE_OR_CODE,
+    REGISTRATION_REQUIRED,
+    APPROVAL_REQUIRED,
+}
+
+internal enum class EventCapacityMode {
+    UNLIMITED,
+    LIMITED,
+}
 
 @Serializable
 internal data class AuthActiveStayDto(

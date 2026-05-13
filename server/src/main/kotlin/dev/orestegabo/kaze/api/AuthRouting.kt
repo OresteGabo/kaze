@@ -14,10 +14,13 @@ import dev.orestegabo.kaze.auth.AuthSigninRequest
 import dev.orestegabo.kaze.auth.AuthStartResponseDto
 import dev.orestegabo.kaze.auth.AuthSignupRequest
 import dev.orestegabo.kaze.auth.AuthUserDto
+import dev.orestegabo.kaze.auth.AuthRole
 import dev.orestegabo.kaze.auth.EventCreateRequest
 import dev.orestegabo.kaze.auth.EventFollowRequest
 import dev.orestegabo.kaze.auth.EventNoticeCreateRequest
 import dev.orestegabo.kaze.auth.SocialSigninRequest
+import dev.orestegabo.kaze.auth.VenueReservationReviewRequest
+import dev.orestegabo.kaze.auth.requireAnyRole
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -173,6 +176,20 @@ internal fun Route.registerAuthRoutes(
                     ?: throw IllegalArgumentException("Missing event id")
                 authService.createEventNotice(principal.payload.subject, eventId, call.receive<EventNoticeCreateRequest>())
                 call.respond(HttpStatusCode.Created, mapOf("status" to "created"))
+            }
+
+            patch("/me/venue-reservations/{reservationId}") {
+                call.noStoreAuthResponse()
+                val principal = call.requireAnyRole(AuthRole.STAFF, AuthRole.ADMIN)
+                val reservationId = call.parameters["reservationId"]
+                    ?: throw IllegalArgumentException("Missing reservation id")
+                call.respond(
+                    authService.reviewVenueReservation(
+                        reviewerUserId = principal.payload.subject,
+                        reservationId = reservationId,
+                        request = call.receive<VenueReservationReviewRequest>(),
+                    ),
+                )
             }
 
             get("/me/active-stay") {

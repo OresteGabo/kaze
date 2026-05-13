@@ -45,7 +45,7 @@ internal fun Application.registerApiRoutes(
                 rateLimit(AuthRateLimit) {
                     registerAuthRoutes(authService)
                 }
-                registerPublicApiV1Routes(dependencies)
+                registerPublicApiV1Routes(dependencies, authService)
 
                 if (isApiAuthenticationEnabled() || isJwtAuthenticationRequired()) {
                     authenticate(ApiJwtAuth, ApiAuth, strategy = AuthenticationStrategy.FirstSuccessful) {
@@ -61,6 +61,7 @@ internal fun Application.registerApiRoutes(
 
 private fun Route.registerPublicApiV1Routes(
     dependencies: ServerDependencies,
+    authService: AuthService,
 ) {
     get {
         call.cachePublicJson()
@@ -70,6 +71,16 @@ private fun Route.registerPublicApiV1Routes(
     get("/hotels") {
         call.cachePublicJson()
         call.respond(dependencies.hotelService.listHotels().map { it.toDto() })
+    }
+
+    get("/places") {
+        call.cachePublicJson()
+        call.respond(dependencies.placeService.listPlaces().map { it.toDto() })
+    }
+
+    get("/events") {
+        call.cachePublicJson()
+        call.respond(authService.publicEvents())
     }
 
     route("/hotels/{hotelId}") {

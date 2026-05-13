@@ -15,8 +15,11 @@ import dev.orestegabo.kaze.auth.AuthStartResponseDto
 import dev.orestegabo.kaze.auth.AuthSignupRequest
 import dev.orestegabo.kaze.auth.AuthUserDto
 import dev.orestegabo.kaze.auth.EventCreateRequest
+import dev.orestegabo.kaze.auth.EventFollowRequest
+import dev.orestegabo.kaze.auth.EventNoticeCreateRequest
 import dev.orestegabo.kaze.auth.SocialSigninRequest
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
@@ -142,10 +145,34 @@ internal fun Route.registerAuthRoutes(
                 call.respond(authService.currentUserEvents(principal.payload.subject))
             }
 
+            get("/me/event-suggestions") {
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
+                call.respond(authService.suggestedEvents(principal.payload.subject))
+            }
+
             post("/me/events") {
                 call.noStoreAuthResponse()
                 val principal = call.authenticatedJwtPrincipal()
                 call.respond(authService.createEvent(principal.payload.subject, call.receive<EventCreateRequest>()))
+            }
+
+            put("/me/events/{eventId}/follow") {
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
+                val eventId = call.parameters["eventId"]
+                    ?: throw IllegalArgumentException("Missing event id")
+                authService.updateEventFollow(principal.payload.subject, eventId, call.receive<EventFollowRequest>())
+                call.respond(HttpStatusCode.OK, mapOf("status" to "updated"))
+            }
+
+            post("/me/events/{eventId}/notices") {
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
+                val eventId = call.parameters["eventId"]
+                    ?: throw IllegalArgumentException("Missing event id")
+                authService.createEventNotice(principal.payload.subject, eventId, call.receive<EventNoticeCreateRequest>())
+                call.respond(HttpStatusCode.Created, mapOf("status" to "created"))
             }
 
             get("/me/active-stay") {

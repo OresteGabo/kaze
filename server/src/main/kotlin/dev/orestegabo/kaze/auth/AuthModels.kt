@@ -175,6 +175,9 @@ internal data class AuthEventSummaryDto(
     val capacityMode: String = EventCapacityMode.UNLIMITED.name,
     val requiresIdentity: Boolean = false,
     val joinCode: String? = null,
+    val viewerState: String? = null,
+    val unreadNoticeCount: Int = 0,
+    val latestNoticeLabel: String? = null,
 )
 
 @Serializable
@@ -191,6 +194,18 @@ internal data class EventCreateRequest(
     val placeId: String? = null,
     val recurrenceFrequency: String? = null,
     val recurrenceUntilIso: String? = null,
+)
+
+@Serializable
+internal data class EventFollowRequest(
+    val status: String,
+)
+
+@Serializable
+internal data class EventNoticeCreateRequest(
+    val changeType: String,
+    val title: String,
+    val message: String,
 )
 
 internal enum class EventVisibility {

@@ -1,12 +1,42 @@
 -- Kaze development schema.
 --
+-- WARNING: this development script resets the database. It drops all Kaze
+-- application tables before recreating them.
+--
 -- Run this manually before the seed script:
 --   psql "postgresql://postgres:YOUR_PASSWORD@localhost:5432/kaze" -f server/src/main/resources/db/dev_schema.sql
 --   psql "postgresql://postgres:YOUR_PASSWORD@localhost:5432/kaze" -f server/src/main/resources/db/dev_seed.sql
 --
--- This script creates all current Kaze application tables and indexes.
+-- This script recreates all current Kaze application tables and indexes.
 
 BEGIN;
+
+DROP TABLE IF EXISTS access_passes CASCADE;
+DROP TABLE IF EXISTS event_invitations CASCADE;
+DROP TABLE IF EXISTS event_memberships CASCADE;
+DROP TABLE IF EXISTS venue_reservations CASCADE;
+DROP TABLE IF EXISTS events CASCADE;
+DROP TABLE IF EXISTS auth_one_time_login_tokens CASCADE;
+DROP TABLE IF EXISTS auth_refresh_tokens CASCADE;
+DROP TABLE IF EXISTS oauth_login_attempts CASCADE;
+DROP TABLE IF EXISTS user_auth_providers CASCADE;
+DROP TABLE IF EXISTS app_users CASCADE;
+DROP TABLE IF EXISTS service_requests CASCADE;
+DROP TABLE IF EXISTS late_checkout_requests CASCADE;
+DROP TABLE IF EXISTS map_nodes CASCADE;
+DROP TABLE IF EXISTS map_floors CASCADE;
+DROP TABLE IF EXISTS maps CASCADE;
+DROP TABLE IF EXISTS amenity_statuses CASCADE;
+DROP TABLE IF EXISTS amenity_highlights CASCADE;
+DROP TABLE IF EXISTS scheduled_experiences CASCADE;
+DROP TABLE IF EXISTS event_days CASCADE;
+DROP TABLE IF EXISTS itinerary_items CASCADE;
+DROP TABLE IF EXISTS stays CASCADE;
+DROP TABLE IF EXISTS guests CASCADE;
+DROP TABLE IF EXISTS place_services CASCADE;
+DROP TABLE IF EXISTS hotel_buildings CASCADE;
+DROP TABLE IF EXISTS hotels CASCADE;
+DROP TABLE IF EXISTS service_places CASCADE;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -99,7 +129,11 @@ CREATE TABLE IF NOT EXISTS events (
     title VARCHAR(240) NOT NULL,
     event_type VARCHAR(64) NOT NULL,
     lifecycle_status VARCHAR(64) NOT NULL DEFAULT 'DRAFT',
-    visibility VARCHAR(64) NOT NULL DEFAULT 'PRIVATE',
+    visibility VARCHAR(64) NOT NULL DEFAULT 'UNLISTED',
+    attendance_policy VARCHAR(64) NOT NULL DEFAULT 'INVITE_OR_CODE',
+    capacity_mode VARCHAR(64) NOT NULL DEFAULT 'UNLIMITED',
+    requires_identity BOOLEAN NOT NULL DEFAULT false,
+    join_code VARCHAR(64) UNIQUE,
     summary TEXT,
     starts_at TIMESTAMPTZ,
     ends_at TIMESTAMPTZ,

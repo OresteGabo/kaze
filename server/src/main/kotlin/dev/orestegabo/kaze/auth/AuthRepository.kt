@@ -70,6 +70,7 @@ internal interface AuthRepository {
     fun listSuggestedEventsForUser(userId: String): List<AuthEventSummaryDto>
     fun updateEventFollow(userId: String, eventId: String, status: String)
     fun createEventNotice(userId: String, eventId: String, request: EventNoticeCreateRequest)
+    fun reviewVenueReservation(reviewerUserId: String, reservationId: String, request: VenueReservationReviewRequest): VenueReservationReviewDto?
     fun findActiveStayForUser(userId: String): AuthActiveStayDto?
     fun respondToInvitation(userId: String, invitationId: String, accepted: Boolean): AuthInvitationSummaryDto?
     fun createEvent(userId: String, request: EventCreateRequest): AuthEventSummaryDto
@@ -792,7 +793,17 @@ internal class JdbcAuthRepository(
                         WHERE n.event_id = e.id
                         ORDER BY n.created_at DESC
                         LIMIT 1
-                    ) AS latest_notice_label
+                    ) AS latest_notice_label,
+                    vr.status AS venue_reservation_status,
+                    CASE
+                        WHEN vr.status = 'CONFIRMED' THEN 'Confirmed by venue'
+                        WHEN vr.status = 'PENDING_CONFIRMATION' THEN 'Reservation requested'
+                        WHEN vr.status = 'DECLINED' THEN 'Declined by venue'
+                        WHEN vr.status = 'CANCELLED' THEN 'Cancelled by venue'
+                        WHEN e.place_id IS NOT NULL THEN 'Venue not involved yet'
+                        ELSE NULL
+                    END AS venue_reservation_label,
+                    vr.selected_room_label AS venue_room_label
                 FROM events e
                 LEFT JOIN event_invitations i
                     ON i.event_id = e.id
@@ -806,6 +817,13 @@ internal class JdbcAuthRepository(
                     AND f.user_id = ?
                 LEFT JOIN service_places sp ON sp.id = e.place_id
                 LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                LEFT JOIN LATERAL (
+                    SELECT status, selected_room_label
+                    FROM venue_reservations
+                    WHERE event_id = e.id
+                    ORDER BY updated_at DESC, created_at DESC
+                    LIMIT 1
+                ) vr ON true
                 CROSS JOIN LATERAL (
                     SELECT e.starts_at, e.ends_at
                     WHERE e.recurrence_frequency IS NULL OR e.recurrence_frequency <> 'WEEKLY'
@@ -859,10 +877,27 @@ internal class JdbcAuthRepository(
                     e.join_code,
                     NULL::TEXT AS viewer_state,
                     0::INT AS unread_notice_count,
-                    NULL::TEXT AS latest_notice_label
+                    NULL::TEXT AS latest_notice_label,
+                    vr.status AS venue_reservation_status,
+                    CASE
+                        WHEN vr.status = 'CONFIRMED' THEN 'Confirmed by venue'
+                        WHEN vr.status = 'PENDING_CONFIRMATION' THEN 'Reservation requested'
+                        WHEN vr.status = 'DECLINED' THEN 'Declined by venue'
+                        WHEN vr.status = 'CANCELLED' THEN 'Cancelled by venue'
+                        WHEN e.place_id IS NOT NULL THEN 'Venue not involved yet'
+                        ELSE NULL
+                    END AS venue_reservation_label,
+                    vr.selected_room_label AS venue_room_label
                 FROM events e
                 LEFT JOIN service_places sp ON sp.id = e.place_id
                 LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                LEFT JOIN LATERAL (
+                    SELECT status, selected_room_label
+                    FROM venue_reservations
+                    WHERE event_id = e.id
+                    ORDER BY updated_at DESC, created_at DESC
+                    LIMIT 1
+                ) vr ON true
                 CROSS JOIN LATERAL (
                     SELECT e.starts_at, e.ends_at
                     WHERE e.recurrence_frequency IS NULL OR e.recurrence_frequency <> 'WEEKLY'
@@ -929,10 +964,27 @@ internal class JdbcAuthRepository(
                         WHERE n.event_id = e.id
                         ORDER BY n.created_at DESC
                         LIMIT 1
-                    ) AS latest_notice_label
+                    ) AS latest_notice_label,
+                    vr.status AS venue_reservation_status,
+                    CASE
+                        WHEN vr.status = 'CONFIRMED' THEN 'Confirmed by venue'
+                        WHEN vr.status = 'PENDING_CONFIRMATION' THEN 'Reservation requested'
+                        WHEN vr.status = 'DECLINED' THEN 'Declined by venue'
+                        WHEN vr.status = 'CANCELLED' THEN 'Cancelled by venue'
+                        WHEN e.place_id IS NOT NULL THEN 'Venue not involved yet'
+                        ELSE NULL
+                    END AS venue_reservation_label,
+                    vr.selected_room_label AS venue_room_label
                 FROM events e
                 LEFT JOIN service_places sp ON sp.id = e.place_id
                 LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                LEFT JOIN LATERAL (
+                    SELECT status, selected_room_label
+                    FROM venue_reservations
+                    WHERE event_id = e.id
+                    ORDER BY updated_at DESC, created_at DESC
+                    LIMIT 1
+                ) vr ON true
                 LEFT JOIN event_follows f
                     ON f.event_id = e.id
                     AND f.user_id = ?
@@ -1035,6 +1087,40 @@ internal class JdbcAuthRepository(
             }
         }
     }
+
+    override fun reviewVenueReservation(
+        reviewerUserId: String,
+        reservationId: String,
+        request: VenueReservationReviewRequest,
+    ): VenueReservationReviewDto? =
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(
+                """
+                UPDATE venue_reservations
+                SET status = ?,
+                    selected_room_label = COALESCE(?, selected_room_label),
+                    venue_note = COALESCE(?, venue_note),
+                    confirmed_by_user_id = CASE WHEN ? = 'CONFIRMED' THEN ? ELSE NULL END,
+                    confirmed_at = CASE WHEN ? = 'CONFIRMED' THEN now() ELSE NULL END,
+                    declined_at = CASE WHEN ? = 'DECLINED' THEN now() ELSE NULL END,
+                    updated_at = now()
+                WHERE id = ?
+                RETURNING id, event_id, place_id, status, selected_room_label, venue_note, confirmed_at, declined_at
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, request.status)
+                statement.setString(2, request.selectedRoomLabel)
+                statement.setString(3, request.venueNote)
+                statement.setString(4, request.status)
+                statement.setString(5, reviewerUserId)
+                statement.setString(6, request.status)
+                statement.setString(7, request.status)
+                statement.setString(8, reservationId)
+                statement.executeQuery().use { result ->
+                    if (result.next()) result.toVenueReservationReviewDto() else null
+                }
+            }
+        }
 
     override fun findActiveStayForUser(userId: String): AuthActiveStayDto? =
         dataSource.connection.use { connection ->
@@ -1378,6 +1464,21 @@ private fun ResultSet.toAuthEventSummaryDto(): AuthEventSummaryDto =
         viewerState = getString("viewer_state"),
         unreadNoticeCount = getInt("unread_notice_count"),
         latestNoticeLabel = getString("latest_notice_label"),
+        venueReservationStatus = getString("venue_reservation_status"),
+        venueReservationLabel = getString("venue_reservation_label"),
+        venueRoomLabel = getString("venue_room_label"),
+    )
+
+private fun ResultSet.toVenueReservationReviewDto(): VenueReservationReviewDto =
+    VenueReservationReviewDto(
+        id = getString("id"),
+        eventId = getString("event_id"),
+        placeId = getString("place_id"),
+        status = getString("status"),
+        selectedRoomLabel = getString("selected_room_label"),
+        venueNote = getString("venue_note"),
+        confirmedAt = getTimestamp("confirmed_at")?.toInstant()?.toString(),
+        declinedAt = getTimestamp("declined_at")?.toInstant()?.toString(),
     )
 
 private fun java.sql.Connection.findEventSummaryForUser(userId: String, eventId: String): AuthEventSummaryDto? =
@@ -1421,10 +1522,27 @@ private fun java.sql.Connection.findEventSummaryForUser(userId: String, eventId:
                 WHERE n.event_id = e.id
                 ORDER BY n.created_at DESC
                 LIMIT 1
-            ) AS latest_notice_label
+            ) AS latest_notice_label,
+            vr.status AS venue_reservation_status,
+            CASE
+                WHEN vr.status = 'CONFIRMED' THEN 'Confirmed by venue'
+                WHEN vr.status = 'PENDING_CONFIRMATION' THEN 'Reservation requested'
+                WHEN vr.status = 'DECLINED' THEN 'Declined by venue'
+                WHEN vr.status = 'CANCELLED' THEN 'Cancelled by venue'
+                WHEN e.place_id IS NOT NULL THEN 'Venue not involved yet'
+                ELSE NULL
+            END AS venue_reservation_label,
+            vr.selected_room_label AS venue_room_label
         FROM events e
         LEFT JOIN service_places sp ON sp.id = e.place_id
         LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+        LEFT JOIN LATERAL (
+            SELECT status, selected_room_label
+            FROM venue_reservations
+            WHERE event_id = e.id
+            ORDER BY updated_at DESC, created_at DESC
+            LIMIT 1
+        ) vr ON true
         LEFT JOIN event_memberships m
             ON m.event_id = e.id
             AND m.user_id = ?

@@ -12,6 +12,9 @@
 BEGIN;
 
 DROP TABLE IF EXISTS access_passes CASCADE;
+DROP TABLE IF EXISTS event_notice_receipts CASCADE;
+DROP TABLE IF EXISTS event_change_notices CASCADE;
+DROP TABLE IF EXISTS event_follows CASCADE;
 DROP TABLE IF EXISTS event_invitations CASCADE;
 DROP TABLE IF EXISTS event_memberships CASCADE;
 DROP TABLE IF EXISTS venue_reservations CASCADE;
@@ -214,6 +217,33 @@ CREATE TABLE IF NOT EXISTS access_passes (
     UNIQUE (event_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS event_follows (
+    event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    follow_status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (event_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS event_change_notices (
+    id VARCHAR(120) PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    event_id VARCHAR(120) NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    change_type VARCHAR(64) NOT NULL,
+    title VARCHAR(160) NOT NULL,
+    message TEXT NOT NULL,
+    created_by_user_id VARCHAR(120) REFERENCES app_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS event_notice_receipts (
+    notice_id VARCHAR(120) NOT NULL REFERENCES event_change_notices(id) ON DELETE CASCADE,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    seen_at TIMESTAMPTZ,
+    dismissed_at TIMESTAMPTZ,
+    PRIMARY KEY (notice_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS hotels (
     id VARCHAR(120) PRIMARY KEY REFERENCES service_places(id) ON DELETE CASCADE,
     slug VARCHAR(160) NOT NULL UNIQUE,
@@ -398,6 +428,9 @@ CREATE INDEX IF NOT EXISTS event_invitations_invited_email_idx ON event_invitati
 CREATE INDEX IF NOT EXISTS event_invitations_invited_phone_number_idx ON event_invitations(invited_phone_number) WHERE invited_phone_number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS access_passes_user_id_idx ON access_passes(user_id);
 CREATE INDEX IF NOT EXISTS access_passes_event_id_idx ON access_passes(event_id);
+CREATE INDEX IF NOT EXISTS event_follows_user_status_idx ON event_follows(user_id, follow_status);
+CREATE INDEX IF NOT EXISTS event_change_notices_event_created_idx ON event_change_notices(event_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS event_notice_receipts_user_seen_idx ON event_notice_receipts(user_id, seen_at);
 CREATE INDEX IF NOT EXISTS oauth_login_attempts_expires_at_idx ON oauth_login_attempts(expires_at);
 CREATE INDEX IF NOT EXISTS stays_guest_id_idx ON stays(guest_id);
 CREATE INDEX IF NOT EXISTS stays_guest_status_window_idx ON stays(guest_id, status, start_iso_utc DESC, end_iso_utc);

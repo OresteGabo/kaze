@@ -751,14 +751,14 @@ internal class JdbcAuthRepository(
             connection.prepareStatement(
                 """
                 SELECT DISTINCT
-                    e.id,
-                    CONCAT('event-day-', to_char(e.starts_at, 'YYYY-MM-DD')) AS day_id,
-                    trim(to_char(e.starts_at, 'Dy DD Mon')) AS day_label,
-                    to_char(e.starts_at, 'YYYY-MM-DD') AS date_iso,
+                    CONCAT(e.id, '@', to_char(occ.starts_at, 'YYYYMMDDHH24MI')) AS id,
+                    CONCAT('event-day-', to_char(occ.starts_at, 'YYYY-MM-DD')) AS day_id,
+                    trim(to_char(occ.starts_at, 'Dy DD Mon')) AS day_label,
+                    to_char(occ.starts_at, 'YYYY-MM-DD') AS date_iso,
                     e.title,
                     e.summary,
-                    e.starts_at,
-                    e.ends_at,
+                    occ.starts_at,
+                    occ.ends_at,
                     COALESCE(sp.name, e.title) AS venue_label,
                     organizer.display_name AS host_label,
                     e.visibility,
@@ -776,8 +776,20 @@ internal class JdbcAuthRepository(
                     AND m.membership_status = 'ACTIVE'
                 LEFT JOIN service_places sp ON sp.id = e.place_id
                 LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                CROSS JOIN LATERAL (
+                    SELECT e.starts_at, e.ends_at
+                    WHERE e.recurrence_frequency IS NULL OR e.recurrence_frequency <> 'WEEKLY'
+                    UNION ALL
+                    SELECT occurrence_start AS starts_at, occurrence_start + (e.ends_at - e.starts_at) AS ends_at
+                    FROM generate_series(
+                        e.starts_at,
+                        LEAST(COALESCE(e.recurrence_until, now() + interval '1 year'), now() + interval '1 year'),
+                        interval '1 week'
+                    ) AS gs(occurrence_start)
+                    WHERE e.recurrence_frequency = 'WEEKLY'
+                ) occ
                 WHERE i.id IS NOT NULL OR m.id IS NOT NULL
-                ORDER BY e.starts_at ASC, e.id ASC
+                ORDER BY starts_at ASC, id ASC
                 """.trimIndent(),
             ).use { statement ->
                 statement.setString(1, userId)
@@ -797,14 +809,14 @@ internal class JdbcAuthRepository(
             connection.prepareStatement(
                 """
                 SELECT
-                    e.id,
-                    CONCAT('event-day-', to_char(e.starts_at, 'YYYY-MM-DD')) AS day_id,
-                    trim(to_char(e.starts_at, 'Dy DD Mon')) AS day_label,
-                    to_char(e.starts_at, 'YYYY-MM-DD') AS date_iso,
+                    CONCAT(e.id, '@', to_char(occ.starts_at, 'YYYYMMDDHH24MI')) AS id,
+                    CONCAT('event-day-', to_char(occ.starts_at, 'YYYY-MM-DD')) AS day_id,
+                    trim(to_char(occ.starts_at, 'Dy DD Mon')) AS day_label,
+                    to_char(occ.starts_at, 'YYYY-MM-DD') AS date_iso,
                     e.title,
                     e.summary,
-                    e.starts_at,
-                    e.ends_at,
+                    occ.starts_at,
+                    occ.ends_at,
                     COALESCE(sp.name, e.title) AS venue_label,
                     organizer.display_name AS host_label,
                     e.visibility,
@@ -815,10 +827,22 @@ internal class JdbcAuthRepository(
                 FROM events e
                 LEFT JOIN service_places sp ON sp.id = e.place_id
                 LEFT JOIN app_users organizer ON organizer.id = e.organizer_user_id
+                CROSS JOIN LATERAL (
+                    SELECT e.starts_at, e.ends_at
+                    WHERE e.recurrence_frequency IS NULL OR e.recurrence_frequency <> 'WEEKLY'
+                    UNION ALL
+                    SELECT occurrence_start AS starts_at, occurrence_start + (e.ends_at - e.starts_at) AS ends_at
+                    FROM generate_series(
+                        e.starts_at,
+                        LEAST(COALESCE(e.recurrence_until, now() + interval '1 year'), now() + interval '1 year'),
+                        interval '1 week'
+                    ) AS gs(occurrence_start)
+                    WHERE e.recurrence_frequency = 'WEEKLY'
+                ) occ
                 WHERE e.visibility = 'PUBLIC'
                   AND e.lifecycle_status IN ('SCHEDULED', 'PUBLISHED')
-                  AND (e.ends_at IS NULL OR e.ends_at >= now())
-                ORDER BY e.starts_at ASC, e.id ASC
+                  AND (occ.ends_at IS NULL OR occ.ends_at >= now())
+                ORDER BY occ.starts_at ASC, e.id ASC
                 LIMIT 100
                 """.trimIndent(),
             ).use { statement ->
@@ -951,9 +975,9 @@ internal class JdbcAuthRepository(
                     INSERT INTO events (
                         organizer_user_id, place_id, slug, title, event_type, lifecycle_status,
                         visibility, attendance_policy, capacity_mode, requires_identity,
-                        join_code, summary, starts_at, ends_at
+                        join_code, summary, starts_at, ends_at, recurrence_frequency, recurrence_until
                     )
-                    VALUES (?, ?, ?, ?, ?, 'SCHEDULED', ?, ?, ?, ?, ?, ?, COALESCE(?::timestamptz, now()), COALESCE(?::timestamptz, now() + interval '3 hours'))
+                    VALUES (?, ?, ?, ?, ?, 'SCHEDULED', ?, ?, ?, ?, ?, ?, COALESCE(?::timestamptz, now()), COALESCE(?::timestamptz, now() + interval '3 hours'), ?, ?::timestamptz)
                     RETURNING id
                     """.trimIndent(),
                 ).use { statement ->
@@ -975,6 +999,8 @@ internal class JdbcAuthRepository(
                     statement.setString(11, request.summary?.trim()?.takeIf { it.isNotEmpty() })
                     statement.setString(12, request.startsAtIso?.trim()?.takeIf { it.isNotEmpty() })
                     statement.setString(13, request.endsAtIso?.trim()?.takeIf { it.isNotEmpty() })
+                    statement.setString(14, request.recurrenceFrequency?.toEventRecurrenceFrequency())
+                    statement.setString(15, request.recurrenceUntilIso?.trim()?.takeIf { it.isNotEmpty() })
                     statement.executeQuery().use { result ->
                         check(result.next()) { "Event insert did not return an id" }
                         result.getString("id")
@@ -1217,6 +1243,9 @@ private fun String.toEventAttendancePolicy(): EventAttendancePolicy =
 
 private fun String.toEventCapacityMode(): EventCapacityMode =
     runCatching { EventCapacityMode.valueOf(trim().uppercase()) }.getOrDefault(EventCapacityMode.UNLIMITED)
+
+private fun String.toEventRecurrenceFrequency(): String? =
+    trim().uppercase().takeIf { it == "WEEKLY" }
 
 private fun String.toEventType(): String =
     trim()

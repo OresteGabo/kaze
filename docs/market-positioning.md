@@ -44,7 +44,7 @@ For Kaze:
 
 - this is a strong and practical market wedge
 - it turns Kaze into a distribution and transaction layer, not just a utility app
-- it supports long-term revenue through software fees, commissions, featured placement, and owned service businesses
+- it supports long-term revenue through owned service businesses and optional managed services after demand is proven
 
 ## Important Product Framing
 
@@ -129,18 +129,19 @@ Examples:
 
 ## Long-Term Profit Logic
 
-Over time, Kaze can make money from:
+At launch, Kaze should be free for customers, organizers, venue owners, and event-linked service sellers wherever possible.
 
-- venue listing and lead fees
-- booking commissions
-- event software subscriptions
-- featured service placement
-- payment fees
+Over time, Kaze can make money from:
 - owned service operations in the highest-demand categories
+- optional managed event packages
+- preferred partner arrangements that do not add hidden customer cost
+- payment-provider pass-through costs when rails such as Apple Pay, MTN MoMo, Airtel Money, IremboPay, BK / RSwitch, or local alternatives charge unavoidable fees
+
+Venue listing fees, booking commissions, and seller commissions should not be part of the starting promise. They can be reviewed much later only if they do not weaken adoption, venue trust, or customer affordability.
 
 ## Final Position
 
 Kaze is not just an event app.
 It can become a more direct market infrastructure layer for venues, organizers, guests, and service providers.
 
-That is a strong story for Rwanda and for expansion later.
+That is a strong story for Rwanda, East Africa, and possible West Africa expansion later.

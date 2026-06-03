@@ -4,7 +4,7 @@ Last updated: April 4, 2026
 
 ## Overview
 
-Kaze is a private digital hospitality platform developed by GABO for hotel guests, event attendees, day visitors, and related hospitality users.
+Kaze is a private event, venue, and event-linked services platform developed by GABO for attendees, organizers, venues, service providers, and related hospitality users.
 
 This Privacy Policy explains how Kaze may collect, use, store, and protect personal data when the product is used in business, pilot, or production environments.
 
@@ -17,7 +17,7 @@ Kaze is operated as a private commercial project by GABO.
 
 Depending on the deployment model, personal data may be processed:
 - by GABO as the product provider
-- by a hotel, venue, or business customer using Kaze
+- by a venue, organizer, service provider, hotel, or business customer using Kaze
 - by both parties under a commercial agreement
 
 Exact controller/processor roles may depend on the final contract and deployment setup.
@@ -28,10 +28,13 @@ Depending on the product features enabled, Kaze may process:
 
 - guest identity information
   - name
+  - event or invitation references
   - stay identifier
   - room assignment
   - booking-related references
 - service request data
+  - event-linked service requests
+  - venue reservation requests
   - late checkout requests
   - housekeeping requests
   - concierge requests
@@ -61,8 +64,8 @@ Depending on the product features enabled, Kaze may process:
 
 We may use information to:
 
-- provide digital guest services
-- display hotel stay information
+- provide event, venue, and guest services
+- display event, reservation, invitation, pass, or stay information
 - enable map navigation and venue discovery
 - process and track service requests
 - personalize guest-facing recommendations

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file captures business ideas that fit Rwanda and East Africa, but should not all be forced into Kaze itself.
+This file captures business ideas that fit Rwanda and East Africa, with possible West Africa expansion through strong local marketing partners, but should not all be forced into Kaze itself.
 
 The goal is to help Kaze stay focused while keeping a long-term founder roadmap for future companies, platforms, and vertical integrations.
 
@@ -30,7 +30,8 @@ A photo, video, and live-streaming business focused on events.
 
 At first:
 - list third-party photographers and videographers inside Kaze
-- take commissions
+- let providers list and sell through Kaze free at launch
+- learn demand, pricing, and reliability patterns
 
 Later:
 - operate Kaze-owned teams for premium events
@@ -50,7 +51,7 @@ Year 3+:
 
 ### Profit logic
 
-- commission revenue
+- later Kaze-owned media packages
 - premium package margins
 - upsells for drone, reels, live stream, same-day edits
 
@@ -89,7 +90,7 @@ Year 3+:
 
 ### Profit logic
 
-- booking commissions
+- later Kaze-managed transport margins
 - premium service margins
 - subscription contracts with organizers or venues
 
@@ -127,7 +128,7 @@ Year 3+:
 
 ### Profit logic
 
-- commissions
+- later Kaze-owned or preferred production margins
 - packaging margins
 - rush-fee pricing
 
@@ -165,7 +166,7 @@ Year 3+:
 
 ### Profit logic
 
-- commissions
+- later Kaze-owned or preferred styling margins
 - package margins
 - upsells for flowers, lighting, stage, premium decor
 
@@ -208,6 +209,8 @@ Year 3+:
 - per-event fees
 - enterprise setup and support fees
 
+These should be considered later B2B options, not the default launch model.
+
 ## 6. Kaze Ticketing And Passes
 
 ### What it is
@@ -240,6 +243,8 @@ Year 3+:
 - per-ticket or per-pass fees
 - organizer subscriptions
 - venue contracts
+
+These should be delayed until Kaze has proven adoption and should not replace the free launch promise.
 
 ## 7. Kaze Corporate Events
 
@@ -275,6 +280,8 @@ Year 3+:
 - margin on bundled services
 - recurring corporate contracts
 
+These belong to optional managed services, not basic Kaze marketplace access.
+
 ## 8. Kaze Wedding Platform
 
 ### What it is
@@ -308,7 +315,7 @@ Year 3+:
 
 ### Profit logic
 
-- vendor commissions
+- later Kaze-owned or preferred wedding service margins
 - premium invitation packages
 - service bundling margins
 
@@ -347,8 +354,8 @@ Year 3+:
 
 ### Profit logic
 
-- commissions
-- featured placement
+- later Kaze-owned or preferred network margins
+- optional featured placement only if it does not reduce marketplace trust
 - talent management margins
 
 ## Which Ideas Belong Inside Kaze Now
@@ -386,6 +393,8 @@ The smartest sequence is:
 2. Use Kaze to generate demand for event services.
 3. Learn which service categories have the strongest margins and most repeat demand.
 4. Own the best categories later through separate branded businesses or operating units.
+
+The starting promise should stay simple: customers, venues, organizers, and service providers can benefit from Kaze without Kaze adding an early platform charge. Payment-provider costs are different; if Apple Pay, MTN MoMo, Airtel Money, IremboPay, BK / RSwitch, or country-specific rails charge fees, those should be shown transparently as payment rail costs.
 
 ## Final Rule
 

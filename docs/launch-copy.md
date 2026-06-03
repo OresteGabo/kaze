@@ -10,6 +10,8 @@ Kaze brings invitations, passes, schedules, venues, and event-linked services in
 
 Instead of relying on fragmented manual coordination, unclear venue communication, or commission-heavy middlemen, Kaze helps guests, organizers, and venues connect more directly.
 
+Kaze is designed to start free for guests, organizers, venues, and event-linked service providers, so the platform feels like an easier way to work rather than another fee.
+
 With Kaze, people can:
 
 - receive and manage invitations
@@ -32,6 +34,7 @@ Why Kaze matters:
 - clearer pricing and access
 - smoother coordination
 - fewer unnecessary layers between customer and venue
+- free venue and service visibility at launch
 
 Kaze is built to make events feel more organized, more direct, and easier to move through.
 
@@ -73,6 +76,7 @@ Finding a venue or coordinating an event often depends on manual follow-up, scat
 - Clearer event coordination
 - One place for passes and invitations
 - Better visibility for venues and service partners
+- Free participation at launch for venues, organizers, and service sellers
 
 ### Section: Who It Helps
 

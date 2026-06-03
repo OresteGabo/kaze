@@ -129,8 +129,9 @@ High-potential categories:
 
 This gives Kaze a practical path:
 1. start with third-party providers
-2. take commissions and build demand
-3. later own the strongest categories through Kaze-operated companies
+2. let venues and service providers join free so the marketplace can build trust and demand
+3. study which event-linked services sell best
+4. later own the strongest categories through Kaze-operated companies, while still allowing third-party competition
 
 ## What To Demote
 

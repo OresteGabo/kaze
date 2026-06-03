@@ -1,6 +1,6 @@
 # Kaze
 
-Kaze is a Kotlin Multiplatform event operating system for conferences, weddings, summits, and premium gatherings in Rwanda and East Africa.
+Kaze is a Kotlin Multiplatform event operating system for conferences, weddings, summits, and premium gatherings, starting in Rwanda and East Africa with room to expand into West Africa through strong local marketing partners.
 
 Instead of treating every user as a hotel guest, Kaze centers the full event journey for:
 - conference attendees
@@ -35,16 +35,25 @@ Kaze can still power venue mapping and access logic underneath, but the product 
 
 ## Revenue Direction
 
-Kaze is not just a guest app. It can grow into an event commerce platform through:
-- organizer software fees
-- venue partnerships
-- service commissions
-- featured vendor placement
-- event package upsells
+Kaze should start as a free event and venue marketplace.
+
+At launch:
+- attendees and guests should not pay Kaze to use the app
+- organizers should be able to coordinate events without a Kaze platform fee
+- venue owners and managers should be able to list, show, and rent their places without Kaze commission
+- service providers should be able to register and sell event-linked services without Kaze taking an early marketplace cut
+- customers should see Kaze as a way to reduce friction, not as another cost layer
+
+The long-term business model should come from demand Kaze helps organize, not from making the first users pay more. Kaze can later earn through:
+- Kaze-owned service categories that prove strong demand
+- optional managed service packages
+- partner service arrangements that do not inflate the customer price
+- unavoidable payment-provider charges when a payment rail applies
 - local payment support in Rwanda
   - MTN MoMo
   - Airtel Money
   - BK / RSwitch and other compatible payment rails
+- future payment rails in other countries
 - add-on service sales
   - photography and videography
   - live streaming
@@ -69,6 +78,7 @@ Kaze should avoid becoming a generic hotel utility app with unrelated room-servi
 - [Product Overview](docs/product-overview.md)
 - [Venue Platform Strategy](docs/venue-platform-strategy.md)
 - [Event Platform Vision](docs/event-platform-vision.md)
+- [Free Launch And Future Fees](docs/free-launch-and-future-fees.md)
 - [Architecture Diagrams](docs/diagrams/README.md)
 - [Access Pass System](docs/access-pass-system.md)
 - [Map Access Control](docs/map-access-control.md)

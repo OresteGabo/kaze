@@ -6,7 +6,7 @@ Last updated: April 4, 2026
 
 These Terms of Use describe the rules for access to and use of Kaze.
 
-Kaze is a private hospitality software product developed by GABO.
+Kaze is a private event, venue, and event-linked services software product developed by GABO.
 
 Contact:
 - See [CONTACT.md](CONTACT.md)
@@ -20,7 +20,7 @@ By accessing, testing, deploying, or using Kaze, you agree to these Terms of Use
 Kaze may only be used by:
 
 - authorized business customers
-- authorized hotel or venue staff
+- authorized organizer, venue, hotel, or service-provider staff
 - approved internal team members
 - approved contractors or operators
 - end users using the service through an authorized business deployment
@@ -32,7 +32,7 @@ You may not:
 - reverse engineer the product except where law explicitly allows it
 - copy or redistribute the product without authorization
 - attempt to bypass access controls
-- misuse hotel, guest, or venue data
+- misuse event, guest, organizer, venue, service-provider, or hotel data
 - interfere with the platform or related infrastructure
 - use the product for unlawful conduct
 
@@ -46,7 +46,7 @@ Kaze may change over time. Features may be added, removed, limited, or refined a
 
 ## Business Integrations
 
-Some features may depend on third-party systems such as hotel property systems, notifications, mapping assets, or venue operations platforms. Availability of those features may depend on external integrations.
+Some features may depend on third-party systems such as payment providers, notifications, mapping assets, venue operations platforms, or hotel property systems where relevant. Availability of those features may depend on external integrations.
 
 ## Privacy
 

@@ -11,7 +11,7 @@ It is designed for:
 - service providers connected to an event
 - public event and venue discovery before authentication
 
-Kaze is not trying to be a generic hotel utility app. Its core job is to make event experiences feel organized, premium, easy to enter, and easy to monetize.
+Kaze is not trying to be a generic hotel utility app. Its core job is to make event experiences feel organized, premium, easy to enter, and easier to operate.
 
 ## Core User Types
 
@@ -115,14 +115,16 @@ That means the system can support:
 
 ## Commerce Direction
 
-Kaze should support paid event interactions, especially where local organizers and venues need a simpler and cheaper alternative to fragmented manual workflows.
+Kaze should support event commerce without making the first marketplace participants pay extra just to join.
 
 Important commercial directions:
-- event package sales
+- free event and venue discovery at launch
+- free venue listing and rental lead generation for owners and managers at launch
+- free seller participation for event-linked service providers at launch
 - venue discovery with conversion into booking or invitation flows
-- deposits and balance collection
 - service packages sold during booking or after invitation acceptance
-- organizer-facing tools that justify recurring or per-event fees
+- demand tracking so Kaze can learn which service categories are strongest
+- later Kaze-owned services in categories where demand and margins are proven
 
 Potential add-on categories:
 - camera and photography services
@@ -139,8 +141,11 @@ For Rwanda, payment support should prioritize methods people and businesses alre
 Priority methods:
 - MTN MoMo
 - Airtel Money
+- IremboPay where relevant
 - BK / RSwitch compatible flows
 - other locally relevant mobile or bank-backed payment rails
+
+Any unavoidable payment-provider charges should be transparent and treated as payment rail costs, not as a hidden Kaze markup. Kaze should avoid adding extra platform cost where the customer is already paying for a venue or a service they would have needed anyway.
 
 ## Platform Direction
 
@@ -176,7 +181,7 @@ Why:
 
 Kaze can create stronger value by:
 - reducing event booking friction
-- lowering commission pressure on venues and organizers
+- lowering commission pressure on venues, organizers, and customers
 - adding local payment options
 - bundling services around an event
 - owning the relationship between guest, organizer, venue, and service provider

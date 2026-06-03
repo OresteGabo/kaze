@@ -9,6 +9,7 @@ Current product direction:
 - conference and wedding centered
 - venue-aware, not hotel-bloated
 - focused on passes, schedules, access, and event-linked services
+- free at launch for guests, organizers, venues, and service sellers wherever possible
 
 Status guide:
 - `[x]` Done
@@ -332,7 +333,7 @@ Organizers and guests often track payments across mobile money, cash, cards, and
 - [~] Kaze Pass-gated event entry after reservation/payment
 - [ ] venue operator dashboard for reservation approvals
 - [ ] cancellation and refund policy engine
-- [ ] commission and payout model
+- [ ] free-launch payout and payment-provider fee handling model
 - [ ] tax and invoicing model for Rwanda
 
 ## Platform Expansion
@@ -401,12 +402,12 @@ Last checked: 2026-05-01
 - [x] security policy draft
 - [x] terms of use draft
 - [ ] customer contract templates
-- [ ] paid pilot onboarding process
+- [ ] free pilot onboarding process
 - [ ] SLA / support process
-- [ ] pricing and packaging model
+- [ ] optional future pricing and packaging model
 - [ ] commercial rollout checklist
-- [ ] venue-commerce pricing model
-- [ ] operator commission strategy
+- [ ] free venue-commerce launch model
+- [ ] later owned-service revenue strategy
 - [ ] partner onboarding for decorators, cleaners, insurers, and media providers
 - [ ] anti-bypass commercial strategy for hotels and venues
 - [ ] merchant/payment compliance review for Rwanda

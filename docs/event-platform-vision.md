@@ -59,20 +59,23 @@ They need:
 
 ## Revenue Logic
 
-Kaze should make money from:
-- organizer software fees
-- venue partnerships
-- service commissions
-- featured provider placement
-- packaged event upsells
+Kaze should start free for the main marketplace participants:
+- guests and attendees should not pay Kaze to use the app
+- organizers should be able to coordinate events without an early platform fee
+- venues should be able to list, show, and rent spaces without Kaze commission
+- event-linked service providers should be able to register and sell without an early Kaze marketplace cut
 
-Then later, Kaze can own the best-performing service categories directly.
+The launch goal is adoption, trust, operational ease, and demand discovery.
+
+Then later, Kaze can make money by owning or operating the best-performing service categories directly, while still allowing outside providers to compete on the platform.
 
 Examples:
 - Kaze Studio for photo and video
 - Kaze Transport
 - Kaze Print and Branding
 - Kaze Event Styling
+
+If online payment rails are used, unavoidable provider charges from services such as Apple Pay, MTN MoMo, Airtel Money, IremboPay, BK / RSwitch, or country-specific alternatives may be passed through transparently. Those charges should be treated differently from a Kaze commission.
 
 ## Product Rule For Future Decisions
 

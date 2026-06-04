@@ -4,10 +4,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,8 +67,12 @@ import dev.orestegabo.kaze.ui.components.KazeGhostButton
 import dev.orestegabo.kaze.ui.components.KazePrimaryButton
 import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import kaze.composeapp.generated.resources.Res
+import kaze.composeapp.generated.resources.airtel_logo
+import kaze.composeapp.generated.resources.bk_logo
 import kaze.composeapp.generated.resources.gabo_mark_raster
 import kaze.composeapp.generated.resources.k_mark_raster
+import kaze.composeapp.generated.resources.momo
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 private enum class OnboardingLayoutMode {
@@ -76,11 +87,18 @@ internal data class OnboardingPage(
     val body: String,
     val footer: String,
     val highlights: List<OnboardingFeature>,
+    val paymentOptions: List<OnboardingPaymentOption> = emptyList(),
+    val countryLabels: List<String> = emptyList(),
 )
 
 internal data class OnboardingFeature(
     val icon: ImageVector,
     val title: String,
+)
+
+internal data class OnboardingPaymentOption(
+    val title: String,
+    val logo: DrawableResource,
 )
 
 internal val kazeOnboardingPages = listOf(
@@ -108,14 +126,20 @@ internal val kazeOnboardingPages = listOf(
     ),
     OnboardingPage(
         eyebrow = "Direct access",
-        title = "Reach venues more directly",
-        body = "Find venues, invitations, passes, and event-linked services in one place, without the usual back-and-forth.",
-        footer = "Kaze helps guests, organizers, and venues connect more clearly, with fewer unnecessary layers.",
+        title = "Local payments, local venues",
+        body = "Find venues, invitations, passes, and event-linked services in one place, with payment options that fit how people already pay locally.",
+        footer = "Kaze keeps venue discovery, event services, and local payment choices close to the way people already plan events.",
         highlights = listOf(
             OnboardingFeature(Icons.Default.Storefront, "Direct venue access"),
-            OnboardingFeature(Icons.Default.Payments, "Clearer pricing"),
+            OnboardingFeature(Icons.Default.Payments, "Local payment friendly"),
             OnboardingFeature(Icons.Default.RoomService, "Less back-and-forth"),
         ),
+        paymentOptions = listOf(
+            OnboardingPaymentOption("MTN MoMo", Res.drawable.momo),
+            OnboardingPaymentOption("Airtel Money", Res.drawable.airtel_logo),
+            OnboardingPaymentOption("BK / Rswitch", Res.drawable.bk_logo),
+        ),
+        countryLabels = listOf("🇷🇼 Rwanda", "🇰🇪 Kenya", "🇺🇬 Uganda", "🇹🇿 Tanzania", "🇬🇭 Ghana", "🇳🇬 Nigeria"),
     ),
 )
 
@@ -296,6 +320,7 @@ private fun OnboardingPageCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PageHero(
+                        page = page,
                         pageIndex = pageIndex,
                         modifier = Modifier
                             .weight(1f)
@@ -317,6 +342,7 @@ private fun OnboardingPageCard(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                         PageHero(
+                            page = page,
                             pageIndex = pageIndex,
                             modifier = if (layoutMode == OnboardingLayoutMode.TALL_EXPANDED) {
                                 Modifier.height(236.dp)
@@ -429,6 +455,7 @@ private fun OnboardingFeatureRow(feature: OnboardingFeature) {
 
 @Composable
 private fun PageHero(
+    page: OnboardingPage,
     pageIndex: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -522,7 +549,133 @@ private fun PageHero(
             modifier = Modifier
                 .align(Alignment.Center)
                 .size(96.dp),
-            alpha = 0.8f,
+            alpha = if (page.paymentOptions.isEmpty()) 0.8f else 0.34f,
+        )
+
+        if (page.paymentOptions.isNotEmpty()) {
+            OnboardingLocalPaymentAtmosphere(
+                paymentOptions = page.paymentOptions,
+                countryLabels = page.countryLabels,
+                modifier = Modifier.matchParentSize(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun OnboardingLocalPaymentAtmosphere(
+    paymentOptions: List<OnboardingPaymentOption>,
+    countryLabels: List<String>,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "local-payment-atmosphere")
+    val drift = transition.animateFloat(
+        initialValue = -7f,
+        targetValue = 7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2400),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "payment-drift",
+    )
+    val fade = transition.animateFloat(
+        initialValue = 0.62f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2800),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "country-fade",
+    )
+
+    Box(modifier = modifier.padding(14.dp)) {
+        paymentOptions.getOrNull(0)?.let { option ->
+            AmbientPaymentLogo(
+                option = option,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .graphicsLayer {
+                        translationY = drift.value
+                        alpha = 0.86f
+                    },
+            )
+        }
+        paymentOptions.getOrNull(1)?.let { option ->
+            AmbientPaymentLogo(
+                option = option,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .graphicsLayer {
+                        translationY = -drift.value
+                        alpha = 0.78f
+                    },
+            )
+        }
+        paymentOptions.getOrNull(2)?.let { option ->
+            AmbientPaymentLogo(
+                option = option,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .graphicsLayer {
+                        translationY = drift.value * 0.55f
+                        alpha = 0.72f
+                    },
+            )
+        }
+
+        FlowRow(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxWidth(0.68f)
+                .graphicsLayer { alpha = fade.value },
+            horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.End),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            countryLabels.forEach { label ->
+                AmbientCountryChip(label = label)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AmbientPaymentLogo(
+    option: OnboardingPaymentOption,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(22.dp),
+        color = Color.White.copy(alpha = 0.72f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
+        ),
+        shadowElevation = 3.dp,
+    ) {
+        Image(
+            painter = painterResource(option.logo),
+            contentDescription = option.title,
+            modifier = Modifier.size(58.dp).padding(9.dp),
+        )
+    }
+}
+
+@Composable
+private fun AmbientCountryChip(label: String) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.58f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
+        ),
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f),
         )
     }
 }

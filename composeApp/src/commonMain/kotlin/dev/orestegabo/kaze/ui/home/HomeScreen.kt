@@ -56,6 +56,7 @@ internal fun HomeScreen(
     serviceRequestDraft: ServiceRequestDraftUi,
     submittedServiceRequests: List<ServiceRequestRecord>,
     invitations: List<InvitationPreview>,
+    reservationRequests: List<ReservationResponse>,
     personalEventCount: Int,
     suggestedEventCount: Int,
     isGuestMode: Boolean,
@@ -133,7 +134,7 @@ internal fun HomeScreen(
                     accessCard != null ||
                     invitations.isNotEmpty() ||
                     personalEventCount > 0
-                if (!hasPersonalContent) {
+                if (!hasPersonalContent && reservationRequests.isEmpty()) {
                     KazeEmptyStateScreen(
                         modifier = Modifier.fillMaxWidth(),
                         title = if (suggestedEventCount > 0) "No personal events yet" else "No passes or events yet",
@@ -154,7 +155,7 @@ internal fun HomeScreen(
                             }
                         },
                     )
-                } else {
+                } else if (hasPersonalContent) {
                     HomeStayDashboard(
                         hotelDisplayName = hotelDisplayName,
                         guestName = guestName,
@@ -209,6 +210,12 @@ internal fun HomeScreen(
                     code = joinCode,
                     onCodeChange = { joinCode = it.uppercase() },
                     onSubmit = { onEnterCode(joinCode) },
+                )
+            }
+
+            if (!isGuestMode) {
+                ReservationRequestsSection(
+                    reservations = reservationRequests,
                 )
             }
 

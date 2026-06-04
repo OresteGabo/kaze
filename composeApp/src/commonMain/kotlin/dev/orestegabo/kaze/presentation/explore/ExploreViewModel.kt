@@ -28,7 +28,7 @@ internal class ExploreViewModel(
     fun onHighlightAction(highlight: AmenityHighlight): ExploreActionResult =
         when (highlight.actionLabel) {
             "Open amenity map", "Open venue map", "Start route" ->
-                ExploreActionResult.Feedback("Indoor maps are not part of the MVP yet. Use the venue details for now.")
+                ExploreActionResult.Feedback("Indoor maps are not ready for this place yet. Use the venue details for now.")
             "Open amenity" ->
                 ExploreActionResult.Feedback("${highlight.title} details are available from the venue.")
             else -> ExploreActionResult.Feedback("${highlight.title} saved for this event journey.")
@@ -38,5 +38,5 @@ internal class ExploreViewModel(
         ExploreActionResult.Feedback("Choose a venue from Home to start a reservation request.")
 
     fun openPoolDeckRoute(): ExploreActionResult.Feedback =
-        ExploreActionResult.Feedback("Advanced indoor maps are deferred for MVP.")
+        ExploreActionResult.Feedback("Detailed indoor routes are not ready for this place yet.")
 }

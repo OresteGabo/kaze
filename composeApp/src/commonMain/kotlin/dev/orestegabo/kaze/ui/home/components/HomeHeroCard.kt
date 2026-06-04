@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Search
@@ -27,10 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.kaze.ui.components.KazePrimaryButton
+import dev.orestegabo.kaze.ui.components.KazeSecondaryButton
 import dev.orestegabo.kaze.ui.components.MetaPill
 
 @Composable
 internal fun HomeHeroCard(
+    onBrowseVenues: () -> Unit,
+    onSeeEvents: () -> Unit,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
@@ -51,12 +56,12 @@ internal fun HomeHeroCard(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
-                        "Explore Kaze",
+                        "Start with Kaze",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        "Venues • Reservations • Pass",
+                        "Venues • Events • Invitation codes",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
@@ -86,6 +91,21 @@ internal fun HomeHeroCard(
                 MetaPill("Venues", leadingIcon = Icons.Default.Search)
                 MetaPill("Invitation code", leadingIcon = Icons.Default.VpnKey)
                 MetaPill("Invitations", leadingIcon = Icons.Default.Groups)
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                KazePrimaryButton(
+                    label = "Browse venues",
+                    onClick = onBrowseVenues,
+                    leadingIcon = Icons.Default.Explore,
+                )
+                KazeSecondaryButton(
+                    label = "View events",
+                    onClick = onSeeEvents,
+                    leadingIcon = Icons.Default.CalendarMonth,
+                )
             }
         }
     }

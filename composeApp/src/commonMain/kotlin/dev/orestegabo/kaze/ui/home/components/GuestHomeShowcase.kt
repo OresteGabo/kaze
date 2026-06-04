@@ -49,6 +49,7 @@ internal fun GuestHomeShowcase(
     onCodeChange: (String) -> Unit,
     onSubmitCode: () -> Unit,
     onOpenInvitations: () -> Unit,
+    onBrowseVenues: () -> Unit,
 ) {
     BoxWithConstraints {
         val isExpanded = maxWidth >= 860.dp
@@ -62,6 +63,7 @@ internal fun GuestHomeShowcase(
                 GuestHomeHeroCard(
                     invitations = invitations,
                     onOpenInvitations = onOpenInvitations,
+                    onBrowseVenues = onBrowseVenues,
                     modifier = Modifier.weight(1.18f),
                 )
                 GuestHomeEntryCard(
@@ -76,6 +78,7 @@ internal fun GuestHomeShowcase(
                 GuestHomeHeroCard(
                     invitations = invitations,
                     onOpenInvitations = onOpenInvitations,
+                    onBrowseVenues = onBrowseVenues,
                 )
                 GuestHomeEntryCard(
                     code = code,
@@ -91,6 +94,7 @@ internal fun GuestHomeShowcase(
 private fun GuestHomeHeroCard(
     invitations: List<InvitationPreview>,
     onOpenInvitations: () -> Unit,
+    onBrowseVenues: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -194,6 +198,22 @@ private fun GuestHomeHeroCard(
                     MetaPill("Pass", leadingIcon = Icons.Default.QrCode2)
                     MetaPill("Schedule", leadingIcon = Icons.Default.CalendarMonth)
                     MetaPill("Venue flow", leadingIcon = Icons.Default.Map)
+                }
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    KazePrimaryButton(
+                        label = "Browse venues",
+                        onClick = onBrowseVenues,
+                        leadingIcon = Icons.Default.Map,
+                    )
+                    KazeSecondaryButton(
+                        label = "View invites",
+                        onClick = onOpenInvitations,
+                        leadingIcon = Icons.Default.VpnKey,
+                    )
                 }
 
                 Surface(

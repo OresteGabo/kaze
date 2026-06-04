@@ -526,7 +526,7 @@ internal class KazeAppViewModel(
             )
             "google_auth_not_configured", "social_auth_not_configured" -> KazeAuthFailure(
                 title = "Google sign-in is not ready",
-                message = "The server is missing Google sign-in configuration. Email sign-in and guest browsing are still available.",
+                message = "Google sign-in is temporarily unavailable. Email sign-in and guest browsing are still available.",
                 provider = SocialAuthProvider.GOOGLE.displayName,
             )
             "identity_email_missing" -> KazeAuthFailure(

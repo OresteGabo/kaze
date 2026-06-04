@@ -159,6 +159,38 @@ class FeatureViewModelTest {
     }
 
     @Test
+    fun app_view_model_tracks_saved_reservation_requests() = runTest(testDispatcher) {
+        val secureStore = RecordingSecureStore()
+        val viewModel = KazeAppViewModel(
+            secureStore = secureStore,
+            authGateway = RecordingAuthGateway(),
+        )
+        advanceUntilIdle()
+
+        viewModel.signIn("aline@example.com", "Password123!")
+        advanceUntilIdle()
+
+        val response = viewModel.submitReservation(
+            ReservationDraftSubmissionRequest(
+                placeId = "place_test",
+                serviceId = "service_test",
+                eventName = "Launch reception",
+                preferredDateLabel = "24 Aug 2026",
+                selectedRoom = "Garden hall",
+                guestCount = 80,
+                packageLabel = "Full day",
+                paymentMethod = "MTN MoMo",
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals("KAZE-TEST", response.reservationCode)
+        assertEquals(1, viewModel.uiState.sessionReservations.size)
+        assertEquals("Launch reception", viewModel.uiState.sessionReservations.first().eventName)
+        assertTrue(secureStore.values["app.session_content_cache"].orEmpty().contains("KAZE-TEST"))
+    }
+
+    @Test
     fun app_view_model_opens_map_route() = runTest(testDispatcher) {
         val viewModel = KazeAppViewModel(RecordingSecureStore())
         advanceUntilIdle()

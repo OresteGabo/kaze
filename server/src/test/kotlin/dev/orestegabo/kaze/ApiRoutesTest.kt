@@ -145,7 +145,7 @@ class ApiRoutesTest {
     ) {
 
         val unauthorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary")
-        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_jean_paul/itinerary") {
+        val authorizedResponse = client.get("/api/v1/hotels/rw-kgl-marriott/guests/guest_ange/itinerary") {
             header(HttpHeaders.Authorization, "Bearer ${testJwt()}")
         }
 

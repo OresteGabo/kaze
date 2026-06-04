@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -87,6 +88,8 @@ import kaze.composeapp.generated.resources.permission_primer_location_title
 import kaze.composeapp.generated.resources.success_state_home
 import kaze.composeapp.generated.resources.success_state_subtitle
 import kaze.composeapp.generated.resources.success_state_title
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
@@ -112,6 +115,7 @@ internal fun KazeEmptyStateScreen(
     eyebrow: String? = null,
     tags: List<String> = emptyList(),
     icon: ImageVector = Icons.Outlined.BookmarkBorder,
+    brandIcon: DrawableResource? = null,
     onAction: (() -> Unit)? = null,
 ) {
     Column(
@@ -142,12 +146,20 @@ internal fun KazeEmptyStateScreen(
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
             contentAlignment = Alignment.Center,
         ) {
-            androidx.compose.material3.Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-            )
+            if (brandIcon != null) {
+                Image(
+                    painter = painterResource(brandIcon),
+                    contentDescription = "Kaze mark",
+                    modifier = Modifier.size(38.dp),
+                )
+            } else {
+                androidx.compose.material3.Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(20.dp))

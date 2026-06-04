@@ -46,7 +46,7 @@ internal enum class LegalPage(
                 heading = "Reservations and bookings",
                 body = listOf(
                     "When reservations or booking-related actions are used, Kaze may process the data needed to show booking state and venue or hotel confirmation details.",
-                    "Direct in-app payments are not part of the MVP experience.",
+                    "Some reservations may be confirmed by the venue before payment is requested or collected.",
                 ),
             ),
             LegalSection(
@@ -148,7 +148,7 @@ internal enum class LegalPage(
                 heading = "Security approach",
                 body = listOf(
                     "Kaze uses access controls, limited internal access, secure storage practices, environment separation, audit-friendly operations, and ongoing security reviews.",
-                    "No system can be guaranteed to be 100% secure, so services are reviewed before launch.",
+                    "No system can be guaranteed to be 100% secure, so Kaze reviews services and security controls regularly.",
                 ),
             ),
             LegalSection(
@@ -167,8 +167,8 @@ internal enum class LegalPage(
             LegalSection(
                 heading = "Third-party and infrastructure services",
                 body = listOf(
-                    "Kaze may rely on hosting, notifications, payment providers, maps, wallet integrations, or social sign-in providers. Each provider is reviewed for privacy, security, and contractual fit.",
-                    "Infrastructure and operational choices may change over time as the product grows.",
+                    "Kaze may rely on trusted services for hosting, notifications, payments, maps, wallet features, or sign-in. These providers are reviewed for privacy and security.",
+                    "Some service providers may change over time, and Kaze will keep the experience focused on reliability and user safety.",
                 ),
             ),
         ),

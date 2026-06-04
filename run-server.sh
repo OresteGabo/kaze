@@ -23,7 +23,7 @@ if [ -z "${JAVA_HOME:-}" ] && ! command -v java >/dev/null 2>&1; then
   exit 1
 fi
 
-SYNC_CLOUD_ON_RUN="${SYNC_CLOUD_ON_RUN:-1}"
+SYNC_CLOUD_ON_RUN="${SYNC_CLOUD_ON_RUN:-0}"
 
 if [ "$SYNC_CLOUD_ON_RUN" = "1" ]; then
   if [ -n "${PROJECT_ID:-}" ] && [ -n "${DATABASE_URL:-}" ] && [ -n "${KAZE_JWT_SECRET:-}" ] && [ -x "$ROOT_DIR/deploy-cloudrun.sh" ]; then
@@ -32,6 +32,8 @@ if [ "$SYNC_CLOUD_ON_RUN" = "1" ]; then
   else
     echo "Cloud sync skipped. Add PROJECT_ID, DATABASE_URL, and KAZE_JWT_SECRET in $ENV_FILE to enable automatic deploy."
   fi
+else
+  echo "Cloud sync disabled. Set SYNC_CLOUD_ON_RUN=1 only when you intentionally want local startup to deploy first."
 fi
 
 export DATABASE_URL="${DATABASE_URL:-jdbc:postgresql://localhost:5432/kaze}"

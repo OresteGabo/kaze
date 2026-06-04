@@ -85,6 +85,7 @@ Kaze should avoid becoming a generic hotel utility app with unrelated room-servi
 - [UI Architecture](docs/ui-architecture.md)
 - [API Contracts](docs/kaze-api-contracts.md)
 - [Security Checklist](docs/security-checklist.md)
+- [Environments](docs/environments.md)
 - [Roadmap](ROADMAP.md)
 
 ## Legal And Project Policies
@@ -111,10 +112,13 @@ Server:
 
 ## Local Server Environment
 
-Kaze uses two server env files:
+Kaze uses local and deployment-specific server env files:
 
 - [`.env.server.reference`](.env.server.reference): tracked reference for required variables
 - `.env.server.local`: real local values and secrets, gitignored
+- `.env.server.dev.reference`: tracked reference for development Cloud Run
+- `.env.server.staging.reference`: tracked reference for staging Cloud Run
+- `.env.server.production.reference`: tracked reference for production Cloud Run
 
 Use `.env.server.local` for:
 - `DATABASE_URL`
@@ -132,25 +136,30 @@ Apple sign-in server variables also belong in `.env.server.local`:
 
 Only put these in an Android Studio Run Configuration if you are launching the Ktor server directly from Android Studio. They do not belong in the mobile app environment itself.
 
-Both scripts load `.env.server.local` automatically:
+Local startup loads `.env.server.local` automatically:
 
 ```sh
 ./run-server.sh
-./deploy-cloudrun.sh
 ```
 
-That means you do not need to manually export the same variables every time.
+Deployments should use an explicit environment file:
 
-`./run-server.sh` can also sync Cloud Run before starting your local backend when:
+```sh
+ENV_FILE=.env.server.dev.local ./deploy-cloudrun.sh
+ENV_FILE=.env.server.staging.local ./deploy-cloudrun.sh
+ENV_FILE=.env.server.production.local ./deploy-cloudrun.sh
+```
+
+`./run-server.sh` does not sync Cloud Run by default. It can sync Cloud Run before starting your local backend only when:
 
 - `SYNC_CLOUD_ON_RUN=1`
 - `PROJECT_ID` is set
 - `KAZE_JWT_SECRET` is set
 
-If you want to skip the deploy step for a local-only run:
+For normal local-only work:
 
 ```sh
-SYNC_CLOUD_ON_RUN=0 ./run-server.sh
+./run-server.sh
 ```
 
 Web:

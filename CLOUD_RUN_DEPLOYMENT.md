@@ -18,7 +18,7 @@ This project now uses a slightly more explicit deploy flow in `deploy-cloudrun.s
 
 That flow is easier to understand than the default `gcloud run deploy --source .` spinner, which often just repeats "Building Container" without much detail.
 
-## Recommended region
+## Deployment Region
 
 Use `europe-west1`.
 
@@ -36,6 +36,24 @@ Enable these APIs in your Google Cloud project:
 - Cloud Build API
 - Artifact Registry API
 
+## Environments
+
+Kaze now supports separate deployment environment files for development, staging, and production.
+
+Environment files:
+
+- `.env.server.dev.local`
+- `.env.server.staging.local`
+- `.env.server.production.local`
+
+The tracked reference files show the expected variables:
+
+- `.env.server.dev.reference`
+- `.env.server.staging.reference`
+- `.env.server.production.reference`
+
+See [Kaze Environments](docs/environments.md) for the full workflow.
+
 ## Required environment variables
 
 Minimum:
@@ -50,7 +68,7 @@ For Google login:
 - `GOOGLE_OAUTH_CLIENT_SECRET`
 - `GOOGLE_OAUTH_REDIRECT_URI`
 
-## First deploy
+## First production deploy
 
 ```sh
 export PROJECT_ID="kaze-backend"
@@ -63,8 +81,24 @@ export GOOGLE_OAUTH_REDIRECT_URI="https://api.kazerwanda.com/api/v1/auth/google/
 /bin/sh ./deploy-cloudrun.sh
 ```
 
+Environment-specific deploy commands:
+
+```sh
+ENV_FILE=.env.server.dev.local ./deploy-cloudrun.sh
+```
+
+```sh
+ENV_FILE=.env.server.staging.local ./deploy-cloudrun.sh
+```
+
+```sh
+ENV_FILE=.env.server.production.local ./deploy-cloudrun.sh
+```
+
 Optional deploy variables:
 
+- `DEPLOY_ENV` or `KAZE_DEPLOY_ENV` to control the environment, one of `development`, `staging`, or `production`
+- `SERVICE_NAME` to override the Cloud Run service name
 - `BUILD_REGION` to control Cloud Build region, default `global`
 - `ARTIFACT_REPOSITORY` to control the Artifact Registry Docker repository name, default `kaze-images`
 - `IMAGE_REPOSITORY` to override the pushed image repository
@@ -83,7 +117,7 @@ Test it first before mapping your domain.
 
 ## Custom domain
 
-Recommended by Google for production: use a global external Application Load Balancer in front of Cloud Run.
+For production, Google documents the global external Application Load Balancer path in front of Cloud Run.
 
 Reference:
 
@@ -97,7 +131,7 @@ For a fast dev setup, you can still first test with the default Cloud Run URL, t
 
 Your Google OAuth redirect URI must exactly match the deployed backend callback URL. If you deploy first on the default Cloud Run URL, you may want to temporarily add that callback URL in Google Cloud Console too.
 
-## Suggested order
+## Deployment Order
 
 1. Deploy backend to Cloud Run
 2. Test with the default `run.app` URL

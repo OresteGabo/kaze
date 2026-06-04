@@ -29,3 +29,4 @@ logs/
 # Local run helpers with secrets
 /export-config.sh
 .env.server.local
+.env.server.*.local

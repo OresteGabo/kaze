@@ -12,11 +12,34 @@ if [ -f "$LOCAL_ENV_FILE" ]; then
   . "$LOCAL_ENV_FILE"
 fi
 
-SERVICE_NAME="${SERVICE_NAME:-kaze-api}"
 REGION="${REGION:-europe-west1}"
 PROJECT_ID="${PROJECT_ID:-}"
 BUILD_REGION="${BUILD_REGION:-global}"
 ARTIFACT_REPOSITORY="${ARTIFACT_REPOSITORY:-kaze-images}"
+DEPLOY_ENV="${KAZE_DEPLOY_ENV:-${DEPLOY_ENV:-${KAZE_ENV:-production}}}"
+DEPLOY_ENV="$(printf '%s' "$DEPLOY_ENV" | tr '[:upper:]' '[:lower:]')"
+
+case "$DEPLOY_ENV" in
+  dev|development)
+    DEPLOY_ENV="development"
+    DEFAULT_SERVICE_NAME="kaze-api-dev"
+    ;;
+  staging|stage)
+    DEPLOY_ENV="staging"
+    DEFAULT_SERVICE_NAME="kaze-api-staging"
+    ;;
+  prod|production|live)
+    DEPLOY_ENV="production"
+    DEFAULT_SERVICE_NAME="kaze-api"
+    ;;
+  *)
+    echo "Unsupported DEPLOY_ENV/KAZE_ENV: $DEPLOY_ENV"
+    echo "Use one of: development, staging, production."
+    exit 1
+    ;;
+esac
+
+SERVICE_NAME="${SERVICE_NAME:-$DEFAULT_SERVICE_NAME}"
 
 if [ -z "$PROJECT_ID" ]; then
   echo "Missing PROJECT_ID"
@@ -119,7 +142,7 @@ stream_build_logs() {
 
 cat > "$ENV_FILE" <<EOF
 DATABASE_URL: "$(yaml_quote "${DATABASE_URL}")"
-KAZE_ENV: "production"
+KAZE_ENV: "$(yaml_quote "${DEPLOY_ENV}")"
 KAZE_DB_SCHEMA_MODE: "$(yaml_quote "${KAZE_DB_SCHEMA_MODE:-none}")"
 KAZE_DB_MAXIMUM_POOL_SIZE: "$(yaml_quote "${KAZE_DB_MAXIMUM_POOL_SIZE:-5}")"
 KAZE_JWT_SECRET: "$(yaml_quote "${KAZE_JWT_SECRET}")"
@@ -184,6 +207,8 @@ if [ "$BUILD_STATUS" != "SUCCESS" ]; then
 fi
 
 echo "==> Deploying image to Cloud Run"
+echo "    Environment: $DEPLOY_ENV"
+echo "    Service: $SERVICE_NAME"
 gcloud run deploy "$SERVICE_NAME" \
   --image "$IMAGE_URI" \
   --region "$REGION" \

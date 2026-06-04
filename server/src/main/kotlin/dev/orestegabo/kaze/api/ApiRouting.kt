@@ -265,6 +265,7 @@ private fun ApplicationCall.requireGuestAccess(authService: AuthService, hotelId
         return
     }
     if (principal<UserIdPrincipal>()?.name == "api-client") return
+    if (!application.isApiAuthenticationEnabled() && !application.isJwtAuthenticationRequired()) return
     throw IllegalArgumentException("A signed-in user is required.")
 }
 

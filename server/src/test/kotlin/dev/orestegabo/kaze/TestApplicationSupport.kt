@@ -31,6 +31,9 @@ internal fun kazeTestApplication(
         )
         add("kaze.database.schema.mode" to "create")
         add("kaze.database.seed.mode" to "dev")
+        add("kaze.security.apiToken" to "")
+        add("kaze.security.cors.allowedHosts" to "localhost:3000,localhost:5173,127.0.0.1:3000,127.0.0.1:5173")
+        add("kaze.security.jwt.secret" to "test-jwt-secret-that-is-long-enough-for-hmac")
         add("kaze.security.jwt.requireForApi" to "false")
         addAll(extraConfig)
     }

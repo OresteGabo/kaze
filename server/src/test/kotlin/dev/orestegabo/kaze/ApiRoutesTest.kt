@@ -332,6 +332,7 @@ class ApiRoutesTest {
             .withIssuer("kaze-api")
             .withAudience("kaze-mobile")
             .withSubject("user_ange_uwase")
+            .withJWTId("test-token-${now.toEpochMilli()}")
             .withClaim("email", "ange.uwase@kaze.dev")
             .withClaim("roles", listOf("CUSTOMER"))
             .withIssuedAt(Date.from(now))

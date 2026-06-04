@@ -62,11 +62,11 @@ The goal for v1 is not to finish the whole Kaze platform. The goal is to ship a 
 ## Core Event Experience
 
 - [x] onboarding flow
-- [ ] first-run entry screen after onboarding
-- [ ] public event and venue discovery without sign-in
+- [~] first-run entry screen after onboarding
+- [~] public event and venue discovery without sign-in
 - [ ] event and venue search by name
-- [ ] short code entry flow for conferences, weddings, and private events
-- [ ] invitation-first join flow
+- [~] short code entry flow for conferences, weddings, and private events
+- [~] invitation-first join flow
 - [~] invitation acceptance and identity confirmation flow
 - [~] post-invitation Kaze Pass generation
 - [~] pass-centered home and event entry experience

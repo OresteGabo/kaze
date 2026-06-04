@@ -360,6 +360,7 @@ internal class KazeAppViewModel(
             sessionPhoneNumber = "",
             sessionInvitations = emptyList(),
             sessionEvents = emptyList(),
+            sessionReservations = emptyList(),
             sessionActiveStay = null,
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
@@ -434,7 +435,17 @@ internal class KazeAppViewModel(
     suspend fun submitReservation(request: ReservationDraftSubmissionRequest): ReservationResponse {
         val accessToken = secureStore.get(AUTH_TOKEN_KEY)
         require(!accessToken.isNullOrBlank()) { "Sign in before saving a reservation request." }
-        return authGateway.submitReservation(accessToken, request).also {
+        return authGateway.submitReservation(accessToken, request).also { response ->
+            val updatedReservations = (listOf(response) + uiState.sessionReservations).distinctBy { it.id }
+            uiState = uiState.copy(sessionReservations = updatedReservations)
+            persistSessionContent(
+                SessionContent(
+                    invitations = uiState.sessionInvitations,
+                    events = uiState.sessionEvents,
+                    reservations = updatedReservations,
+                    activeStay = uiState.sessionActiveStay,
+                ),
+            )
             refreshAuthenticatedSessionFromServer(accessToken)
         }
     }
@@ -454,6 +465,7 @@ internal class KazeAppViewModel(
                         SessionContent(
                             invitations = uiState.sessionInvitations,
                             events = updatedEvents,
+                            reservations = uiState.sessionReservations,
                             activeStay = uiState.sessionActiveStay,
                         ),
                     )
@@ -592,6 +604,7 @@ internal class KazeAppViewModel(
             privacyConsent = privacyConsent,
             sessionInvitations = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionInvitations else emptyList(),
             sessionEvents = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionEvents else emptyList(),
+            sessionReservations = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionReservations else emptyList(),
             sessionActiveStay = if (mode == KazeSessionMode.AUTHENTICATED) uiState.sessionActiveStay else null,
             currentDestination = navigator.state.currentDestination,
             activeMapTarget = navigator.state.mapTarget,
@@ -645,6 +658,7 @@ internal class KazeAppViewModel(
             uiState = uiState.copy(
                 sessionInvitations = emptyList(),
                 sessionEvents = emptyList(),
+                sessionReservations = emptyList(),
                 sessionActiveStay = null,
             )
         }
@@ -678,12 +692,14 @@ internal class KazeAppViewModel(
                 uiState = uiState.copy(
                     sessionInvitations = bootstrap.invitations,
                     sessionEvents = bootstrap.events,
+                    sessionReservations = uiState.sessionReservations,
                     sessionActiveStay = bootstrap.activeStay,
                 )
                 persistSessionContent(
                     SessionContent(
                         invitations = bootstrap.invitations,
                         events = bootstrap.events,
+                        reservations = uiState.sessionReservations,
                         activeStay = bootstrap.activeStay,
                     ),
                 )
@@ -698,12 +714,13 @@ internal class KazeAppViewModel(
             uiState = uiState.copy(
                 sessionInvitations = content.invitations,
                 sessionEvents = content.events,
+                sessionReservations = content.reservations,
                 sessionActiveStay = content.activeStay,
             )
-            if (content.invitations.isNotEmpty() || content.events.isNotEmpty() || content.activeStay != null) {
+            if (content.invitations.isNotEmpty() || content.events.isNotEmpty() || content.reservations.isNotEmpty() || content.activeStay != null) {
                 persistSessionContent(content)
             }
-            if (!profileLoaded && content.invitations.isEmpty() && content.events.isEmpty() && content.activeStay == null) {
+            if (!profileLoaded && content.invitations.isEmpty() && content.events.isEmpty() && content.reservations.isEmpty() && content.activeStay == null) {
                 showFeedback("Some live Kaze content could not load right now. You can still browse available sections and try again.")
             }
         }
@@ -718,6 +735,7 @@ internal class KazeAppViewModel(
             uiState = uiState.copy(
                 sessionInvitations = cached.invitations,
                 sessionEvents = cached.events,
+                sessionReservations = cached.reservations,
                 sessionActiveStay = cached.activeStay,
             )
         }
@@ -732,6 +750,7 @@ internal class KazeAppViewModel(
                         userId = uiState.sessionUserId,
                         invitations = content.invitations,
                         events = content.events,
+                        reservations = content.reservations,
                         activeStay = content.activeStay,
                     ),
                 ),
@@ -754,6 +773,7 @@ internal class KazeAppViewModel(
             SessionContent(
                 invitations = invitationsDeferred.await(),
                 events = eventsDeferred.await(),
+                reservations = uiState.sessionReservations,
                 activeStay = activeStayDeferred.await(),
             )
         }
@@ -892,6 +912,7 @@ private fun AuthPrivacyConsent.toKazePrivacyConsent(): KazePrivacyConsent =
 private data class SessionContent(
     val invitations: List<AuthInvitationSummary>,
     val events: List<AuthEventSummary>,
+    val reservations: List<ReservationResponse> = emptyList(),
     val activeStay: AuthActiveStay?,
 )
 
@@ -900,6 +921,7 @@ private data class CachedSessionContent(
     val userId: String,
     val invitations: List<AuthInvitationSummary> = emptyList(),
     val events: List<AuthEventSummary> = emptyList(),
+    val reservations: List<ReservationResponse> = emptyList(),
     val activeStay: AuthActiveStay? = null,
 )
 

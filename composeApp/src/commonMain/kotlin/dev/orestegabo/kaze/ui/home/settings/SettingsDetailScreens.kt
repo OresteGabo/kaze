@@ -211,15 +211,15 @@ private fun HelpSupportCard() {
                     "Can I add my wedding venue or conference room?" to "Venue owners or managers can contact Kaze to add spaces, prices, photos, maps, and booking rules.",
                     "Can Kaze be used for private events?" to "Yes. Organizers can use Kaze for invitations, guest access, event updates, and Kaze Pass entry.",
                     "Can I change event details after sending invitations?" to "Yes. Invited guests can see updated event information when the organizer changes it.",
-                    "Can Kaze support other venues?" to "Yes. The MVP focuses on conference rooms, wedding venues, and hotels.",
+                    "Can Kaze support other venues?" to "Yes. Kaze is designed for conference rooms, wedding venues, hotels, and other event spaces.",
                 ),
             )
             HelpFaqCategory(
                 title = "For businesses",
                 items = listOf(
-                    "How can a hotel or venue join Kaze?" to "Contact GABO at dev@kazerwanda.com or visit kazerwanda.com to discuss onboarding.",
-                    "Can Kaze support other businesses?" to "Yes. Kaze can support more venue types after the MVP is stable.",
-                    "Can a business request a custom Kaze app?" to "Yes, if agreed with GABO. Kaze is a private commercial product, so custom use needs a business agreement.",
+                    "How can a hotel or venue join Kaze?" to "Venue owners and managers can contact Kaze support to add spaces, photos, prices, maps, and booking rules.",
+                    "Can Kaze support other businesses?" to "Yes. Businesses can contact Kaze support to discuss venue, event, or service needs.",
+                    "Can a business request a custom Kaze setup?" to "Yes. Businesses can contact Kaze support to discuss custom venue, event, or service needs.",
                 ),
             )
             HelpFaqCategory(
@@ -303,7 +303,7 @@ private fun PaymentMethodsCard() {
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    "Rwanda-first payment options for reservations, services, deposits, and event extras.",
+                    "Payment options for reservations, services, deposits, and event extras.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                 )
@@ -341,7 +341,7 @@ private fun PaymentMethodsCard() {
                     title = "BK / Rswitch",
                     status = "Available",
                     logo = Res.drawable.bk_logo,
-                    subtitle = "Bank and card rails",
+                    subtitle = "Bank and card payments",
                 )
                 Text(
                     "Also supported",
@@ -525,7 +525,7 @@ private fun AboutKazeBrandCard() {
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f),
                 )
                 Text(
-                    "Built by GABO as a private commercial product for hospitality, venues, and event experiences.",
+                    "Built by GABO for hospitality, venues, and event experiences.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
                 )

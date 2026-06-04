@@ -442,7 +442,7 @@ internal fun Throwable.toProfileMessage(): String =
         is ClientRequestException -> when (response.status.value) {
             400 -> "Please check your name, username, and phone number."
             401 -> "Your session expired. Please sign in again."
-            405 -> "Profile saving is not live on the server yet. Redeploy the backend, then try again."
+            405 -> "Profile saving is temporarily unavailable. Please try again later."
             409 -> "That username or phone number is already in use."
             else -> "Could not save your profile right now."
         }

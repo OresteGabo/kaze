@@ -189,7 +189,7 @@ internal fun InvitationsScreen(
                     stringResource(Res.string.empty_invitations_title)
                 },
                 subtitle = if (isGuestMode) {
-                    "Kaze does not show sample invitations in production. Sign in to access invitations linked to your account or event code."
+                    "Sign in or enter an event code to see invitations linked to you."
                 } else if (allowInvitationCreation) {
                     stringResource(Res.string.empty_invitations_subtitle)
                 } else {
@@ -1282,7 +1282,7 @@ private fun ContactSelectionPanel(
                 )
             }
             Text(
-                "Select people from phone contacts or guests already registered on Kaze. This demo list will be replaced by real contacts and app users later.",
+                "Select people from your contacts or guests already registered on Kaze.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
             )

@@ -233,7 +233,7 @@ fun App() {
         }
 
         fun showMapPreviewUnavailable() {
-            appViewModel.showFeedback("Indoor venue maps are still being prepared for production. Browse the venue details for now.")
+            appViewModel.showFeedback("Indoor venue maps are not ready for this place yet. Browse the venue details for now.")
         }
 
         fun handleStayResult(result: StayActionResult?) {

@@ -1225,7 +1225,7 @@ private fun defaultBookingNotes(categoryTitle: String): List<String> = when (cat
     "Wedding venues" -> listOf(
         "Final capacity and decoration rules should be confirmed by the venue.",
         "After approval, invitation acceptance and Kaze Pass access can be prepared.",
-        "Optional services can be coordinated outside the MVP reservation request.",
+        "Optional services can be coordinated after the venue confirms availability.",
     )
     "Conference rooms" -> listOf(
         "Confirm the room setup before approval: boardroom, classroom, or theatre.",
@@ -1255,7 +1255,7 @@ private fun defaultBookingNotes(categoryTitle: String): List<String> = when (cat
     else -> listOf(
         "Availability and final pricing should be confirmed by the provider.",
         "This service can later be attached to an event or invitation.",
-        "Access and provider updates will become backend-backed.",
+        "Access and provider updates can be shared after confirmation.",
     )
 }
 
@@ -1307,12 +1307,12 @@ private fun servicePageContent(query: String): HomeServicePageContent {
     if (normalizedQuery !in setOf("wedding venues", "conference rooms", "hotels")) {
         return HomeServicePageContent(
             title = "Unavailable",
-            subtitle = "This area is not part of the MVP yet.",
+            subtitle = "This category is not available for reservation yet.",
             icon = Icons.Default.Search,
             background = Res.drawable.kaze_bg_guest_access_raster,
             accent = colors.primary,
             filters = emptyList(),
-            highlights = listOf("Use wedding venues, conference rooms, or hotels for the MVP reservation journey."),
+            highlights = listOf("Use wedding venues, conference rooms, or hotels to start a reservation request."),
             isAvailable = false,
             results = emptyList(),
         )
@@ -1518,7 +1518,7 @@ private fun servicePageContent(query: String): HomeServicePageContent {
             background = Res.drawable.kaze_bg_transport_raster,
             accent = colors.tertiary,
             filters = listOf("Airport", "Shuttle", "VIP car", "Guest pickup", "Bus", "Wedding"),
-            highlights = listOf("Attach pickup details to event invitations.", "Coordinate drivers with venue timing.", "Confirm transport outside the MVP reservation flow."),
+            highlights = listOf("Attach pickup details to event invitations.", "Coordinate drivers with venue timing.", "Confirm transport after the event details are set."),
             isAvailable = true,
             results = listOf(
                 HomeServiceResult("Airport VIP Pickup", "Driver pickup for speakers, couples, or special guests.", "Airport • VIP car", "From RWF 35K"),
@@ -1546,12 +1546,12 @@ private fun servicePageContent(query: String): HomeServicePageContent {
         )
         else -> HomeServicePageContent(
             title = "Unavailable",
-            subtitle = "This area is not part of the MVP yet.",
+            subtitle = "This category is not available for reservation yet.",
             icon = Icons.Default.Search,
             background = Res.drawable.kaze_bg_guest_access_raster,
             accent = colors.primary,
             filters = emptyList(),
-            highlights = listOf("Use wedding venues, conference rooms, or hotels for the MVP reservation journey."),
+            highlights = listOf("Use wedding venues, conference rooms, or hotels to start a reservation request."),
             isAvailable = false,
             results = emptyList(),
         )

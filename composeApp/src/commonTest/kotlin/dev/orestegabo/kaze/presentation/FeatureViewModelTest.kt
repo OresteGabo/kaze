@@ -320,9 +320,12 @@ class FeatureViewModelTest {
         override suspend fun getEvents(accessToken: String): List<AuthEventSummary> = emptyList()
 
         override suspend fun getPublicEvents(): List<AuthEventSummary> = emptyList()
-        override suspend fun getEventVenues(): List<EventVenueOption> {
-            TODO("Not yet implemented")
-        }
+
+        override suspend fun getEventSuggestions(accessToken: String): List<AuthEventSummary> = emptyList()
+
+        override suspend fun getEventVenues(): List<EventVenueOption> = emptyList()
+
+        override suspend fun updateEventFollow(accessToken: String, eventId: String, status: String) = Unit
 
         override suspend fun createEvent(accessToken: String, request: EventCreateRequest): AuthEventSummary =
             AuthEventSummary(

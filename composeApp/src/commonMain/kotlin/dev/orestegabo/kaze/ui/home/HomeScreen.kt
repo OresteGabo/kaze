@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +35,8 @@ import dev.orestegabo.kaze.ui.home.components.*
 import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
 import dev.orestegabo.kaze.ui.stay.LateCheckoutScreen
 import dev.orestegabo.kaze.ui.stay.ServiceRequestScreen
+import kaze.composeapp.generated.resources.Res
+import kaze.composeapp.generated.resources.k_mark_raster
 
 @Composable
 internal fun HomeScreen(
@@ -145,12 +145,12 @@ internal fun HomeScreen(
                         actionLabel = if (suggestedEventCount > 0) "View events" else "Browse venues",
                         eyebrow = "Home",
                         tags = if (suggestedEventCount > 0) listOf("Suggestions", "Events", "Pass") else listOf("Venues", "Reservations", "Pass"),
-                        icon = Icons.Outlined.BookmarkBorder,
+                        brandIcon = Res.drawable.k_mark_raster,
                         onAction = {
                             if (suggestedEventCount > 0) {
                                 onSeeEvents()
                             } else {
-                                selectedServiceQuery = "conference rooms"
+                                onBrowseVenues()
                             }
                         },
                     )
@@ -176,6 +176,7 @@ internal fun HomeScreen(
                     onCodeChange = { joinCode = it.uppercase() },
                     onSubmitCode = { onEnterCode(joinCode) },
                     onOpenInvitations = onSeeAllInvitations,
+                    onBrowseVenues = onBrowseVenues,
                 )
             }
 
@@ -186,7 +187,10 @@ internal fun HomeScreen(
                     verticalAlignment = Alignment.Top,
                 ) {
                     Box(modifier = Modifier.weight(1.12f)) {
-                        HomeHeroCard()
+                        HomeHeroCard(
+                            onBrowseVenues = onBrowseVenues,
+                            onSeeEvents = onSeeEvents,
+                        )
                     }
                     Box(modifier = Modifier.weight(0.82f)) {
                         CodeEntryCard(
@@ -197,7 +201,10 @@ internal fun HomeScreen(
                     }
                 }
             } else if (!isGuestMode) {
-                HomeHeroCard()
+                HomeHeroCard(
+                    onBrowseVenues = onBrowseVenues,
+                    onSeeEvents = onSeeEvents,
+                )
                 CodeEntryCard(
                     code = joinCode,
                     onCodeChange = { joinCode = it.uppercase() },

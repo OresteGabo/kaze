@@ -8,6 +8,7 @@ import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.presentation.demo.KazeDestination
 import dev.orestegabo.kaze.presentation.navigation.MapNavigationTarget
 import dev.orestegabo.kaze.theme.KazeThemeMode
+import kotlinx.serialization.Serializable
 
 internal data class KazeAppUiState(
     val isReady: Boolean = false,
@@ -23,6 +24,7 @@ internal data class KazeAppUiState(
     val sessionInvitations: List<AuthInvitationSummary> = emptyList(),
     val sessionEvents: List<AuthEventSummary> = emptyList(),
     val sessionReservations: List<ReservationResponse> = emptyList(),
+    val savedPlaces: List<KazeSavedPlace> = emptyList(),
     val publicEvents: List<AuthEventSummary> = emptyList(),
     val eventVenueOptions: List<EventVenueOption> = emptyList(),
     val sessionActiveStay: AuthActiveStay? = null,
@@ -44,6 +46,16 @@ internal enum class KazeSessionMode {
 internal data class KazeSuccessCelebration(
     val title: String,
     val subtitle: String,
+)
+
+@Serializable
+internal data class KazeSavedPlace(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val category: String,
+    val metaLabel: String,
+    val priceLabel: String,
 )
 
 internal data class KazeAuthFailure(

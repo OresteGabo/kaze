@@ -411,6 +411,7 @@ fun App() {
                                                 submittedServiceRequests = stayUiState.submittedServiceRequests,
                                                 invitations = visibleInvitations,
                                                 reservationRequests = uiState.sessionReservations,
+                                                savedPlaces = uiState.savedPlaces,
                                                 personalEventCount = uiState.sessionEvents.size,
                                                 suggestedEventCount = suggestedPublicSessions.size,
                                                 isGuestMode = isGuestMode,
@@ -426,6 +427,7 @@ fun App() {
                                                 onSeeAllInvitations = ::openInvitations,
                                                 onSeeEvents = { appViewModel.onDestinationSelected(KazeDestination.EVENTS) },
                                                 onBrowseVenues = { openPublicBrowse("") },
+                                                onToggleSavedPlace = appViewModel::toggleSavedPlace,
                                                 onSubmitReservation = appViewModel::submitReservation,
                                                 bottomContentPadding = bottomContentPadding,
                                             )
@@ -589,6 +591,7 @@ fun App() {
                                             submittedServiceRequests = stayUiState.submittedServiceRequests,
                                             invitations = visibleInvitations,
                                             reservationRequests = uiState.sessionReservations,
+                                            savedPlaces = uiState.savedPlaces,
                                             personalEventCount = uiState.sessionEvents.size,
                                             suggestedEventCount = suggestedPublicSessions.size,
                                             isGuestMode = isGuestMode,
@@ -604,6 +607,7 @@ fun App() {
                                             onSeeAllInvitations = ::openInvitations,
                                             onSeeEvents = { appViewModel.onDestinationSelected(KazeDestination.EVENTS) },
                                             onBrowseVenues = { openPublicBrowse("") },
+                                            onToggleSavedPlace = appViewModel::toggleSavedPlace,
                                             onSubmitReservation = appViewModel::submitReservation,
                                             bottomContentPadding = bottomContentPadding,
                                         )

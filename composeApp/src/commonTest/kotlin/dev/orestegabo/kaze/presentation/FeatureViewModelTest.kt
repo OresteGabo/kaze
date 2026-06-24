@@ -4,6 +4,7 @@ import dev.orestegabo.kaze.platform.SecureStore
 import dev.orestegabo.kaze.presentation.app.KazeSessionMode
 import dev.orestegabo.kaze.presentation.app.KazeAppViewModel
 import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
+import dev.orestegabo.kaze.presentation.app.KazeSavedPlace
 import dev.orestegabo.kaze.presentation.auth.AuthEventSummary
 import dev.orestegabo.kaze.presentation.auth.AuthGateway
 import dev.orestegabo.kaze.presentation.auth.AuthActiveStay
@@ -188,6 +189,33 @@ class FeatureViewModelTest {
         assertEquals(1, viewModel.uiState.sessionReservations.size)
         assertEquals("Launch reception", viewModel.uiState.sessionReservations.first().eventName)
         assertTrue(secureStore.values["app.session_content_cache"].orEmpty().contains("KAZE-TEST"))
+    }
+
+    @Test
+    fun app_view_model_toggles_saved_places() = runTest(testDispatcher) {
+        val secureStore = RecordingSecureStore()
+        val viewModel = KazeAppViewModel(secureStore)
+        advanceUntilIdle()
+
+        val place = KazeSavedPlace(
+            id = "wedding:kigali-garden",
+            title = "Kigali Garden Pavilion",
+            subtitle = "Outdoor reception venue",
+            category = "Wedding venues",
+            metaLabel = "250 guests",
+            priceLabel = "From RWF 1.8M",
+        )
+
+        viewModel.toggleSavedPlace(place)
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.uiState.savedPlaces.size)
+        assertTrue(secureStore.values["app.session_content_cache"].orEmpty().contains("Kigali Garden Pavilion"))
+
+        viewModel.toggleSavedPlace(place)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.savedPlaces.isEmpty())
     }
 
     @Test

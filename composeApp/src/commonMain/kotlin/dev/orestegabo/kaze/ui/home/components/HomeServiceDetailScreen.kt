@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Chair
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.OpenInFull
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import dev.orestegabo.kaze.presentation.app.KazeSavedPlace
 import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
 import dev.orestegabo.kaze.presentation.auth.ReservationResponse
 import dev.orestegabo.kaze.ui.components.KazeGhostButton
@@ -113,6 +115,16 @@ internal data class HomeServiceResult(
     val bookingNotes: List<String> = emptyList(),
 )
 
+private fun HomeServiceResult.toSavedPlace(content: HomeServicePageContent): KazeSavedPlace =
+    KazeSavedPlace(
+        id = "${content.title}:${title}".lowercase().filter { it.isLetterOrDigit() || it == ':' },
+        title = title,
+        subtitle = subtitle,
+        category = content.title,
+        metaLabel = metaLabel,
+        priceLabel = priceLabel,
+    )
+
 private enum class ServiceResultDetailTab(val label: String) {
     DETAILS("Details"),
 }
@@ -121,7 +133,9 @@ private enum class ServiceResultDetailTab(val label: String) {
 internal fun HomeServiceDetailScreen(
     serviceQuery: String,
     bottomContentPadding: Dp,
+    savedPlaceIds: Set<String>,
     onBack: () -> Unit,
+    onToggleSavedPlace: (KazeSavedPlace) -> Unit,
     onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
 ) {
     val content = servicePageContent(serviceQuery)
@@ -149,7 +163,9 @@ internal fun HomeServiceDetailScreen(
             content = content,
             result = selectedResult,
             bottomContentPadding = bottomContentPadding,
+            isSaved = selectedResult.toSavedPlace(content).id in savedPlaceIds,
             onBack = { selectedResultTitle = null },
+            onToggleSavedPlace = { onToggleSavedPlace(selectedResult.toSavedPlace(content)) },
             onSubmitReservation = onSubmitReservation,
         )
         return
@@ -213,6 +229,8 @@ internal fun HomeServiceDetailScreen(
                             accent = content.accent,
                             icon = content.icon,
                             background = content.background,
+                            isSaved = result.toSavedPlace(content).id in savedPlaceIds,
+                            onToggleSaved = { onToggleSavedPlace(result.toSavedPlace(content)) },
                             onClick = { selectedResultTitle = result.title },
                         )
                     }
@@ -492,6 +510,8 @@ private fun ServiceResultCard(
     accent: Color,
     icon: ImageVector,
     background: DrawableResource,
+    isSaved: Boolean,
+    onToggleSaved: () -> Unit,
     onClick: () -> Unit,
 ) {
     Card(
@@ -532,7 +552,23 @@ private fun ServiceResultCard(
                         tint = accent,
                         modifier = Modifier
                             .padding(12.dp)
-                            .size(22.dp),
+                        .size(22.dp),
+                    )
+                }
+                Surface(
+                    onClick = onToggleSaved,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                    border = BorderStroke(1.dp, accent.copy(alpha = 0.22f)),
+                ) {
+                    Icon(
+                        imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (isSaved) "Remove saved place" else "Save place",
+                        tint = if (isSaved) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+                        modifier = Modifier.padding(10.dp).size(18.dp),
                     )
                 }
             }
@@ -585,7 +621,9 @@ private fun HomeServiceResultDetailScreen(
     content: HomeServicePageContent,
     result: HomeServiceResult,
     bottomContentPadding: Dp,
+    isSaved: Boolean,
     onBack: () -> Unit,
+    onToggleSavedPlace: () -> Unit,
     onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
 ) {
     val scrollState = rememberScrollState()
@@ -686,6 +724,12 @@ private fun HomeServiceResultDetailScreen(
                         onClick = { isReservationDraftOpen = true },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = Icons.Default.CheckCircle,
+                    )
+                    KazeGhostButton(
+                        label = if (isSaved) "Saved" else "Save for later",
+                        onClick = onToggleSavedPlace,
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     )
                 }
             }

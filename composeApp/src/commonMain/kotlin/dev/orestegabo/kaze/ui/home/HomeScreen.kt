@@ -31,6 +31,7 @@ import dev.orestegabo.kaze.presentation.demo.StayPrimaryAction
 import dev.orestegabo.kaze.presentation.demo.StayScreen
 import dev.orestegabo.kaze.presentation.auth.ReservationDraftSubmissionRequest
 import dev.orestegabo.kaze.presentation.auth.ReservationResponse
+import dev.orestegabo.kaze.presentation.app.KazeSavedPlace
 import dev.orestegabo.kaze.ui.home.components.*
 import dev.orestegabo.kaze.ui.states.KazeEmptyStateScreen
 import dev.orestegabo.kaze.ui.stay.LateCheckoutScreen
@@ -57,6 +58,7 @@ internal fun HomeScreen(
     submittedServiceRequests: List<ServiceRequestRecord>,
     invitations: List<InvitationPreview>,
     reservationRequests: List<ReservationResponse>,
+    savedPlaces: List<KazeSavedPlace>,
     personalEventCount: Int,
     suggestedEventCount: Int,
     isGuestMode: Boolean,
@@ -72,6 +74,7 @@ internal fun HomeScreen(
     onSeeAllInvitations: () -> Unit,
     onSeeEvents: () -> Unit,
     onBrowseVenues: () -> Unit,
+    onToggleSavedPlace: (KazeSavedPlace) -> Unit,
     onSubmitReservation: suspend (ReservationDraftSubmissionRequest) -> ReservationResponse,
     bottomContentPadding: Dp = 20.dp,
 ) {
@@ -113,7 +116,9 @@ internal fun HomeScreen(
             HomeServiceDetailScreen(
                 serviceQuery = serviceQuery,
                 bottomContentPadding = bottomContentPadding,
+                savedPlaceIds = savedPlaces.map { it.id }.toSet(),
                 onBack = { selectedServiceQuery = null },
+                onToggleSavedPlace = onToggleSavedPlace,
                 onSubmitReservation = onSubmitReservation,
             )
             return@BoxWithConstraints
@@ -133,6 +138,7 @@ internal fun HomeScreen(
                 val hasPersonalContent = accessContexts.isNotEmpty() ||
                     accessCard != null ||
                     invitations.isNotEmpty() ||
+                    savedPlaces.isNotEmpty() ||
                     personalEventCount > 0
                 if (!hasPersonalContent && reservationRequests.isEmpty()) {
                     KazeEmptyStateScreen(
@@ -218,6 +224,10 @@ internal fun HomeScreen(
                     reservations = reservationRequests,
                 )
             }
+
+            SavedPlacesSection(
+                savedPlaces = savedPlaces,
+            )
 
             HomeServiceRail(
                 onOpenService = { serviceQuery -> selectedServiceQuery = serviceQuery },

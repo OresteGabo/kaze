@@ -23,6 +23,7 @@ import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
 internal interface AuthGateway {
     suspend fun signIn(email: String, password: String): AuthSession
     suspend fun createAccount(email: String, password: String): AuthSession
+    suspend fun setPassword(accessToken: String, newPassword: String, currentPassword: String? = null)
     suspend fun signInWithCredential(
         provider: SocialAuthProvider,
         credential: String,
@@ -67,10 +68,14 @@ internal class KazeAuthGateway(
     private val apiBaseUrl = baseUrl.trimEnd('/')
 
     override suspend fun signIn(email: String, password: String): AuthSession =
-        client.post("$apiBaseUrl/auth/signin") {
-            contentType(ContentType.Application.Json)
-            setBody(AuthSigninRequest(email = email, password = password))
-        }.body<AuthResponse>().toSession()
+        try {
+            client.post("$apiBaseUrl/auth/signin") {
+                contentType(ContentType.Application.Json)
+                setBody(AuthSigninRequest(email = email, password = password))
+            }.body<AuthResponse>().toSession()
+        } catch (cause: ClientRequestException) {
+            throw cause.toAuthGatewayProblem()
+        }
 
     override suspend fun createAccount(email: String, password: String): AuthSession =
         try {
@@ -81,6 +86,18 @@ internal class KazeAuthGateway(
         } catch (cause: ClientRequestException) {
             throw cause.toAuthGatewayProblem()
         }
+
+    override suspend fun setPassword(accessToken: String, newPassword: String, currentPassword: String?) {
+        try {
+            client.put("$apiBaseUrl/auth/me/password") {
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $accessToken")
+                setBody(AuthSetPasswordRequest(newPassword = newPassword, currentPassword = currentPassword))
+            }
+        } catch (cause: ClientRequestException) {
+            throw cause.toAuthGatewayProblem()
+        }
+    }
 
     override suspend fun signInWithCredential(
         provider: SocialAuthProvider,
@@ -264,6 +281,8 @@ internal object NoopAuthGateway : AuthGateway {
 
     override suspend fun createAccount(email: String, password: String): AuthSession = unavailable()
 
+    override suspend fun setPassword(accessToken: String, newPassword: String, currentPassword: String?) = unavailable()
+
     override suspend fun signInWithCredential(
         provider: SocialAuthProvider,
         credential: String,
@@ -382,6 +401,14 @@ internal fun Throwable.toAuthMessage(): String =
         is HttpRequestTimeoutException -> {
             "Kaze is taking longer than usual to connect. Please check your internet and try again."
         }
+        is AuthGatewayProblemException -> when {
+            problemCode == "password_login_not_configured" ->
+                "This email belongs to a social-sign-in account. Use Google, Apple, or Facebook, then add an email password in Settings > Account."
+            problemCode == "current_password_required" -> "Enter your current password first."
+            problemCode == "current_password_incorrect" -> "The current password is incorrect."
+            statusCode == 429 -> "You have tried too many times. Please wait a minute and try again."
+            else -> message.ifBlank { "Could not complete sign-in. Please try again." }
+        }
         is ClientRequestException -> when (response.status.value) {
             400 -> "This sign-in option is not available yet. Please try another option."
             401 -> "The sign-in session expired or was rejected. Please try again."
@@ -406,6 +433,8 @@ internal fun Throwable.toSignupMessage(): String =
             "Kaze is taking longer than usual to create your account. Please check your internet and try again."
         }
         is AuthGatewayProblemException -> when {
+            statusCode == 409 && problemCode == "password_login_not_configured" ->
+                "This email already belongs to a social-sign-in account. Sign in with Google, Apple, or Facebook, then add an email password in Settings > Account."
             statusCode == 409 && problemCode == "email_already_registered" ->
                 "This email is already registered. Try logging in instead."
             statusCode == 409 && problemCode == "username_already_registered" ->

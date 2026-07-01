@@ -21,6 +21,8 @@ internal interface AuthRepository {
         roles: Set<AuthRole> = setOf(AuthRole.CUSTOMER),
     ): StoredAuthUser
 
+    fun setPasswordLogin(userId: String, passwordHash: String): StoredAuthUser?
+
     fun upsertExternalUser(identity: ExternalIdentity): StoredAuthUser
     fun linkSocialProviderToUser(
         userId: String,
@@ -272,12 +274,59 @@ internal class JdbcAuthRepository(
             }
         }
 
+    override fun setPasswordLogin(userId: String, passwordHash: String): StoredAuthUser? =
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            try {
+                val user = connection.prepareStatement(
+                    """
+                    UPDATE app_users
+                    SET password_hash = ?, updated_at = now()
+                    WHERE id = ?
+                    RETURNING id, email, display_name, username, phone_number,
+                              map_and_venue_activity_enabled, diagnostics_enabled, notifications_enabled, analytics_enabled,
+                              password_hash, roles
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setString(1, passwordHash)
+                    statement.setString(2, userId)
+                    statement.executeQuery().use { result -> result.singleUserOrNull() }
+                }
+                if (user == null) {
+                    connection.rollback()
+                    return@use null
+                }
+                linkSocialProviderToUser(
+                    userId = user.user.id,
+                    provider = AuthProvider.PASSWORD.name,
+                    subject = user.user.email,
+                    email = user.user.email,
+                    emailVerified = true,
+                    displayName = user.user.displayName,
+                    avatarUrl = null,
+                    connection = connection,
+                )
+                connection.commit()
+                user
+            } catch (cause: Throwable) {
+                connection.rollback()
+                throw cause
+            }
+        }
+
     override fun upsertExternalUser(identity: ExternalIdentity): StoredAuthUser =
         findUserBySocialProvider(identity.provider.name, identity.providerSubject)?.toStoredAuthUser()
             ?: dataSource.connection.use { connection ->
                 connection.autoCommit = false
                 try {
                     val existingUser = findByEmail(identity.email)
+                    if (existingUser != null && !identity.emailVerified) {
+                        throw AuthProblemException(
+                            status = io.ktor.http.HttpStatusCode.Conflict,
+                            code = "external_email_not_verified",
+                            message = "The provider must verify this email before it can be linked to the existing account.",
+                        )
+                    }
                     val storedUser = existingUser ?: insertUser(
                         email = identity.email,
                         passwordHash = null,

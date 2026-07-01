@@ -47,6 +47,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.kaze.presentation.app.KazePrivacyConsent
@@ -90,6 +91,7 @@ internal fun SettingsDetailScreen(
     onNotificationsConsentChange: (Boolean) -> Unit,
     onAnalyticsConsentChange: (Boolean) -> Unit,
     onUpdateProfile: (String, String, String) -> Unit,
+    onSetPassword: (String?, String) -> Unit,
     onBack: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -120,6 +122,9 @@ internal fun SettingsDetailScreen(
                 needsProfileCompletion = needsProfileCompletion,
                 onUpdateProfile = onUpdateProfile,
             )
+            if (sessionEmail.isNotBlank()) {
+                PasswordLoginCard(onSetPassword = onSetPassword)
+            }
         }
         if (page == SettingsDetailPage.PRIVACY_CONTROLS) {
             DataCollectionSettingsCard(
@@ -138,6 +143,88 @@ internal fun SettingsDetailScreen(
             HelpSupportCard()
         } else {
             SettingsSectionCard(page = page)
+        }
+    }
+}
+
+@Composable
+private fun PasswordLoginCard(
+    onSetPassword: (String?, String) -> Unit,
+) {
+    var currentPassword by rememberSaveable { mutableStateOf("") }
+    var newPassword by rememberSaveable { mutableStateOf("") }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var validationMessage by rememberSaveable { mutableStateOf("") }
+
+    Surface(
+        shape = RoundedCornerShape(26.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+        tonalElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "Email and password sign-in",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                "Signed up with Google? Leave the current password empty and create one here. Kaze will add it to this same account, so your invitations and bookings stay together.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+            )
+            OutlinedTextField(
+                value = currentPassword,
+                onValueChange = { currentPassword = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Current password (if you have one)") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+            )
+            OutlinedTextField(
+                value = newPassword,
+                onValueChange = { newPassword = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("New password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+            )
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Confirm new password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                supportingText = validationMessage.takeIf { it.isNotBlank() }?.let { message ->
+                    { Text(message) }
+                },
+                isError = validationMessage.isNotBlank(),
+            )
+            KazePrimaryButton(
+                label = "Save email password",
+                onClick = {
+                    validationMessage = when {
+                        newPassword.length < 8 -> "Use at least 8 characters."
+                        newPassword != confirmPassword -> "The new passwords do not match."
+                        else -> ""
+                    }
+                    if (validationMessage.isEmpty()) {
+                        onSetPassword(currentPassword.takeIf { it.isNotBlank() }, newPassword)
+                        currentPassword = ""
+                        newPassword = ""
+                        confirmPassword = ""
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

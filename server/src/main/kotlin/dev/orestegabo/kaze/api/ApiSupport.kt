@@ -3,6 +3,7 @@ package dev.orestegabo.kaze.api
 import dev.orestegabo.kaze.auth.AuthProblemException
 import dev.orestegabo.kaze.auth.AuthRefreshRequest
 import dev.orestegabo.kaze.auth.AuthSessionClaimRequest
+import dev.orestegabo.kaze.auth.AuthSetPasswordRequest
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.auth.AuthSigninRequest
 import dev.orestegabo.kaze.auth.AuthSignupRequest
@@ -190,6 +191,17 @@ internal fun Application.configureHttp(authService: AuthService) {
                 request.password.isBlank() -> ValidationResult.Invalid("password is required")
                 request.password.length > AUTH_PASSWORD_MAX_LENGTH ->
                     ValidationResult.Invalid("password must be $AUTH_PASSWORD_MAX_LENGTH characters or fewer")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<AuthSetPasswordRequest> { request ->
+            when {
+                request.newPassword.length < AUTH_PASSWORD_MIN_LENGTH ->
+                    ValidationResult.Invalid("newPassword must be at least $AUTH_PASSWORD_MIN_LENGTH characters")
+                request.newPassword.length > AUTH_PASSWORD_MAX_LENGTH ->
+                    ValidationResult.Invalid("newPassword must be $AUTH_PASSWORD_MAX_LENGTH characters or fewer")
+                request.currentPassword != null && request.currentPassword.length > AUTH_PASSWORD_MAX_LENGTH ->
+                    ValidationResult.Invalid("currentPassword must be $AUTH_PASSWORD_MAX_LENGTH characters or fewer")
                 else -> ValidationResult.Valid
             }
         }

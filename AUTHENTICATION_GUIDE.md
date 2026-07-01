@@ -841,6 +841,233 @@ If a user disconnects Google, Apple, or Facebook:
 - Treat Apple private relay email as a valid email but not proof that it belongs to another provider identity.
 - Add admin tooling to revoke sessions by user/device.
 
+## Authentication Cases And Current Compliance Audit
+
+This section is the source of truth for the authentication cases Kaze must handle. The audit reflects
+the repository as of **2026-07-01**. A feature mentioned in UI copy is not considered implemented
+unless the client, server, persistence, and tests enforce it.
+
+Status legend:
+
+- **Implemented**: enforced by the current code and persistence model.
+- **Partial**: some building blocks exist, but the complete security behavior is not enforced.
+- **Missing**: no production implementation exists yet.
+- **External check**: behavior depends on deployment or provider-console configuration and must be verified outside the repository.
+
+### Identity And Account Linking
+
+| Case | Required behavior | Status | Current evidence and gap |
+|---|---|---|---|
+| Email normalization and uniqueness | Lowercase/normalize email and keep one `app_users` row per email. | **Implemented** | `AuthService.normalizeEmail`, normalized inserts, and the unique `app_users.email` constraint enforce this. Do not strip provider-specific `+tag` or dot semantics. |
+| Existing provider identity signs in again | Resolve by `(provider, provider_subject)` before considering email. | **Implemented** | `JdbcAuthRepository.upsertExternalUser` first resolves the stable provider subject. |
+| Password first, then Google/Apple/Facebook | Link a verified provider email to the existing user instead of creating a second user. | **Implemented** | `upsertExternalUser` links verified matching email to the existing user. |
+| Social first, then password | Add `PASSWORD` to the same user while already authenticated. | **Implemented** | `PUT /auth/me/password` updates the existing row and adds a password-provider link. |
+| Unverified provider email matches an account | Refuse automatic linking. | **Implemented** | `upsertExternalUser` returns `external_email_not_verified`. |
+| Password-signup email ownership | Verify the mailbox before treating the address as verified or enabling sensitive operations. | **Missing** | Password signup currently creates the `PASSWORD` provider with `email_verified=true` without sending a challenge. |
+| Provider email changes | Continue resolving by provider subject; treat the new email as a separately verified profile change. | **Partial** | Stable subject lookup works, but there is no reviewed email-change workflow. |
+| Apple private-relay email | Treat the relay as a valid address and never infer that it matches a non-relay address. | **Partial** | The guide states the rule; no explicit relay or account-link confirmation flow exists. |
+| Two active accounts with different emails | Require explicit authenticated confirmation before merging. | **Missing** | There is no account-merge endpoint or UI. |
+| Concurrent signup/social callbacks | Produce one user and an idempotent successful result under races. | **Partial** | Database uniqueness prevents duplicates, but racing inserts can still make one request fail instead of cleanly resolving the winner. |
+| Disconnecting a provider | Allow unlink only when another usable login method remains. | **Missing** | No provider-disconnect endpoint is registered. |
+| Disabled account | Reject password login, social login, refresh, and API access immediately. | **Missing** | `app_users.disabled` exists, but normal auth lookups and JWT validation do not enforce it. |
+
+### Passwords, Recovery, And Step-Up Authentication
+
+| Case | Required behavior | Status | Current evidence and gap |
+|---|---|---|---|
+| Password storage | Store only a salted adaptive hash and support work-factor migration. | **Implemented / review** | BCrypt cost 12 is used. Add an algorithm/work-factor migration plan; prefer Argon2id for new deployments when operationally available. |
+| Password strength | For password-only login, require at least 15 characters, allow at least 64, accept spaces/Unicode, and reject common/compromised values. | **Missing** | Kaze currently requires only 8 characters and has no breached-password blocklist. This follows current [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html) guidance. |
+| Password change | Require current password or recent provider/passkey reauthentication. | **Partial** | Existing password users must provide the current password. A social-only user can add a password with any still-valid access token; recent-authentication time is not checked. |
+| Password change consequences | Rotate/revoke other sessions and notify the user. | **Missing** | Password updates do not revoke refresh-token families or send a security notice. |
+| Forgotten password | Use a random, hashed, short-lived, single-use token and return the same response for existing and unknown accounts. | **Missing** | No forgot/reset routes or token table exist. Follow the [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html). |
+| Email change | Require recent reauthentication, verify the new address, notify the old address, and preserve uniqueness. | **Missing** | Email cannot currently be changed through the profile endpoint. |
+| MFA for privileged users | Require a second factor or passkey for `STAFF` and `ADMIN`, with recovery codes and factor reset controls. | **Missing** | Roles exist, but no MFA authenticators, challenges, or recovery codes exist. |
+| High-risk actions | Require recent step-up auth for password/email/provider changes, data export/deletion, staff actions, and payment-security changes. | **Missing** | A valid access token is currently sufficient for password addition and profile changes. |
+| Account enumeration | Keep login and recovery responses/timing indistinguishable where possible. | **Partial** | Wrong-password login is generic, but signup and `password_login_not_configured` reveal account state. |
+
+### OAuth And Social Provider Failures
+
+| Case | Required behavior | Status | Current evidence and gap |
+|---|---|---|---|
+| Authorization-code flow | Use backend code exchange with state, nonce, PKCE, and one-time app login token. | **Implemented** | OAuth attempts store hashed state/nonce/verifier metadata; callback attempts and app login tokens are consumed once. |
+| Token verification | Verify signature, issuer, audience, expiry, nonce, subject, and provider email claim rules. | **Implemented / partial** | Browser OAuth verifies the required claims and nonce. Direct `/auth/google` and `/auth/apple` ID-token routes pass `nonce=null`; replay protection should be defined for native credential flows. |
+| Multiple Google client IDs | Accept every explicitly configured Android/iOS/web audience. | **Partial** | Direct Google sign-in verifies against `googleClientIds.first()` rather than selecting the matching configured audience. |
+| User cancels or denies consent | Return a safe actionable error and leave no session behind. | **Partial** | Callback failures are handled, but provider-specific cancellation/denial tests are incomplete. |
+| Missing provider email/name | Continue an already-linked identity by subject; require a verified email only when creating/linking a new account. | **Partial** | Token verification currently requires an email before repository subject lookup. |
+| Provider outage/revocation | Fail safely, preserve the Kaze account, and offer another linked login/recovery method. | **Partial** | Generic provider failure exists; recovery and alternate-method guidance are incomplete. |
+| App redirect/deep link | Accept only exact configured HTTPS/App Link/Universal Link destinations. | **Missing — high priority** | `/auth/{provider}/start` accepts caller-provided `appRedirectUri` without an allowlist. |
+| Provider-console redirect configuration | Production redirect URIs, bundle IDs, package names, fingerprints, and secrets must match exactly. | **External check** | Verify in Google Cloud, Apple Developer, and Meta consoles for every environment. |
+
+### Sessions, Devices, And Token Storage
+
+| Case | Required behavior | Status | Current evidence and gap |
+|---|---|---|---|
+| Access/refresh token lifetimes | Use short access tokens and bounded refresh-token lifetime. | **Implemented / review** | Expiry is configured and verified. Reassess the current 12-hour access-token lifetime for privileged accounts. |
+| Refresh rotation and replay | Rotate on every use; replay of a revoked token revokes its family. | **Implemented** | PostgreSQL row locking, replacement links, and family revocation are implemented. |
+| One-device logout | Revoke the presented refresh token and clear local credentials. | **Implemented / partial** | Refresh-token revocation is database-backed; access-token denial is only process-local. |
+| Multi-instance logout | A revoked access token must be rejected by every Cloud Run instance. | **Missing** | `revokedAccessTokenIds` is an in-memory map, so another instance can accept the token until expiry. |
+| Active session list | Show device label, platform, first/last use, approximate location, and allow remote revocation. | **Missing** | Device columns exist, but there are no list/revoke-device routes or screens backed by session data. |
+| Per-install device identity | Generate a random stable installation ID and store it in platform-secure storage. | **Missing** | Every client currently sends the literal `deviceId = "kaze-device"`, so devices cannot be distinguished. |
+| Android token storage | Encrypt auth secrets with an Android Keystore key. | **Implemented / partial** | AES-GCM with an Android Keystore key is used, but the key is not gated by user authentication. |
+| iOS token storage | Store auth secrets in Keychain with an appropriate accessibility/access-control policy. | **Implemented / partial** | Keychain storage exists, but no Face ID/Touch ID access-control flags are configured. |
+| Web token storage | Keep bearer/refresh secrets out of JavaScript-readable web storage in production. | **Missing — high priority for web** | Auth tokens are stored in `sessionStorage`; use an HTTPS BFF with `HttpOnly`, `Secure`, `SameSite` cookies where possible. See [OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html). |
+| Secure transport | Require HTTPS outside explicitly scoped local development. | **Partial** | Android cleartext is limited to local hosts. iOS currently sets `NSAllowsArbitraryLoads=true`, which must not ship in production. |
+| No-store responses | Prevent tokens/private auth responses from being cached. | **Implemented** | Auth routes and sensitive responses set restrictive cache headers. |
+
+### Abuse Resistance, Authorization, And Account Lifecycle
+
+| Case | Required behavior | Status | Current evidence and gap |
+|---|---|---|---|
+| Brute force and credential stuffing | Layer per-account, per-IP, and risk-based throttling; avoid easy account-lockout denial of service. | **Partial** | Ktor applies 20 auth requests/minute per client IP and route. There is no per-account counter, progressive delay, breached-password detection, or suspicious-login response. |
+| New-device alerting | Notify the user after a new device/authenticator signs in and provide a revoke action. | **Missing** | No unique device identity or auth-event notification exists. |
+| Auth audit log | Record success/failure, provider linking, password/reset, authenticator changes, refresh replay, logout, and administrative recovery without secrets. | **Missing** | Request logs exist, but there is no durable authentication-event model. |
+| Object ownership/tenant isolation | Every protected lookup must verify the user, role, resource owner, and hotel/venue/event tenant. | **Partial — ongoing audit required** | Guest ownership and selected event/staff checks exist, but there is no completed endpoint-by-endpoint authorization matrix. |
+| Role/permission change | Invalidate or version existing JWT authorization claims when roles change. | **Missing** | Roles are copied into access JWTs and remain valid until token expiry. |
+| Lost/stolen device | Let the user revoke the device, its refresh families, device trust, and device-bound credentials. | **Missing** | Only the locally presented refresh token can currently be revoked. |
+| Account deletion | Reauthenticate, revoke all sessions/providers/passkeys, apply retention rules, and notify the user. | **Missing** | Settings directs users to support; no authenticated deletion workflow exists. |
+| Support/admin recovery | Require strong identity proof, two-person controls for sensitive recovery where appropriate, and durable audit logs. | **Missing** | No recovery tooling exists. |
+
+## Remembered Sessions, Recognized Devices, Trusted Devices, Biometrics, And Passkeys
+
+These are different security concepts and must not be represented as the same feature:
+
+1. **Remembered session**: a refresh token keeps the user signed in. It is convenience, not proof that a device is trusted.
+2. **Recognized device**: Kaze remembers a random per-install identifier and device metadata as a risk signal. An identifier alone is forgeable and is not an authenticator.
+3. **Trusted device**: the device proves possession of a non-exportable private key that the user explicitly registered. Trust is revocable, expires, and does not bypass high-risk step-up requirements.
+4. **Biometric app unlock**: Android fingerprint/face or Apple Face ID/Touch ID locally unlocks a key or credential. Kaze must never receive or store biometric templates.
+5. **Passkey**: a WebAuthn/FIDO public-key credential authenticates to the server. Device biometrics or device PIN commonly activate the credential locally. A synced passkey may be available on several devices, so it is not automatically equivalent to one trusted physical device.
+
+NIST explicitly distinguishes a short-term remembered session from a device authenticator: a cookie or bearer
+session token alone is not proof of possession of a trusted physical authenticator. See
+[NIST SP 800-63B authenticator requirements](https://pages.nist.gov/800-63-4/sp800-63b.html) and
+[session requirements](https://pages.nist.gov/800-63-4/sp800-63b/session/).
+
+### Trusted Device Design
+
+Kaze should implement trusted devices as an optional, explicit binding after a full authentication:
+
+1. Generate a random per-install identifier. Do not use an advertising ID, IMEI, serial number, or invasive fingerprint.
+2. Generate a non-exportable device key pair in Android Keystore or Apple Secure Enclave/Keychain.
+3. Send the public key and server-issued single-use challenge after recent authentication.
+4. Store a server device record with user, public key, label, platform, first/last seen time, trust time, expiry, revocation time, and risk metadata.
+5. For recognized-device proof, ask the device to sign a fresh server challenge. Verify signature, challenge, user, expiry, revocation, and intended action.
+6. Gate private-key use with the system biometric/device-credential prompt where the platform supports it.
+7. Require normal or stronger authentication for password/email/provider changes, payments, account deletion, staff/admin actions, or suspicious context even on a trusted device.
+8. Show all recognized/trusted devices and provide “revoke device” and “sign out all sessions” controls.
+9. Notify the user when a device is first trusted or used from a meaningfully new context.
+10. Define recovery for a replaced/lost phone without weakening normal authentication.
+
+Suggested persistence additions:
+
+```sql
+CREATE TABLE auth_devices (
+    id VARCHAR(120) PRIMARY KEY,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    installation_id_hash TEXT NOT NULL,
+    public_key_cose BYTEA,
+    platform VARCHAR(40) NOT NULL,
+    device_label VARCHAR(240),
+    first_seen_at TIMESTAMPTZ NOT NULL,
+    last_seen_at TIMESTAMPTZ NOT NULL,
+    trusted_at TIMESTAMPTZ,
+    trust_expires_at TIMESTAMPTZ,
+    revoked_at TIMESTAMPTZ,
+    UNIQUE (user_id, installation_id_hash)
+);
+```
+
+Store only the minimum device metadata required for security and explain it in the privacy policy.
+
+### Fingerprint, Face ID, Touch ID, And Device Credential
+
+Biometrics should be a local activation factor, not a biometric database owned by Kaze.
+
+Android implementation requirements:
+
+- Use Credential Manager for initial sign-in/passkeys and `BiometricPrompt` for local reauthorization.
+- Support `BIOMETRIC_STRONG` with an intentional `DEVICE_CREDENTIAL` fallback where the risk model allows it.
+- For token/app-lock protection, generate a Keystore key with `setUserAuthenticationRequired(true)` and use a `CryptoObject` when appropriate.
+- Handle no hardware, no enrollment, temporary lockout, permanent lockout, changed enrollment, canceled prompt, and device-credential fallback.
+- Never treat a callback from a custom biometric UI as proof; use the system prompt and protected key operation.
+
+See [Android biometric authentication](https://developer.android.com/identity/sign-in/biometric-auth) and
+[Credential Manager passkey/biometric integration](https://developer.android.com/identity/sign-in/single-tap-biometric).
+
+iOS implementation requirements:
+
+- Use LocalAuthentication for local Face ID/Touch ID/device-passcode checks.
+- Protect Keychain/private-key items with an access-control policy requiring user presence or current biometric set where appropriate.
+- Add a clear `NSFaceIDUsageDescription` before invoking Face ID.
+- Handle unavailable/not-enrolled biometrics, lockout, passcode fallback, canceled prompts, and biometric-set changes.
+- Keep passkey flows in AuthenticationServices; do not manually handle private keys or biometric data.
+
+See [Apple LocalAuthentication](https://developer.apple.com/documentation/localauthentication).
+
+Current status: **Missing**. Android Keystore and iOS Keychain storage exist, but neither is gated by
+biometric/device authentication. There is no biometric service or prompt flow, and iOS lacks
+`NSFaceIDUsageDescription`. The Security settings text is currently descriptive copy only.
+
+### Passkeys (WebAuthn/FIDO)
+
+Passkeys should become a first-class provider in `user_auth_providers` or, preferably, a dedicated
+credential table because one user can register multiple passkeys:
+
+```sql
+CREATE TABLE user_passkey_credentials (
+    credential_id TEXT PRIMARY KEY,
+    user_id VARCHAR(120) NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    public_key_cose BYTEA NOT NULL,
+    sign_count BIGINT NOT NULL DEFAULT 0,
+    transports TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    backup_eligible BOOLEAN NOT NULL DEFAULT false,
+    backed_up BOOLEAN NOT NULL DEFAULT false,
+    label VARCHAR(240),
+    created_at TIMESTAMPTZ NOT NULL,
+    last_used_at TIMESTAMPTZ,
+    revoked_at TIMESTAMPTZ
+);
+```
+
+Required server flows:
+
+```text
+POST   /api/v1/auth/passkeys/registration/options
+POST   /api/v1/auth/passkeys/registration/verify
+POST   /api/v1/auth/passkeys/authentication/options
+POST   /api/v1/auth/passkeys/authentication/verify
+GET    /api/v1/auth/me/passkeys
+DELETE /api/v1/auth/me/passkeys/{credentialId}
+```
+
+Registration and authentication requirements:
+
+- Generate a cryptographically random, short-lived, single-use server challenge and bind it to the intended ceremony and user/session.
+- Verify challenge, RP ID hash, allowed origin/app association, credential type, signature, user presence, requested user-verification policy, and credential revocation state.
+- Persist only the public key and credential metadata; the private key stays with the platform credential provider.
+- Permit multiple credentials, give each a recognizable label, show last use, and let users revoke them.
+- Require recent authentication to add or remove a passkey; never allow removal of the last recovery/login method without a safe replacement.
+- Handle synced and device-bound credentials, cross-device sign-in, sign-counter limitations, lost devices, provider sync loss, and account recovery.
+- Configure Android Digital Asset Links and Apple Associated Domains using the same relying-party domain as the web experience.
+- Prefer usernameless/discoverable credentials where the Kaze UX supports them, while keeping account selection and privacy behavior explicit.
+
+Android should use Credential Manager. Apple platforms should use AuthenticationServices. See
+[Android passkeys](https://developer.android.com/identity/passkeys),
+[Android passkey sign-in](https://developer.android.com/identity/passkeys/sign-in-with-passkeys), and
+[Apple supporting passkeys](https://developer.apple.com/documentation/authenticationservices/supporting-passkeys).
+
+Current status: **Missing**. There are no WebAuthn/passkey dependencies, challenge routes, credential
+tables, Android asset association, Apple `webcredentials` associated domain, or passkey tests.
+
+### Recommended Delivery Order
+
+1. Fix foundational gaps: password-email verification, password reset, disabled-user enforcement, redirect allowlist, generic recovery responses, and durable auth-event logging.
+2. Replace the static client device ID with a random per-install identifier and add session/device list plus remote revocation.
+3. Add biometric-gated local app/token unlock on Android and iOS, with device credential/passcode fallback and recovery.
+4. Add passkey registration/authentication and credential management using server challenges and platform APIs.
+5. Add explicit trusted-device key binding only if Kaze needs a trust signal beyond passkeys and remembered sessions.
+6. Add MFA/step-up policy for staff/admin and high-risk customer actions.
+7. Run an endpoint-by-endpoint authorization, abuse, privacy, recovery, and multi-instance deployment test before calling auth production-complete.
+
 ## Recommended Kaze API Surface
 
 ```text
@@ -852,10 +1079,24 @@ POST /api/v1/auth/session/claim
 POST /api/v1/auth/refresh
 POST /api/v1/auth/logout
 GET  /api/v1/auth/me
+PUT  /api/v1/auth/me/password
 GET  /api/v1/auth/sessions
 DELETE /api/v1/auth/sessions/{sessionId}
 POST /api/v1/auth/providers/{provider}/disconnect
+POST /api/v1/auth/passkeys/registration/options
+POST /api/v1/auth/passkeys/registration/verify
+POST /api/v1/auth/passkeys/authentication/options
+POST /api/v1/auth/passkeys/authentication/verify
+GET  /api/v1/auth/me/passkeys
+DELETE /api/v1/auth/me/passkeys/{credentialId}
+GET  /api/v1/auth/me/devices
+DELETE /api/v1/auth/me/devices/{deviceId}
 ```
+
+`PUT /api/v1/auth/me/password` lets an authenticated social-login user add password login to the
+same `app_users` row. Kaze stores a separate `PASSWORD` provider link; it never creates another user
+for the same normalized email. If a password already exists, the current password is required before
+it can be replaced.
 
 ## Recommended Kaze Implementation Phases
 
@@ -891,6 +1132,14 @@ POST /api/v1/auth/providers/{provider}/disconnect
 - Optional step-up verification for organizer/staff accounts.
 - Admin session revocation tools.
 
+### Phase 5: Device And Passwordless Authentication
+
+- Generate a unique per-install device ID and add active-device management.
+- Add biometric-gated local app unlock on Android and iOS.
+- Add passkey registration, authentication, management, and recovery.
+- Add explicit trusted-device key binding only where the risk model needs it.
+- Add MFA/passkey step-up for privileged roles and sensitive actions.
+
 ## Testing Checklist
 
 - Google login creates a Kaze user.
@@ -907,6 +1156,29 @@ POST /api/v1/auth/providers/{provider}/disconnect
 - App restart uses Kaze refresh token without calling social providers.
 - Deep link with missing login token is rejected.
 - Deep link with wrong state is rejected.
+- Password signup does not become trusted until email verification succeeds.
+- Disabled users cannot sign in, refresh, or use an existing access token.
+- Password reset responses do not reveal whether an account exists.
+- Password reset tokens are hashed, single-use, expiring, and invalidate as designed.
+- Password/email/provider/passkey changes require recent reauthentication and create an audit event.
+- Password changes revoke or intentionally preserve other sessions according to a tested policy.
+- Provider disconnect cannot remove the final usable login method.
+- Concurrent password/social/passkey registration produces one user and an idempotent result.
+- Every installed app instance receives a distinct random device identifier.
+- A remembered refresh-token session is never displayed as a cryptographically trusted device.
+- Trusted-device proof rejects a wrong challenge, key, user, action, expiry, or revoked device.
+- Lost-device revocation invalidates refresh families, trust keys, and device-bound credentials as applicable.
+- Android biometric success is tied to a system prompt and protected key operation.
+- iOS Face ID/Touch ID success is tied to LocalAuthentication/Keychain access control.
+- Biometric unavailable, not enrolled, lockout, enrollment change, cancellation, and fallback paths are tested.
+- Passkey registration rejects the wrong RP ID, origin/app association, challenge, or user.
+- Passkey authentication rejects replayed/expired challenges, invalid signatures, and revoked credentials.
+- Multiple, synced, device-bound, cross-device, renamed, and revoked passkeys are tested.
+- Removing the final passkey/login/recovery method is refused.
+- New-device and authenticator-change alerts contain no secrets and link to revocation controls.
+- Logout and revocation work across multiple server instances.
+- Web auth secrets are not exposed to JavaScript-readable storage in the production architecture.
+- Each protected endpoint passes user ownership, tenant isolation, and role authorization tests.
 
 ## Configuration Example
 
@@ -952,7 +1224,8 @@ kaze {
 - Keep redirect URIs exact; provider consoles usually require exact scheme, host, path, and sometimes trailing slash matching.
 - Add monitoring for login success rate, callback failures, invalid state, and token refresh failures.
 - Add a support flow for users who lose access to a social account.
-- Keep a migration path for adding password login or passkeys later.
+- Treat remembered sessions, recognized devices, trusted devices, biometrics, and passkeys as separate controls.
+- Keep recovery at least as strong as the authenticators it can replace.
 
 ## References
 
@@ -965,3 +1238,13 @@ kaze {
 - [Meta Facebook Login: Manually Build a Login Flow](https://developers.facebook.com/docs/facebook-login/guides/advanced/manual-flow)
 - [Meta Graph API: Access Tokens](https://developers.facebook.com/docs/facebook-login/guides/access-tokens)
 - [OAuth 2.0 Redirect URI Guidance](https://www.oauth.com/oauth2-servers/redirect-uris/)
+- [NIST SP 800-63B: Authentication and Authenticator Management](https://pages.nist.gov/800-63-4/sp800-63b.html)
+- [NIST SP 800-63B: Session Management](https://pages.nist.gov/800-63-4/sp800-63b/session/)
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)
+- [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+- [OWASP OAuth 2.0 Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OAuth2_Cheat_Sheet.html)
+- [Android Credential Manager and Passkeys](https://developer.android.com/identity/passkeys)
+- [Android Biometric Authentication](https://developer.android.com/identity/sign-in/biometric-auth)
+- [Apple LocalAuthentication](https://developer.apple.com/documentation/localauthentication)
+- [Apple Passkeys](https://developer.apple.com/documentation/authenticationservices/supporting-passkeys)

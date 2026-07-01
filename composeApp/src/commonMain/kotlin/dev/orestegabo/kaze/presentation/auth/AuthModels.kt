@@ -64,6 +64,12 @@ internal data class AuthSignupRequest(
 )
 
 @Serializable
+internal data class AuthSetPasswordRequest(
+    val newPassword: String,
+    val currentPassword: String? = null,
+)
+
+@Serializable
 internal data class AuthProfileUpdateRequest(
     val displayName: String? = null,
     val username: String? = null,

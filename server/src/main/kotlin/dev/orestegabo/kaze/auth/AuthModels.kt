@@ -85,6 +85,12 @@ internal data class AuthSigninRequest(
 )
 
 @Serializable
+internal data class AuthSetPasswordRequest(
+    val newPassword: String,
+    val currentPassword: String? = null,
+)
+
+@Serializable
 internal data class SocialSigninRequest(
     val idToken: String? = null,
     val accessToken: String? = null,

@@ -24,6 +24,7 @@ internal fun HomeSettingsScreen(
     onNotificationsConsentChange: (Boolean) -> Unit,
     onAnalyticsConsentChange: (Boolean) -> Unit,
     onUpdateProfile: (String, String, String) -> Unit,
+    onSetPassword: (String?, String) -> Unit,
     onLogout: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -45,6 +46,7 @@ internal fun HomeSettingsScreen(
         onNotificationsConsentChange = onNotificationsConsentChange,
         onAnalyticsConsentChange = onAnalyticsConsentChange,
         onUpdateProfile = onUpdateProfile,
+        onSetPassword = onSetPassword,
         onLogout = onLogout,
         onBack = onBack,
     )

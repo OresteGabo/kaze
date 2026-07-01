@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import dev.orestegabo.kaze.platform.AndroidApplicationContext
 import dev.orestegabo.kaze.platform.KazeConnectivityContext
 import dev.orestegabo.kaze.platform.PlatformServicesProvider
 import dev.orestegabo.kaze.presentation.auth.KazeAuthAndroidPlatform
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
         setTheme(R.style.Theme_Kaze_App)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        AndroidApplicationContext.initialize(applicationContext)
         KazeConnectivityContext.initialize(applicationContext)
         PlatformServicesProvider.initialize(applicationContext)
         KazeAuthAndroidPlatform.initialize(applicationContext)

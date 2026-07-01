@@ -44,6 +44,12 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.clientAndroid)
             implementation(libs.facebook.login)
+            implementation(libs.koog.agents)
+            implementation(libs.mlkit.segmentation.selfie)
+            implementation(libs.mediapipe.tasks.genai)
+            implementation(libs.mediapipe.tasks.vision)
+            implementation(libs.litert)
+            implementation(libs.kotlinx.coroutines.play.services)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -99,6 +105,13 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/io.netty.versions.properties"
         }
     }
     buildTypes {

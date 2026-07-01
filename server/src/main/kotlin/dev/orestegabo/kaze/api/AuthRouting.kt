@@ -9,6 +9,7 @@ import dev.orestegabo.kaze.auth.AuthInvitationResponseRequest
 import dev.orestegabo.kaze.auth.AuthProfileUpdateRequest
 import dev.orestegabo.kaze.auth.AuthSessionClaimRequest
 import dev.orestegabo.kaze.auth.AuthSessionBootstrapDto
+import dev.orestegabo.kaze.auth.AuthSetPasswordRequest
 import dev.orestegabo.kaze.auth.AuthService
 import dev.orestegabo.kaze.auth.AuthSigninRequest
 import dev.orestegabo.kaze.auth.AuthStartResponseDto
@@ -210,6 +211,12 @@ internal fun Route.registerAuthRoutes(
                 call.noStoreAuthResponse()
                 val principal = call.authenticatedJwtPrincipal()
                 call.respond(authService.updateProfile(principal.payload.subject, call.receive<AuthProfileUpdateRequest>()))
+            }
+
+            put("/me/password") {
+                call.noStoreAuthResponse()
+                val principal = call.authenticatedJwtPrincipal()
+                call.respond(authService.setPassword(principal.payload.subject, call.receive<AuthSetPasswordRequest>()))
             }
 
             post("/logout") {

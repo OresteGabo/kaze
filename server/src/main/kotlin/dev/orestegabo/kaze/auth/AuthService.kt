@@ -35,6 +35,10 @@ internal class AuthService(
             phoneNumber = phoneNumber,
         )
         if (conflicts.emailExists) {
+            val existingUser = repository.findByEmail(email)
+            if (existingUser?.passwordHash == null) {
+                throw passwordLoginNotConfigured()
+            }
             throw AuthProblemException(HttpStatusCode.Conflict, "email_already_registered", "This email is already registered.")
         }
         if (conflicts.usernameExists) {
@@ -64,10 +68,36 @@ internal class AuthService(
             ?: throw invalidCredentials()
         val storedUser = findUserByIdentifier(identifier)
             ?: throw invalidCredentials()
-        val passwordHash = storedUser.passwordHash ?: throw invalidCredentials()
+        val passwordHash = storedUser.passwordHash ?: throw passwordLoginNotConfigured()
         if (!BCrypt.checkpw(request.password, passwordHash)) throw invalidCredentials()
 
         return storedUser.user.toAuthResponse()
+    }
+
+    fun setPassword(userId: String, request: AuthSetPasswordRequest): AuthUserDto {
+        validatePassword(request.newPassword)
+        val storedUser = repository.findById(userId)
+            ?: throw AuthProblemException(HttpStatusCode.NotFound, "user_not_found", "The signed-in user could not be found.")
+        storedUser.passwordHash?.let { currentHash ->
+            val currentPassword = request.currentPassword?.takeIf { it.isNotBlank() }
+                ?: throw AuthProblemException(
+                    HttpStatusCode.Unauthorized,
+                    "current_password_required",
+                    "Enter the current password before replacing it.",
+                )
+            if (!BCrypt.checkpw(currentPassword, currentHash)) {
+                throw AuthProblemException(
+                    HttpStatusCode.Unauthorized,
+                    "current_password_incorrect",
+                    "The current password is incorrect.",
+                )
+            }
+        }
+        return repository.setPasswordLogin(
+            userId = userId,
+            passwordHash = BCrypt.hashpw(request.newPassword, BCrypt.gensalt(BCRYPT_COST)),
+        )?.user?.toDto()
+            ?: throw AuthProblemException(HttpStatusCode.InternalServerError, "password_update_failed", "Could not update the password right now.")
     }
 
     fun signinWithGoogle(request: SocialSigninRequest): AuthResponseDto {
@@ -435,6 +465,13 @@ internal class AuthService(
 
     private fun invalidCredentials(): AuthProblemException =
         AuthProblemException(HttpStatusCode.Unauthorized, "invalid_credentials", "Identifier or password is incorrect.")
+
+    private fun passwordLoginNotConfigured(): AuthProblemException =
+        AuthProblemException(
+            HttpStatusCode.Conflict,
+            "password_login_not_configured",
+            "This account uses social sign-in and does not have a password yet. Sign in with Google, Apple, or Facebook, then add a password in Settings > Account.",
+        )
 
     private fun findUserByIdentifier(identifier: String): StoredAuthUser? =
         when {

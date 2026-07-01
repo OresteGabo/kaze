@@ -309,6 +309,29 @@ internal class KazeAppViewModel(
         }
     }
 
+    fun setPassword(currentPassword: String?, newPassword: String) {
+        if (newPassword.length < MIN_PASSWORD_LENGTH) {
+            showFeedback("Use a new password with at least $MIN_PASSWORD_LENGTH characters.")
+            return
+        }
+        scope.launch {
+            val accessToken = secureStore.get(AUTH_TOKEN_KEY)
+            if (accessToken.isNullOrBlank()) {
+                showFeedback("Your session expired. Please sign in again.")
+                return@launch
+            }
+            runCatching {
+                authGateway.setPassword(
+                    accessToken = accessToken,
+                    newPassword = newPassword,
+                    currentPassword = currentPassword?.takeIf { it.isNotBlank() },
+                )
+            }.onSuccess {
+                showFeedback("Email and password sign-in is now ready for this same account.")
+            }.onFailure { showFeedback(it.toAuthMessage()) }
+        }
+    }
+
     fun signInWithSocialProvider(provider: String) {
         val socialProvider = provider.toSocialAuthProvider()
         if (socialProvider == null) {

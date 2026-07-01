@@ -230,6 +230,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthUser"
+  /auth/me/password:
+    put:
+      tags: [Auth]
+      summary: Add or replace password sign-in on the current account
+      description: Social-login accounts may add a password without creating a second user. Replacing an existing password requires the current password.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthSetPassword"
+      responses:
+        "200":
+          description: Password login is linked to the current user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: The session or current password is invalid.
   /auth/logout:
     post:
       tags: [Auth]
@@ -546,6 +568,18 @@ components:
         password:
           type: string
           format: password
+    AuthSetPassword:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+        currentPassword:
+          type: string
+          format: password
+          nullable: true
     SocialSignin:
       type: object
       required: [idToken]

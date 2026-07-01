@@ -510,7 +510,7 @@ fun App() {
                                                 modifier = Modifier.weight(1f),
                                                 invitations = visibleInvitations,
                                                 isGuestMode = isGuestMode,
-                                                allowInvitationCreation = false,
+                                                allowInvitationCreation = uiState.sessionMode == KazeSessionMode.AUTHENTICATED,
                                                 onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                                 selectedInvitation = selectedInvitation,
                                                 onSelectedInvitationChange = { selectedInvitation = it },
@@ -564,6 +564,7 @@ fun App() {
                                                 onNotificationsConsentChange = appViewModel::onNotificationsConsentChanged,
                                                 onAnalyticsConsentChange = appViewModel::onAnalyticsConsentChanged,
                                                 onUpdateProfile = appViewModel::updateProfile,
+                                                onSetPassword = appViewModel::setPassword,
                                                 onLogout = appViewModel::logout,
                                                 onBack = { selectPrimaryDestination(KazeDestination.HOME) },
                                             )
@@ -690,7 +691,7 @@ fun App() {
                                             modifier = Modifier.weight(1f),
                                             invitations = visibleInvitations,
                                             isGuestMode = isGuestMode,
-                                            allowInvitationCreation = false,
+                                            allowInvitationCreation = uiState.sessionMode == KazeSessionMode.AUTHENTICATED,
                                             onBack = { appViewModel.onDestinationSelected(KazeDestination.HOME) },
                                             selectedInvitation = selectedInvitation,
                                             onSelectedInvitationChange = { selectedInvitation = it },
@@ -744,6 +745,7 @@ fun App() {
                                             onNotificationsConsentChange = appViewModel::onNotificationsConsentChanged,
                                             onAnalyticsConsentChange = appViewModel::onAnalyticsConsentChanged,
                                             onUpdateProfile = appViewModel::updateProfile,
+                                            onSetPassword = appViewModel::setPassword,
                                             onLogout = appViewModel::logout,
                                             onBack = { selectPrimaryDestination(KazeDestination.HOME) },
                                         )

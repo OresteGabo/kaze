@@ -353,6 +353,8 @@ class FeatureViewModelTest {
         override suspend fun createAccount(email: String, password: String): AuthSession =
             signIn(email, password)
 
+        override suspend fun setPassword(accessToken: String, newPassword: String, currentPassword: String?) = Unit
+
         override suspend fun signInWithCredential(
             provider: SocialAuthProvider,
             credential: String,

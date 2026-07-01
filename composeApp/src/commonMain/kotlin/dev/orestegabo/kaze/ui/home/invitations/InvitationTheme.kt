@@ -5,12 +5,16 @@ import androidx.compose.ui.Modifier
 import dev.orestegabo.kaze.presentation.demo.InvitationPreview
 import dev.orestegabo.kaze.ui.home.invitations.birthday.BirthdayJoyTheme
 import dev.orestegabo.kaze.ui.home.invitations.conference.ConferenceSummitTheme
+import dev.orestegabo.kaze.ui.home.invitations.funeral.FuneralMemorialTheme
+import dev.orestegabo.kaze.ui.home.invitations.funeral.FuneralPhotoMemoryTheme
 import dev.orestegabo.kaze.ui.home.invitations.wedding.WeddingBotanicalTheme
 import dev.orestegabo.kaze.ui.home.invitations.wedding.WeddingRomanceTheme
+import dev.orestegabo.kaze.ui.home.invitations.wedding.weddingPhotoTemplateThemes
 
 internal enum class InvitationThemeCategory {
     WEDDING,
     BIRTHDAY,
+    FUNERAL,
     CONFERENCE,
 }
 
@@ -20,6 +24,7 @@ internal enum class InvitationEventType(
 ) {
     WEDDING("Wedding", InvitationThemeCategory.WEDDING),
     BIRTHDAY("Birthday", InvitationThemeCategory.BIRTHDAY),
+    FUNERAL("Funeral", InvitationThemeCategory.FUNERAL),
     MEETING("Meeting", InvitationThemeCategory.CONFERENCE),
     CONFERENCE("Conference", InvitationThemeCategory.CONFERENCE),
     OTHER("Other", InvitationThemeCategory.CONFERENCE),
@@ -45,10 +50,25 @@ internal interface InvitationTheme {
     )
 }
 
+internal interface InvitationTemplateContract : InvitationTheme {
+    val templateKind: InvitationTemplateKind
+    val acceptsPhoto: Boolean
+    val previewAspectRatio: Float
+}
+
+internal enum class InvitationTemplateKind {
+    STATIC,
+    PHOTO,
+    AI_GENERATED,
+}
+
 internal val availableInvitationThemes: List<InvitationTheme> = listOf(
     WeddingRomanceTheme,
     WeddingBotanicalTheme,
+    *weddingPhotoTemplateThemes.toTypedArray(),
     BirthdayJoyTheme,
+    FuneralMemorialTheme,
+    FuneralPhotoMemoryTheme,
     ConferenceSummitTheme,
 )
 
@@ -62,6 +82,7 @@ internal fun InvitationPreview.resolveInvitationTheme(): InvitationTheme {
     }
     return when {
         "birthday" in searchable -> BirthdayJoyTheme
+        "funeral" in searchable || "memorial" in searchable || "rest" in searchable -> FuneralMemorialTheme
         isWeddingInvitation() && ("garden" in searchable || "botanical" in searchable) -> WeddingBotanicalTheme
         isWeddingInvitation() -> WeddingRomanceTheme
         else -> ConferenceSummitTheme

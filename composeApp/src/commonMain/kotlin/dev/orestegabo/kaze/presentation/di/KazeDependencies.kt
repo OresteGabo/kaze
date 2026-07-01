@@ -2,6 +2,10 @@ package dev.orestegabo.kaze.presentation.di
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import dev.orestegabo.kaze.ai.ImageSegmentationService
+import dev.orestegabo.kaze.ai.WeddingAiService
+import dev.orestegabo.kaze.ai.createImageSegmentationService
+import dev.orestegabo.kaze.ai.createWeddingAiService
 import dev.orestegabo.kaze.data.repository.ExperienceRepository
 import dev.orestegabo.kaze.data.repository.HotelRepository
 import dev.orestegabo.kaze.data.repository.MapRepository
@@ -39,6 +43,8 @@ internal data class KazeDependencies(
     val authGateway: AuthGateway,
     val externalUrlLauncher: ExternalUrlLauncher,
     val nativeSocialAuthLauncher: NativeSocialAuthLauncher,
+    val weddingAiService: WeddingAiService,
+    val imageSegmentationService: ImageSegmentationService,
 ) {
     companion object {
         private const val DEFAULT_LAUNCH_HOTEL_ID = "rw-kgl-marriott"
@@ -67,6 +73,8 @@ internal data class KazeDependencies(
                 ),
                 externalUrlLauncher = createExternalUrlLauncher(),
                 nativeSocialAuthLauncher = createNativeSocialAuthLauncher(),
+                weddingAiService = createWeddingAiService(enabled = true),
+                imageSegmentationService = createImageSegmentationService(),
             )
         }
 
@@ -94,6 +102,8 @@ internal data class KazeDependencies(
                 ),
                 externalUrlLauncher = createExternalUrlLauncher(),
                 nativeSocialAuthLauncher = createNativeSocialAuthLauncher(),
+                weddingAiService = createWeddingAiService(enabled = true),
+                imageSegmentationService = createImageSegmentationService(),
             )
         }
     }
